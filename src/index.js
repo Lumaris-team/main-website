@@ -1,13 +1,8 @@
-// API funtion
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
     const method = request.method;
-    const headers = request.headers
-    let body;
-    const contentType = request.headers.get('content-type') || '';
     const corsHeaders = {
-      "Content-Type": "application/json",
       "Access-Control-Allow-Origin": "*",
       "Access-Control-Allow-Methods": "GET, POST, DELETE, PUT, PATCH, OPTIONS",
       "Access-Control-Allow-Headers": "*"
@@ -40,27 +35,37 @@ export default {
     // 🌐 SITE (Cloudflare assets)
     // =========================
     // Add CORS headers for assets to allow browser loading
-    if (url.pathname.startsWith("/assets/") && method==="GET") {
+    if (url.pathname.startsWith("/assets/") && method === "GET") {
       const assetResponse = await env.ASSETS.fetch(request);
       
       if (assetResponse.ok) {
+<<<<<<< HEAD
         // For SVG files, serve with correct content-type
         const isSvg = url.pathname.endsWith('.svg');
         const assetsContentType = isSvg ? 'image/svg+xml; charset=utf-8' : (assetResponse.headers.get("Content-Type") || "application/octet-stream");
         
+=======
+        const responseHeaders = new Headers(assetResponse.headers);
+        Object.entries(corsHeaders).forEach(([key, value]) => responseHeaders.set(key, value));
+>>>>>>> fe32456 (Test Git signing)
         return new Response(assetResponse.body, {
-          headers: corsHeaders
+          status: assetResponse.status,
+          headers: responseHeaders
         });
       }
       return assetResponse;
     }
+<<<<<<< HEAD
     // Pages
     if (
       url.pathname === "/" ||
       url.pathname === ""
     ) {
+=======
+    if (url.pathname === "/" || url.pathname === "" || url.pathname === "/home") {
+>>>>>>> fe32456 (Test Git signing)
       const assetUrl = new URL(request.url);
-      assetUrl.pathname = "/pages/home/index.html";
+      assetUrl.pathname = "/pages/index.html";
       return env.ASSETS.fetch(new Request(assetUrl, request));
     }
     return env.ASSETS.fetch(request)
