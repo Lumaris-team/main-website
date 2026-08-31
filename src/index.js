@@ -54,7 +54,6 @@ export default {
       }
       return assetResponse;
     }
-<<<<<<< HEAD
     // Pages
     if (
       url.pathname === "/" ||
