@@ -5,7 +5,6 @@ export default {
     const method = request.method;
     const headers = request.headers
     let body;
-    const contentType = request.headers.get('content-type') || '';
     const corsHeaders = {
       "Content-Type": "application/json",
       "Access-Control-Allow-Origin": "*",
@@ -57,7 +56,7 @@ export default {
     // Pages
     if (
       url.pathname === "/" ||
-      url.pathname === "" ||
+      url.pathname === ""
     ) {
       const assetUrl = new URL(request.url);
       assetUrl.pathname = "/pages/home/index.html";
