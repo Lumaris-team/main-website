@@ -57,7 +57,7 @@ export default {
     // Pages
     if (
       url.pathname === "/" ||
-      url.pathname === "" ||
+      url.pathname === ""
     ) {
       const assetUrl = new URL(request.url);
       assetUrl.pathname = "/pages/home/index.html";
