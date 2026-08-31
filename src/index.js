@@ -16,7 +16,7 @@ export default {
     // =========================
     // 📶 MAIN API
     // =========================
-if (url.pathname.startsWith("/api/")) {
+    if (url.pathname.startsWith("/api/")) {
       try {
         let resp = {object: "nothing"};
         // Return res111ponse
@@ -65,3 +65,4 @@ if (url.pathname.startsWith("/api/")) {
     }
     return env.ASSETS.fetch(request)
   }
+}
