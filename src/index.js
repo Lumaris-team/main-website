@@ -5,6 +5,7 @@ export default {
     const method = request.method;
     const headers = request.headers
     let body;
+    const contentType = request.headers.get('content-type') || '';
     const corsHeaders = {
       "Content-Type": "application/json",
       "Access-Control-Allow-Origin": "*",
@@ -45,7 +46,7 @@ export default {
       if (assetResponse.ok) {
         // For SVG files, serve with correct content-type
         const isSvg = url.pathname.endsWith('.svg');
-        const contentType = isSvg ? 'image/svg+xml; charset=utf-8' : (assetResponse.headers.get("Content-Type") || "application/octet-stream");
+        const assetsContentType = isSvg ? 'image/svg+xml; charset=utf-8' : (assetResponse.headers.get("Content-Type") || "application/octet-stream");
         
         return new Response(assetResponse.body, {
           headers: corsHeaders
@@ -56,7 +57,7 @@ export default {
     // Pages
     if (
       url.pathname === "/" ||
-      url.pathname === ""
+      url.pathname === "" ||
     ) {
       const assetUrl = new URL(request.url);
       assetUrl.pathname = "/pages/home/index.html";
