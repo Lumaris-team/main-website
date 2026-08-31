@@ -39,15 +39,14 @@ export default {
       const assetResponse = await env.ASSETS.fetch(request);
       
       if (assetResponse.ok) {
-<<<<<<< HEAD
         // For SVG files, serve with correct content-type
         const isSvg = url.pathname.endsWith('.svg');
         const assetsContentType = isSvg ? 'image/svg+xml; charset=utf-8' : (assetResponse.headers.get("Content-Type") || "application/octet-stream");
         
-=======
         const responseHeaders = new Headers(assetResponse.headers);
+        responseHeaders.set("Content-Type", assetsContentType);
         Object.entries(corsHeaders).forEach(([key, value]) => responseHeaders.set(key, value));
->>>>>>> fe32456 (Test Git signing)
+        
         return new Response(assetResponse.body, {
           status: assetResponse.status,
           headers: responseHeaders
@@ -59,11 +58,9 @@ export default {
     // Pages
     if (
       url.pathname === "/" ||
-      url.pathname === ""
+      url.pathname === "" ||
+      url.pathname === "/home"
     ) {
-=======
-    if (url.pathname === "/" || url.pathname === "" || url.pathname === "/home") {
->>>>>>> fe32456 (Test Git signing)
       const assetUrl = new URL(request.url);
       assetUrl.pathname = "/pages/index.html";
       return env.ASSETS.fetch(new Request(assetUrl, request));
