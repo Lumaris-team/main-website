@@ -7,6 +7,7 @@ document.querySelector('#navbar').innerHTML = renderNavbar();
 const canvas = document.querySelector('#scene');
 const stage = document.querySelector('.hero-stage');
 const experience = document.querySelector('.experience-shell');
+const experienceCopy = document.querySelector('.experience-copy');
 const experienceKicker = document.querySelector('#experience-kicker');
 const experienceStep = document.querySelector('#experience-step');
 const experienceTitle = document.querySelector('#experience-title');
@@ -14,6 +15,7 @@ const experienceDescription = document.querySelector('#experience-description');
 const experienceIndex = document.querySelector('#experience-index');
 const experienceLocation = document.querySelector('#experience-location');
 const experienceProgressBar = document.querySelector('#experience-progress-bar');
+const experienceFrame = document.querySelector('.experience-frame');
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(28, 1, 0.1, 100);
 camera.position.set(0, 0, 8.8);
@@ -32,6 +34,7 @@ let targetTilt = 0;
 let currentRotation = 0;
 let currentTilt = 0;
 let scrollProgress = 0;
+let modelScrollProgress = 0;
 let activeStep = -1;
 
 const experienceScenes = [
@@ -49,7 +52,7 @@ export function loadModel() {
       if (!child.isMesh) return;
       child.material = new THREE.MeshPhysicalMaterial({ color: 0x7567ff, emissive: 0x351c9c, emissiveIntensity: 1.15, metalness: 0.55, roughness: 0.2, clearcoat: 0.8, clearcoatRoughness: 0.15 });
     });
-    model.scale.setScalar(1.35);
+    model.scale.setScalar(0.72);
     scene.add(model);
     resolve(model);
   }, undefined, reject));
@@ -66,6 +69,8 @@ function updateScroll() {
   const trackStart = experience.offsetTop;
   const trackDistance = Math.max(experience.offsetHeight - window.innerHeight, 1);
   scrollProgress = THREE.MathUtils.clamp((window.scrollY - trackStart) / trackDistance, 0, 1);
+  const exitProgress = THREE.MathUtils.clamp((scrollProgress - 0.82) / 0.18, 0, 1);
+  experienceFrame.style.setProperty('--experience-exit', exitProgress.toFixed(3));
   const scenePosition = scrollProgress * (experienceScenes.length - 1);
   const nextStep = Math.min(Math.floor(scenePosition + 0.5), experienceScenes.length - 1);
   experienceProgressBar.style.transform = `scaleX(${scrollProgress})`;
@@ -73,26 +78,31 @@ function updateScroll() {
   if (nextStep !== activeStep) {
     activeStep = nextStep;
     const sceneData = experienceScenes[activeStep];
-    experienceKicker.textContent = sceneData.kicker;
-    experienceStep.textContent = `${String(activeStep + 1).padStart(2, '0')} / 04`;
-    experienceTitle.innerHTML = sceneData.title;
-    experienceDescription.textContent = sceneData.description;
-    experienceLocation.textContent = sceneData.location;
+    experienceCopy.classList.add('is-changing');
+    window.setTimeout(() => {
+      experienceKicker.textContent = sceneData.kicker;
+      experienceStep.textContent = `${String(activeStep + 1).padStart(2, '0')} / 04`;
+      experienceTitle.innerHTML = sceneData.title;
+      experienceDescription.textContent = sceneData.description;
+      experienceLocation.textContent = sceneData.location;
+      experienceCopy.classList.remove('is-changing');
+    }, 220);
   }
 }
 window.addEventListener('scroll', updateScroll, { passive: true });
 
 function animate(time = 0) {
   requestAnimationFrame(animate);
+  modelScrollProgress += (scrollProgress - modelScrollProgress) * 0.025;
   if (model) {
-    currentRotation += (targetRotation + scrollProgress * Math.PI * 2.2 - currentRotation) * 0.06;
-    currentTilt += (targetTilt + Math.sin(scrollProgress * Math.PI) * 0.35 - currentTilt) * 0.06;
+    currentRotation += (targetRotation + modelScrollProgress * Math.PI * 1.45 - currentRotation) * 0.045;
+    currentTilt += (targetTilt + Math.sin(modelScrollProgress * Math.PI) * 0.25 - currentTilt) * 0.045;
     model.rotation.y = currentRotation;
     model.rotation.x = Math.sin(time * 0.00045) * 0.08 + currentTilt;
     model.rotation.z = Math.sin(time * 0.00035) * 0.035;
-    model.position.y = Math.sin(time * 0.0008) * 0.08 + Math.sin(scrollProgress * Math.PI * 2) * 0.28;
-    model.position.x = Math.sin(scrollProgress * Math.PI * 1.5) * 0.55;
-    model.scale.setScalar(1.35 + Math.sin(scrollProgress * Math.PI) * 0.16);
+    model.position.y = Math.sin(time * 0.0008) * 0.08 + Math.sin(modelScrollProgress * Math.PI * 2) * 0.2;
+    model.position.x = Math.sin(modelScrollProgress * Math.PI * 1.5) * 0.38;
+    model.scale.setScalar(0.72 + Math.sin(modelScrollProgress * Math.PI) * 0.08);
   }
   renderer.render(scene, camera);
 }
