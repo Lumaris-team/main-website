@@ -16,7 +16,7 @@ const experienceLocation = document.querySelector('#experience-location');
 const experienceProgressBar = document.querySelector('#experience-progress-bar');
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(28, 1, 0.1, 100);
-camera.position.set(0, 0, 6.2);
+camera.position.set(0, 0, 8.8);
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: 'high-performance' });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -49,7 +49,7 @@ export function loadModel() {
       if (!child.isMesh) return;
       child.material = new THREE.MeshPhysicalMaterial({ color: 0x7567ff, emissive: 0x351c9c, emissiveIntensity: 1.15, metalness: 0.55, roughness: 0.2, clearcoat: 0.8, clearcoatRoughness: 0.15 });
     });
-    model.scale.setScalar(2.45);
+    model.scale.setScalar(1.35);
     scene.add(model);
     resolve(model);
   }, undefined, reject));
@@ -92,7 +92,7 @@ function animate(time = 0) {
     model.rotation.z = Math.sin(time * 0.00035) * 0.035;
     model.position.y = Math.sin(time * 0.0008) * 0.08 + Math.sin(scrollProgress * Math.PI * 2) * 0.28;
     model.position.x = Math.sin(scrollProgress * Math.PI * 1.5) * 0.55;
-    model.scale.setScalar(2.45 + Math.sin(scrollProgress * Math.PI) * 0.3);
+    model.scale.setScalar(1.35 + Math.sin(scrollProgress * Math.PI) * 0.16);
   }
   renderer.render(scene, camera);
 }
