@@ -20,6 +20,9 @@ const violetLight = new THREE.PointLight(0xb550ff, 22, 8); violetLight.position.
 const loader = new GLTFLoader();
 let model;
 let targetRotation = 0;
+let targetTilt = 0;
+let currentRotation = 0;
+let currentTilt = 0;
 let scrollProgress = 0;
 
 // Loads the supplied logo model and gives every mesh the Lumaris night-spectrum finish.
@@ -36,13 +39,33 @@ export function loadModel() {
   }, undefined, reject));
 }
 
-function resize() { const { width, height } = stage.getBoundingClientRect(); renderer.setSize(width, height, false); camera.aspect = width / height; camera.updateProjectionMatrix(); }
+function resize() { const { width, height } = stage.getBoundingClientRect(); renderer.setSize(width, height, false); camera.aspect = width / height; camera.updateProjectionMatrix(); updateScroll(); }
 loadModel().catch((error) => console.error('Lumaris model failed to load', error));
 window.addEventListener('resize', resize); resize();
-window.addEventListener('pointermove', (event) => { targetRotation = (event.clientX / window.innerWidth - 0.5) * 0.5; });
-window.addEventListener('scroll', () => { scrollProgress = Math.min(window.scrollY / window.innerHeight, 1); }, { passive: true });
+window.addEventListener('pointermove', (event) => {
+  targetRotation = (event.clientX / window.innerWidth - 0.5) * 0.9;
+  targetTilt = (event.clientY / window.innerHeight - 0.5) * 0.45;
+});
+function updateScroll() {
+  const heroHeight = Math.max(stage.closest('.hero').offsetHeight - window.innerHeight, 1);
+  scrollProgress = THREE.MathUtils.clamp(window.scrollY / heroHeight, 0, 1);
+}
+window.addEventListener('scroll', updateScroll, { passive: true });
 
-function animate(time = 0) { requestAnimationFrame(animate); if (model) { model.rotation.y += (targetRotation + scrollProgress * 1.1 - model.rotation.y) * 0.035; model.rotation.x = Math.sin(time * 0.00045) * 0.08 + scrollProgress * 0.18; model.position.y = Math.sin(time * 0.0008) * 0.08 - scrollProgress * 0.18; } renderer.render(scene, camera); }
+function animate(time = 0) {
+  requestAnimationFrame(animate);
+  if (model) {
+    currentRotation += (targetRotation + scrollProgress * Math.PI * 1.25 - currentRotation) * 0.06;
+    currentTilt += (targetTilt + scrollProgress * 0.3 - currentTilt) * 0.06;
+    model.rotation.y = currentRotation;
+    model.rotation.x = Math.sin(time * 0.00045) * 0.08 + currentTilt;
+    model.rotation.z = Math.sin(time * 0.00035) * 0.035;
+    model.position.y = Math.sin(time * 0.0008) * 0.08 - scrollProgress * 0.55;
+    model.position.x = Math.sin(scrollProgress * Math.PI) * 0.35;
+    model.scale.setScalar(2.45 - scrollProgress * 0.35);
+  }
+  renderer.render(scene, camera);
+}
 animate();
 
 const observer = new IntersectionObserver((entries) => entries.forEach((entry) => { if (entry.isIntersecting) entry.target.classList.add('is-visible'); }), { threshold: 0.14 });

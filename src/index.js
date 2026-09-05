@@ -11,7 +11,7 @@ export default {
     // =========================
     // 📶 MAIN API
     // =========================
-    if (url.pathname.startsWith("/api/")) {
+if (url.pathname.startsWith("/api/")) {
       try {
         let resp = {object: "nothing"};
         // Return res111ponse
@@ -39,14 +39,8 @@ export default {
       const assetResponse = await env.ASSETS.fetch(request);
       
       if (assetResponse.ok) {
-        // For SVG files, serve with correct content-type
-        const isSvg = url.pathname.endsWith('.svg');
-        const assetsContentType = isSvg ? 'image/svg+xml; charset=utf-8' : (assetResponse.headers.get("Content-Type") || "application/octet-stream");
-        
         const responseHeaders = new Headers(assetResponse.headers);
-        responseHeaders.set("Content-Type", assetsContentType);
         Object.entries(corsHeaders).forEach(([key, value]) => responseHeaders.set(key, value));
-        
         return new Response(assetResponse.body, {
           status: assetResponse.status,
           headers: responseHeaders
@@ -54,16 +48,10 @@ export default {
       }
       return assetResponse;
     }
-    // Pages
-    if (
-      url.pathname === "/" ||
-      url.pathname === "" ||
-      url.pathname === "/home"
-    ) {
+    if (url.pathname === "/" || url.pathname === "" || url.pathname === "/home") {
       const assetUrl = new URL(request.url);
       assetUrl.pathname = "/pages/index.html";
       return env.ASSETS.fetch(new Request(assetUrl, request));
     }
     return env.ASSETS.fetch(request)
   }
-}
