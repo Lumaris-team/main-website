@@ -53,5 +53,6 @@ if (url.pathname.startsWith("/api/")) {
       assetUrl.pathname = "/pages/index.html";
       return env.ASSETS.fetch(new Request(assetUrl, request));
     }
-    return env.ASSETS.fetch(request)
+    return env.ASSETS.fetch(request);
   }
+};
