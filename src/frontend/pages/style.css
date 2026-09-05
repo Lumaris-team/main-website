@@ -61,7 +61,7 @@ section { scroll-snap-align: start; scroll-snap-stop: always; }
 .file-orbit, .orbit-ring { position: absolute; right: 28px; bottom: 30px; color: var(--cyan); font-size: 25px; }
 .orbit-ring { display: grid; place-items: center; width: 100px; height: 100px; border: 1px solid rgba(140, 236, 255, .5); border-radius: 50%; color: var(--paper); font: 12px 'DM Mono', monospace; box-shadow: 0 0 35px #6845aa; }
 .orbit-ring::before { position: absolute; width: 140px; height: 50px; border: 1px solid rgba(140, 236, 255, .25); border-radius: 50%; content: ""; transform: rotate(-25deg); }
-.focus-section { position: relative; display: flex; align-items: center; gap: 18%; min-height: 100vh; overflow: hidden; padding: 150px max(36px, calc((100vw - 1240px) / 2)); background: linear-gradient(110deg, #121326, #291650); }
+.focus-section { position: relative; display: flex; align-items: center; gap: 18%; min-height: 100vh; overflow: hidden; padding: 150px max(36px, calc((100vw - 1240px) / 2)); background: linear-gradient(180deg, var(--ink) 0%, #0b0d18 14%, #121326 42%, #291650 100%); }
 .focus-section::after { position: absolute; top: 50%; right: 7%; width: 600px; height: 600px; border: 1px solid rgba(140, 236, 255, .15); border-radius: 50%; content: ""; transform: translateY(-50%); box-shadow: 0 0 80px rgba(140, 236, 255, .1), inset 0 0 80px rgba(150, 80, 255, .1); }
 .focus-number { position: absolute; top: 45px; left: max(36px, calc((100vw - 1240px) / 2)); color: #717080; font: 11px 'DM Mono', monospace; }
 .focus-copy { position: relative; z-index: 1; max-width: 540px; }
@@ -113,13 +113,20 @@ footer a { font-size: 10px; }
 .experience-frame .hero-meta { z-index: 3; }
 .experience-frame .label-top span { color: var(--cyan); }
 .experience-shell + .statement { scroll-snap-align: none; }
+.experience-frame { display: block; padding: 0; }
+.experience-frame .hero-stage { position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; }
+.experience-frame .hero-stage canvas { width: 100%; height: 100%; }
+.experience-copy { position: absolute; top: 50%; left: max(36px, calc((100vw - 1240px) / 2)); z-index: 3; width: min(550px, 42vw); transform: translateY(-50%); }
+.experience-copy::before { position: absolute; z-index: -1; inset: -80px -100px; content: ""; background: rgba(8, 9, 18, .12); border-radius: 50%; filter: blur(26px); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); mask-image: radial-gradient(ellipse, black 0%, transparent 72%); }
+.experience-frame .hero-meta { z-index: 4; }
+.experience-frame .stage-label { z-index: 4; }
 
 @media (max-width: 760px) {
 	.experience-shell { height: 400vh; }
-	.experience-frame { display: block; min-height: 0; padding: 112px 20px 55px; }
-	.experience-copy { max-width: 100%; }
+	.experience-frame { display: block; min-height: 0; padding: 0; }
+	.experience-copy { top: 42%; left: 20px; width: calc(100% - 40px); max-width: 100%; transform: translateY(-50%); }
 	.experience-copy h1 { font-size: 58px; }
-	.experience-frame .hero-stage { height: 430px; margin-top: 10px; }
+	.experience-frame .hero-stage { height: 100%; margin-top: 0; }
 	.experience-progress { right: 20px; bottom: 55px; left: 20px; }
 	.experience-frame .hero-meta { right: 20px; bottom: 22px; left: 20px; }
 	.experience-frame .hero-meta span:nth-child(2) { display: none; }
