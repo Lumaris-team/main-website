@@ -28,7 +28,8 @@ scene.add(new THREE.AmbientLight(0x6860ff, 1.7));
 const keyLight = new THREE.PointLight(0x8cecff, 18, 10); keyLight.position.set(3, 2, 4); scene.add(keyLight);
 const violetLight = new THREE.PointLight(0xb550ff, 22, 8); violetLight.position.set(-3, -2, 2); scene.add(violetLight);
 const loader = new GLTFLoader();
-let model;
+let galaxy;
+let logo;
 let targetRotation = 0;
 let targetTilt = 0;
 let currentRotation = 0;
@@ -44,22 +45,46 @@ const experienceScenes = [
   { kicker: 'Deep work, made visible', title: 'Build the rhythm<br>that <em>moves you.</em>', description: 'Focus, Pomodoro et statistiques utiles transforment chaque session en progrès durable.', location: '03 / Deep work' }
 ];
 
-// Loads the supplied logo model and gives every mesh the Lumaris night-spectrum finish.
+function styleLogo(root) {
+  root.traverse((child) => {
+    if (!child.isMesh) return;
+    child.material = new THREE.MeshPhysicalMaterial({ color: 0x8cecff, emissive: 0x4825bd, emissiveIntensity: 1.4, metalness: 0.5, roughness: 0.18, clearcoat: 0.9, clearcoatRoughness: 0.12 });
+  });
+}
+
+function styleGalaxy(root) {
+  root.traverse((child) => {
+    if (!child.isPoints) return;
+    child.material = new THREE.PointsMaterial({ size: 0.055, vertexColors: true, transparent: true, opacity: 0.92, blending: THREE.AdditiveBlending, depthWrite: false, sizeAttenuation: true });
+  });
+}
+
+// Loads the separate neon galaxy and Lumaris logo assets for independent motion.
 export function loadModel() {
   return new Promise((resolve, reject) => loader.load('/assets/models/homepage.glb', (gltf) => {
-    model = gltf.scene;
-    model.traverse((child) => {
-      if (!child.isMesh) return;
-      child.material = new THREE.MeshPhysicalMaterial({ color: 0x7567ff, emissive: 0x351c9c, emissiveIntensity: 1.15, metalness: 0.55, roughness: 0.2, clearcoat: 0.8, clearcoatRoughness: 0.15 });
-    });
-    model.scale.setScalar(0.72);
-    scene.add(model);
-    resolve(model);
+    galaxy = gltf.scene;
+    styleGalaxy(galaxy);
+    galaxy.scale.setScalar(0.62);
+    galaxy.position.set(1.75, 0.05, 0);
+    scene.add(galaxy);
+    resolve(galaxy);
+  }, undefined, reject));
+}
+
+export function loadLogo() {
+  return new Promise((resolve, reject) => loader.load('/assets/logo/3d.glb', (gltf) => {
+    logo = gltf.scene;
+    styleLogo(logo);
+    logo.scale.setScalar(0.16);
+    logo.position.set(-1.25, 1.65, 0.15);
+    scene.add(logo);
+    resolve(logo);
   }, undefined, reject));
 }
 
 function resize() { const { width, height } = stage.getBoundingClientRect(); renderer.setSize(width, height, false); camera.aspect = width / height; camera.updateProjectionMatrix(); updateScroll(); }
 loadModel().catch((error) => console.error('Lumaris model failed to load', error));
+loadLogo().catch((error) => console.error('Lumaris logo failed to load', error));
 window.addEventListener('resize', resize); resize();
 window.addEventListener('pointermove', (event) => {
   targetRotation = (event.clientX / window.innerWidth - 0.5) * 0.9;
@@ -94,15 +119,20 @@ window.addEventListener('scroll', updateScroll, { passive: true });
 function animate(time = 0) {
   requestAnimationFrame(animate);
   modelScrollProgress += (scrollProgress - modelScrollProgress) * 0.025;
-  if (model) {
+  if (galaxy) {
     currentRotation += (targetRotation + modelScrollProgress * Math.PI * 1.45 - currentRotation) * 0.045;
     currentTilt += (targetTilt + Math.sin(modelScrollProgress * Math.PI) * 0.25 - currentTilt) * 0.045;
-    model.rotation.y = currentRotation;
-    model.rotation.x = Math.sin(time * 0.00045) * 0.08 + currentTilt;
-    model.rotation.z = Math.sin(time * 0.00035) * 0.035;
-    model.position.y = Math.sin(time * 0.0008) * 0.08 + Math.sin(modelScrollProgress * Math.PI * 2) * 0.2;
-    model.position.x = Math.sin(modelScrollProgress * Math.PI * 1.5) * 0.38;
-    model.scale.setScalar(0.72 + Math.sin(modelScrollProgress * Math.PI) * 0.08);
+    galaxy.rotation.y = currentRotation;
+    galaxy.rotation.x = Math.sin(time * 0.00045) * 0.08 + currentTilt;
+    galaxy.rotation.z = Math.sin(time * 0.00035) * 0.035;
+    galaxy.position.y = 0.05 + Math.sin(time * 0.0008) * 0.08 + Math.sin(modelScrollProgress * Math.PI * 2) * 0.2;
+    galaxy.position.x = 1.75 + Math.sin(modelScrollProgress * Math.PI * 1.5) * 0.38;
+    galaxy.scale.setScalar(0.62 + Math.sin(modelScrollProgress * Math.PI) * 0.06);
+  }
+  if (logo) {
+    logo.rotation.y += 0.006;
+    logo.rotation.x = Math.sin(time * 0.0006) * 0.08;
+    logo.position.y = 1.65 + Math.sin(time * 0.001) * 0.05;
   }
   renderer.render(scene, camera);
 }
