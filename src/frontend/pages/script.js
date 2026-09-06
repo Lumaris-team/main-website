@@ -55,7 +55,7 @@ function styleLogo(root) {
 function styleGalaxy(root) {
   root.traverse((child) => {
     if (!child.isPoints) return;
-    child.material = new THREE.PointsMaterial({ size: 0.055, vertexColors: true, transparent: true, opacity: 0.92, blending: THREE.AdditiveBlending, depthWrite: false, sizeAttenuation: true });
+    child.material = new THREE.PointsMaterial({ size: 0.072, vertexColors: true, transparent: true, opacity: 0.98, blending: THREE.AdditiveBlending, depthWrite: false, sizeAttenuation: true });
   });
 }
 
@@ -64,7 +64,7 @@ export function loadModel() {
   return new Promise((resolve, reject) => loader.load('/assets/models/homepage.glb', (gltf) => {
     galaxy = gltf.scene;
     styleGalaxy(galaxy);
-    galaxy.scale.setScalar(0.62);
+    galaxy.scale.setScalar(0.36);
     galaxy.position.set(1.75, 0.05, 0);
     scene.add(galaxy);
     resolve(galaxy);
@@ -75,8 +75,8 @@ export function loadLogo() {
   return new Promise((resolve, reject) => loader.load('/assets/logo/3d.glb', (gltf) => {
     logo = gltf.scene;
     styleLogo(logo);
-    logo.scale.setScalar(0.16);
-    logo.position.set(-1.25, 1.65, 0.15);
+    logo.scale.setScalar(0.08);
+    logo.position.set(-1.25, 1.48, 0.15);
     scene.add(logo);
     resolve(logo);
   }, undefined, reject));
@@ -125,14 +125,14 @@ function animate(time = 0) {
     galaxy.rotation.y = currentRotation;
     galaxy.rotation.x = Math.sin(time * 0.00045) * 0.08 + currentTilt;
     galaxy.rotation.z = Math.sin(time * 0.00035) * 0.035;
-    galaxy.position.y = 0.05 + Math.sin(time * 0.0008) * 0.08 + Math.sin(modelScrollProgress * Math.PI * 2) * 0.2;
+    galaxy.position.y = Math.sin(time * 0.0008) * 0.08 + Math.sin(modelScrollProgress * Math.PI * 2) * 0.2;
     galaxy.position.x = 1.75 + Math.sin(modelScrollProgress * Math.PI * 1.5) * 0.38;
-    galaxy.scale.setScalar(0.62 + Math.sin(modelScrollProgress * Math.PI) * 0.06);
+    galaxy.scale.setScalar(0.36 + Math.sin(modelScrollProgress * Math.PI) * 0.035);
   }
   if (logo) {
     logo.rotation.y += 0.006;
     logo.rotation.x = Math.sin(time * 0.0006) * 0.08;
-    logo.position.y = 1.65 + Math.sin(time * 0.001) * 0.05;
+    logo.position.y = 1.48 + Math.sin(time * 0.001) * 0.035;
   }
   renderer.render(scene, camera);
 }
