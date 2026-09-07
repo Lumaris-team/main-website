@@ -39,6 +39,7 @@ let modelScrollProgress = 0;
 let previousScrollProgress = 0;
 let scrollRotationMomentum = 0;
 let spinAngle = 0;
+let logoSpinAngle = 0;
 let activeStep = -1;
 
 const experienceScenes = [
@@ -79,7 +80,7 @@ export function loadLogo() {
     logo = gltf.scene;
     styleLogo(logo);
     logo.scale.setScalar(0.025);
-    logo.position.set(-1.25, 1.48, 0.15);
+    logo.position.set(-1.55, 1.44, 0.15);
     scene.add(logo);
     resolve(logo);
   }, undefined, reject));
@@ -102,8 +103,7 @@ function updateScroll() {
   previousScrollProgress = scrollProgress;
   const exitProgress = THREE.MathUtils.clamp((scrollProgress - 0.82) / 0.18, 0, 1);
   experienceFrame.style.setProperty('--experience-exit', exitProgress.toFixed(3));
-  const scenePosition = scrollProgress * (experienceScenes.length - 1);
-  const nextStep = Math.min(Math.floor(scenePosition + 0.5), experienceScenes.length - 1);
+  const nextStep = Math.min(Math.floor(scrollProgress * experienceScenes.length), experienceScenes.length - 1);
   experienceProgressBar.style.transform = `scaleX(${scrollProgress})`;
   experienceIndex.textContent = String(nextStep + 1).padStart(2, '0');
   if (nextStep !== activeStep) {
@@ -129,7 +129,6 @@ function animate(time = 0) {
     currentRotation += (targetRotation + modelScrollProgress * Math.PI * 1.45 - currentRotation) * 0.09;
     currentTilt += (targetTilt + Math.sin(modelScrollProgress * Math.PI) * 0.25 - currentTilt) * 0.08;
     spinAngle += 0.0014 + scrollRotationMomentum;
-    scrollRotationMomentum *= 0.92;
     galaxy.rotation.y = currentRotation + spinAngle;
     galaxy.rotation.x = Math.sin(time * 0.00045) * 0.08 + currentTilt;
     galaxy.rotation.z = Math.sin(time * 0.00035) * 0.035;
@@ -138,10 +137,12 @@ function animate(time = 0) {
     galaxy.scale.setScalar(0.3 + Math.sin(modelScrollProgress * Math.PI) * 0.025);
   }
   if (logo) {
-    logo.rotation.y += 0.0018;
+    logoSpinAngle += 0.0018 + scrollRotationMomentum * 0.7;
+    logo.rotation.y = logoSpinAngle;
     logo.rotation.x = Math.sin(time * 0.0006) * 0.08;
-    logo.position.y = 1.48 + Math.sin(time * 0.001) * 0.035;
+    logo.position.y = 1.44 + Math.sin(time * 0.001) * 0.035;
   }
+  scrollRotationMomentum *= 0.92;
   renderer.render(scene, camera);
 }
 animate();
