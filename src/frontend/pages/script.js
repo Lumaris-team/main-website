@@ -36,6 +36,9 @@ let currentRotation = 0;
 let currentTilt = 0;
 let scrollProgress = 0;
 let modelScrollProgress = 0;
+let previousScrollProgress = 0;
+let scrollRotationMomentum = 0;
+let spinAngle = 0;
 let activeStep = -1;
 
 const experienceScenes = [
@@ -64,7 +67,7 @@ export function loadModel() {
   return new Promise((resolve, reject) => loader.load('/assets/models/homepage.glb', (gltf) => {
     galaxy = gltf.scene;
     styleGalaxy(galaxy);
-    galaxy.scale.setScalar(0.36);
+    galaxy.scale.setScalar(0.3);
     galaxy.position.set(1.75, 0.05, 0);
     scene.add(galaxy);
     resolve(galaxy);
@@ -75,7 +78,7 @@ export function loadLogo() {
   return new Promise((resolve, reject) => loader.load('/assets/logo/3d.glb', (gltf) => {
     logo = gltf.scene;
     styleLogo(logo);
-    logo.scale.setScalar(0.08);
+    logo.scale.setScalar(0.025);
     logo.position.set(-1.25, 1.48, 0.15);
     scene.add(logo);
     resolve(logo);
@@ -94,6 +97,9 @@ function updateScroll() {
   const trackStart = experience.offsetTop;
   const trackDistance = Math.max(experience.offsetHeight - window.innerHeight, 1);
   scrollProgress = THREE.MathUtils.clamp((window.scrollY - trackStart) / trackDistance, 0, 1);
+  const scrollDelta = scrollProgress - previousScrollProgress;
+  scrollRotationMomentum = THREE.MathUtils.clamp(scrollRotationMomentum + scrollDelta * 1.2, -0.1, 0.1);
+  previousScrollProgress = scrollProgress;
   const exitProgress = THREE.MathUtils.clamp((scrollProgress - 0.82) / 0.18, 0, 1);
   experienceFrame.style.setProperty('--experience-exit', exitProgress.toFixed(3));
   const scenePosition = scrollProgress * (experienceScenes.length - 1);
@@ -118,19 +124,21 @@ window.addEventListener('scroll', updateScroll, { passive: true });
 
 function animate(time = 0) {
   requestAnimationFrame(animate);
-  modelScrollProgress += (scrollProgress - modelScrollProgress) * 0.025;
+  modelScrollProgress += (scrollProgress - modelScrollProgress) * 0.06;
   if (galaxy) {
-    currentRotation += (targetRotation + modelScrollProgress * Math.PI * 1.45 - currentRotation) * 0.045;
-    currentTilt += (targetTilt + Math.sin(modelScrollProgress * Math.PI) * 0.25 - currentTilt) * 0.045;
-    galaxy.rotation.y = currentRotation;
+    currentRotation += (targetRotation + modelScrollProgress * Math.PI * 1.45 - currentRotation) * 0.09;
+    currentTilt += (targetTilt + Math.sin(modelScrollProgress * Math.PI) * 0.25 - currentTilt) * 0.08;
+    spinAngle += 0.0014 + scrollRotationMomentum;
+    scrollRotationMomentum *= 0.92;
+    galaxy.rotation.y = currentRotation + spinAngle;
     galaxy.rotation.x = Math.sin(time * 0.00045) * 0.08 + currentTilt;
     galaxy.rotation.z = Math.sin(time * 0.00035) * 0.035;
     galaxy.position.y = Math.sin(time * 0.0008) * 0.08 + Math.sin(modelScrollProgress * Math.PI * 2) * 0.2;
     galaxy.position.x = 1.75 + Math.sin(modelScrollProgress * Math.PI * 1.5) * 0.38;
-    galaxy.scale.setScalar(0.36 + Math.sin(modelScrollProgress * Math.PI) * 0.035);
+    galaxy.scale.setScalar(0.3 + Math.sin(modelScrollProgress * Math.PI) * 0.025);
   }
   if (logo) {
-    logo.rotation.y += 0.006;
+    logo.rotation.y += 0.0018;
     logo.rotation.x = Math.sin(time * 0.0006) * 0.08;
     logo.position.y = 1.48 + Math.sin(time * 0.001) * 0.035;
   }
