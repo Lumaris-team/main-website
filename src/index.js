@@ -51,7 +51,15 @@ if (url.pathname.startsWith("/api/")) {
     if (url.pathname === "/" || url.pathname === "" || url.pathname === "/home") {
       const assetUrl = new URL(request.url);
       assetUrl.pathname = "/pages/index.html";
-      return env.ASSETS.fetch(new Request(assetUrl, request));
+      const pageResponse = await env.ASSETS.fetch(new Request(assetUrl, {
+        method: "GET",
+        headers: request.headers,
+        redirect: "follow"
+      }));
+      return new Response(pageResponse.body, {
+        status: pageResponse.status,
+        headers: pageResponse.headers
+      });
     }
     return env.ASSETS.fetch(request);
   }
