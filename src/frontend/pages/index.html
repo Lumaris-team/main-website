@@ -16,6 +16,8 @@
     const resetInitialScroll = () => {
       if (window.location.hash) return;
       document.documentElement.style.scrollBehavior = 'auto';
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
       window.scrollTo(0, 0);
     };
     resetInitialScroll();
@@ -24,6 +26,8 @@
       resetInitialScroll();
       requestAnimationFrame(resetInitialScroll);
       window.setTimeout(resetInitialScroll, 100);
+      window.setTimeout(resetInitialScroll, 500);
+      window.setTimeout(resetInitialScroll, 1000);
     }, { once: true });
   </script>
 </head>
