@@ -12,7 +12,7 @@ html { scroll-behavior: smooth; }
 body { margin: 0; overflow-x: hidden; background: var(--ink); color: var(--paper); font-family: Manrope, sans-serif; }
 section { scroll-snap-align: start; scroll-snap-stop: always; }
 .noise { position: fixed; inset: 0; z-index: 10; pointer-events: none; opacity: .045; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.7'/%3E%3C/svg%3E"); }
-.site-header { position: absolute; z-index: 5; top: 0; width: 100%; border-bottom: 1px solid var(--line); }
+.site-header { position: fixed; z-index: 20; top: 0; width: 100%; border-bottom: 1px solid var(--line); background: rgba(8, 9, 18, .28); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
 .nav-shell { display: flex; align-items: center; justify-content: space-between; height: 88px; max-width: 1240px; margin: auto; padding: 0 36px; }
 .brand { display: flex; align-items: center; gap: 10px; color: var(--paper); font-size: 18px; font-weight: 800; letter-spacing: -.04em; text-decoration: none; }
 .brand img { object-fit: contain; }
@@ -100,7 +100,7 @@ footer a { font-size: 10px; }
 }
 
 /* The opening sequence owns the viewport until its model and story are complete. */
-.experience-shell { position: relative; height: 400vh; scroll-margin-top: 0; }
+.experience-shell { position: relative; height: 520vh; scroll-margin-top: 0; }
 .experience-frame { position: sticky; top: 0; display: grid; grid-template-columns: 45% 55%; align-items: center; height: 100vh; min-height: 700px; overflow: hidden; padding: 120px max(36px, calc((100vw - 1240px) / 2)) 60px; background: radial-gradient(circle at 76% 42%, #201848 0, #0d0d1b 22%, var(--ink) 55%); opacity: calc(1 - var(--experience-exit, 0)); transform: translateY(calc(var(--experience-exit, 0) * -3vh)); transition: opacity .08s linear, transform .08s linear; }
 .experience-frame::after { position: absolute; inset: 0; content: ""; opacity: .3; pointer-events: none; background: linear-gradient(90deg, transparent 49.9%, var(--line) 50%, transparent 50.1%), linear-gradient(0deg, transparent 49.9%, var(--line) 50%, transparent 50.1%); background-size: 50% 100%, 100% 50%; }
 .experience-copy { position: relative; z-index: 2; max-width: 550px; }
@@ -117,14 +117,14 @@ footer a { font-size: 10px; }
 .experience-frame .hero-stage { position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; }
 .experience-frame .hero-stage canvas { width: 100%; height: 100%; }
 .experience-copy { position: absolute; top: 57%; left: max(36px, calc((100vw - 1240px) / 2)); z-index: 3; width: min(550px, 42vw); transform: translateY(-50%); }
-.experience-copy { transition: opacity .42s ease, transform .42s ease; }
+.experience-copy { transition: opacity .78s ease, transform .78s ease; }
 .experience-copy.is-changing { opacity: 0; transform: translateY(calc(-50% + 10px)); }
 .experience-copy::before { position: absolute; z-index: -1; inset: -80px -100px; content: ""; background: rgba(8, 9, 18, .12); border-radius: 50%; filter: blur(26px); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); mask-image: radial-gradient(ellipse, black 0%, transparent 72%); }
 .experience-frame .hero-meta { z-index: 4; }
 .experience-frame .stage-label { z-index: 4; }
 
 @media (max-width: 760px) {
-	.experience-shell { height: 400vh; }
+	.experience-shell { height: 520vh; }
 	.experience-frame { display: block; min-height: 0; padding: 0; }
 	.experience-copy { top: 57%; left: 20px; width: calc(100% - 40px); max-width: 100%; transform: translateY(-50%); }
 	.experience-copy h1 { font-size: 58px; }

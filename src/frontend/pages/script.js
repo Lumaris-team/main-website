@@ -38,8 +38,11 @@ let scrollProgress = 0;
 let modelScrollProgress = 0;
 let previousScrollProgress = 0;
 let scrollRotationMomentum = 0;
-let spinAngle = 0;
+let galaxySpinX = 0;
+let galaxySpinY = 0;
+let galaxySpinZ = 0;
 let logoSpinAngle = 0;
+const logoBaseY = 1.4;
 let activeStep = -1;
 
 const experienceScenes = [
@@ -59,7 +62,7 @@ function styleLogo(root) {
 function styleGalaxy(root) {
   root.traverse((child) => {
     if (!child.isPoints) return;
-    child.material = new THREE.PointsMaterial({ size: 0.072, vertexColors: true, transparent: true, opacity: 0.98, blending: THREE.AdditiveBlending, depthWrite: false, sizeAttenuation: true });
+    child.material = new THREE.PointsMaterial({ size: 0.058, vertexColors: true, transparent: true, opacity: 0.9, blending: THREE.AdditiveBlending, depthWrite: false, sizeAttenuation: true });
   });
 }
 
@@ -80,13 +83,29 @@ export function loadLogo() {
     logo = gltf.scene;
     styleLogo(logo);
     logo.scale.setScalar(0.025);
-    logo.position.set(-1.55, 1.44, 0.15);
+    logo.position.set(0, logoBaseY, 0.15);
     scene.add(logo);
+    updateLogoPosition();
     resolve(logo);
   }, undefined, reject));
 }
 
-function resize() { const { width, height } = stage.getBoundingClientRect(); renderer.setSize(width, height, false); camera.aspect = width / height; camera.updateProjectionMatrix(); updateScroll(); }
+function updateLogoPosition() {
+  if (!logo) return;
+  const stageBounds = stage.getBoundingClientRect();
+  const textBounds = experienceCopy.getBoundingClientRect();
+  const depth = camera.position.z - logo.position.z;
+  const halfHeight = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * depth;
+  const halfWidth = halfHeight * camera.aspect;
+  const textLeft = textBounds.left - stageBounds.left;
+  const textWorldX = (textLeft / stageBounds.width * 2 - 1) * halfWidth;
+  const logoBounds = new THREE.Box3().setFromObject(logo);
+  const logoWidth = logoBounds.max.x - logoBounds.min.x;
+  logo.position.x = textWorldX + logoWidth / 2;
+  logo.position.y = logoBaseY;
+}
+
+function resize() { const { width, height } = stage.getBoundingClientRect(); renderer.setSize(width, height, false); camera.aspect = width / height; camera.updateProjectionMatrix(); updateLogoPosition(); updateScroll(); }
 loadModel().catch((error) => console.error('Lumaris model failed to load', error));
 loadLogo().catch((error) => console.error('Lumaris logo failed to load', error));
 window.addEventListener('resize', resize); resize();
@@ -117,7 +136,7 @@ function updateScroll() {
       experienceDescription.textContent = sceneData.description;
       experienceLocation.textContent = sceneData.location;
       experienceCopy.classList.remove('is-changing');
-    }, 220);
+    }, 390);
   }
 }
 window.addEventListener('scroll', updateScroll, { passive: true });
@@ -126,12 +145,14 @@ function animate(time = 0) {
   requestAnimationFrame(animate);
   modelScrollProgress += (scrollProgress - modelScrollProgress) * 0.06;
   if (galaxy) {
-    currentRotation += (targetRotation + modelScrollProgress * Math.PI * 1.45 - currentRotation) * 0.09;
+    currentRotation += (targetRotation - currentRotation) * 0.09;
     currentTilt += (targetTilt + Math.sin(modelScrollProgress * Math.PI) * 0.25 - currentTilt) * 0.08;
-    spinAngle += 0.0014 + scrollRotationMomentum;
-    galaxy.rotation.y = currentRotation + spinAngle;
-    galaxy.rotation.x = Math.sin(time * 0.00045) * 0.08 + currentTilt;
-    galaxy.rotation.z = Math.sin(time * 0.00035) * 0.035;
+    galaxySpinX += 0.00045 + scrollRotationMomentum * 0.8;
+    galaxySpinY += 0.0007 + scrollRotationMomentum * 1.05;
+    galaxySpinZ += 0.00025 - scrollRotationMomentum * 0.6;
+    galaxy.rotation.x = currentTilt + galaxySpinX + Math.sin(time * 0.00045) * 0.08;
+    galaxy.rotation.y = currentRotation + galaxySpinY;
+    galaxy.rotation.z = galaxySpinZ + Math.sin(time * 0.00035) * 0.035;
     galaxy.position.y = Math.sin(time * 0.0008) * 0.08 + Math.sin(modelScrollProgress * Math.PI * 2) * 0.2;
     galaxy.position.x = 1.75 + Math.sin(modelScrollProgress * Math.PI * 1.5) * 0.38;
     galaxy.scale.setScalar(0.3 + Math.sin(modelScrollProgress * Math.PI) * 0.025);
@@ -140,7 +161,7 @@ function animate(time = 0) {
     logoSpinAngle += 0.0018 + scrollRotationMomentum * 0.7;
     logo.rotation.y = logoSpinAngle;
     logo.rotation.x = Math.sin(time * 0.0006) * 0.08;
-    logo.position.y = 1.44 + Math.sin(time * 0.001) * 0.035;
+    logo.position.y = logoBaseY + Math.sin(time * 0.001) * 0.035;
   }
   scrollRotationMomentum *= 0.92;
   renderer.render(scene, camera);
