@@ -13,21 +13,32 @@
   <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js"}}</script>
   <script>
     if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+    let initialScrollLocked = !window.location.hash;
+    let initialScrollTimer;
+    const releaseInitialScroll = () => {
+      initialScrollLocked = false;
+      window.clearInterval(initialScrollTimer);
+    };
     const resetInitialScroll = () => {
-      if (window.location.hash) return;
+      if (!initialScrollLocked) return;
       document.documentElement.style.scrollBehavior = 'auto';
       document.documentElement.scrollTop = 0;
       document.body.scrollTop = 0;
       window.scrollTo(0, 0);
     };
+    ['wheel', 'touchstart', 'pointerdown', 'keydown'].forEach((eventName) => {
+      window.addEventListener(eventName, releaseInitialScroll, { once: true, passive: eventName !== 'keydown' });
+    });
     resetInitialScroll();
     window.addEventListener('pageshow', resetInitialScroll, { once: true });
     window.addEventListener('load', () => {
       resetInitialScroll();
       requestAnimationFrame(resetInitialScroll);
-      window.setTimeout(resetInitialScroll, 100);
-      window.setTimeout(resetInitialScroll, 500);
-      window.setTimeout(resetInitialScroll, 1000);
+      initialScrollTimer = window.setInterval(resetInitialScroll, 50);
+      window.setTimeout(() => {
+        initialScrollLocked = false;
+        window.clearInterval(initialScrollTimer);
+      }, 2500);
     }, { once: true });
   </script>
 </head>
