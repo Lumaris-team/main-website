@@ -11,6 +11,21 @@
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/pages/style.css">
   <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js"}}</script>
+  <script>
+    if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+    const resetInitialScroll = () => {
+      if (window.location.hash) return;
+      document.documentElement.style.scrollBehavior = 'auto';
+      window.scrollTo(0, 0);
+    };
+    resetInitialScroll();
+    window.addEventListener('pageshow', resetInitialScroll, { once: true });
+    window.addEventListener('load', () => {
+      resetInitialScroll();
+      requestAnimationFrame(resetInitialScroll);
+      window.setTimeout(resetInitialScroll, 100);
+    }, { once: true });
+  </script>
 </head>
 <body>
   <div class="noise" aria-hidden="true"></div>

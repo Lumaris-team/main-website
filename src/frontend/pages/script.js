@@ -44,6 +44,7 @@ let galaxySpinZ = 0;
 let logoSpinAngle = 0;
 const logoBaseY = 1.36;
 let activeStep = -1;
+const isPortraitLayout = () => window.matchMedia('(max-width: 760px), (orientation: portrait)').matches;
 
 const experienceScenes = [
   { kicker: 'Your academic operating system', title: 'Make space<br>for <em>what\'s next.</em>', description: 'Lumaris rassemble vos cours, votre concentration et une intelligence qui vous accompagne vraiment.', location: 'Learning, in motion' },
@@ -72,7 +73,7 @@ export function loadModel() {
     galaxy = gltf.scene;
     styleGalaxy(galaxy);
     galaxy.scale.setScalar(0.3);
-    galaxy.position.set(1.75, 0.05, 0);
+    galaxy.position.set(isPortraitLayout() ? 0 : 1.75, 0.05, 0);
     scene.add(galaxy);
     resolve(galaxy);
   }, undefined, reject));
@@ -153,9 +154,10 @@ function animate(time = 0) {
     galaxy.rotation.x = currentTilt + galaxySpinX + Math.sin(time * 0.00045) * 0.08;
     galaxy.rotation.y = currentRotation + galaxySpinY;
     galaxy.rotation.z = galaxySpinZ + Math.sin(time * 0.00035) * 0.035;
-    galaxy.position.y = Math.sin(time * 0.0008) * 0.08 + Math.sin(modelScrollProgress * Math.PI * 2) * 0.2;
-    galaxy.position.x = 1.75 + Math.sin(modelScrollProgress * Math.PI * 1.5) * 0.38;
-    galaxy.scale.setScalar(0.3 + Math.sin(modelScrollProgress * Math.PI) * 0.025);
+    const portrait = isPortraitLayout();
+    galaxy.position.y = (portrait ? -0.05 : 0) + Math.sin(time * 0.0008) * 0.08 + Math.sin(modelScrollProgress * Math.PI * 2) * (portrait ? 0.12 : 0.2);
+    galaxy.position.x = (portrait ? 0 : 1.75) + Math.sin(modelScrollProgress * Math.PI * 1.5) * (portrait ? 0.2 : 0.38);
+    galaxy.scale.setScalar((portrait ? 0.2 : 0.3) + Math.sin(modelScrollProgress * Math.PI) * (portrait ? 0.018 : 0.025));
   }
   if (logo) {
     logoSpinAngle += 0.0018 + scrollRotationMomentum * 0.7;
