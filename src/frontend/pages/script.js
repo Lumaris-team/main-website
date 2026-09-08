@@ -82,7 +82,7 @@ export function loadLogo() {
   return new Promise((resolve, reject) => loader.load('/assets/logo/3d.glb', (gltf) => {
     logo = gltf.scene;
     styleLogo(logo);
-    logo.scale.setScalar(0.025);
+    logo.scale.setScalar(0.015);
     logo.position.set(0, logoBaseY, 0.15);
     scene.add(logo);
     updateLogoPosition();
