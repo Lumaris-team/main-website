@@ -42,7 +42,7 @@ let galaxySpinX = 0;
 let galaxySpinY = 0;
 let galaxySpinZ = 0;
 let logoSpinAngle = 0;
-const logoBaseY = 1.4;
+const logoBaseY = 1.36;
 let activeStep = -1;
 
 const experienceScenes = [
