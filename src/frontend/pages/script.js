@@ -77,6 +77,18 @@ const logoBaseY = 1.36;
 let activeStep = -1;
 const isPortraitLayout = () => window.matchMedia('(max-width: 760px), (orientation: portrait)').matches;
 
+function fitExperienceTitle() {
+  experienceTitle.style.fontSize = '';
+  const computed = window.getComputedStyle(experienceTitle);
+  const lineHeight = parseFloat(computed.lineHeight);
+  const maxHeight = lineHeight * 2.05;
+  let fontSize = parseFloat(computed.fontSize);
+  while (experienceTitle.scrollHeight > maxHeight && fontSize > 34) {
+    fontSize -= 2;
+    experienceTitle.style.fontSize = `${fontSize}px`;
+  }
+}
+
 const experienceScenes = [
   { kicker: 'Votre système d’apprentissage', title: 'Faites de la place<br>pour <em>la suite.</em>', description: 'Lumaris rassemble vos cours, votre concentration et une intelligence qui vous accompagne vraiment.', location: 'Apprendre en mouvement' },
   { kicker: 'Votre rythme scolaire', title: 'Voyez vos progrès<br><em>sous un autre angle.</em>', description: 'Notes, devoirs et emploi du temps se réunissent dans une vision claire de votre parcours scolaire.', location: '01 / Rythme scolaire' },
@@ -167,11 +179,13 @@ function updateScroll() {
       experienceTitle.innerHTML = sceneData.title;
       experienceDescription.textContent = sceneData.description;
       experienceLocation.textContent = sceneData.location;
+      fitExperienceTitle();
       experienceCopy.classList.remove('is-changing');
     }, 390);
   }
 }
 window.addEventListener('scroll', updateScroll, { passive: true });
+window.addEventListener('resize', fitExperienceTitle);
 
 function animate(time = 0) {
   requestAnimationFrame(animate);

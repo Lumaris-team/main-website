@@ -75,13 +75,9 @@ section { scroll-snap-align: start; scroll-snap-stop: always; }
 .tick-a { transform: translate(140px, -90px) rotate(30deg); } .tick-b { transform: translate(-125px, 50px) rotate(-40deg); } .tick-c { transform: translate(100px, 115px) rotate(60deg); }
 .focus-stats { position: absolute; right: max(36px, calc((100vw - 1240px) / 2)); bottom: 48px; left: max(36px, calc((100vw - 1240px) / 2)); z-index: 2; display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; padding-top: 20px; border-top: 1px solid rgba(255, 255, 255, .18); }
 .focus-stats div { display: grid; grid-template-columns: 1fr auto; column-gap: 14px; }.focus-stats span { grid-column: 1 / -1; color: var(--cyan); font: 9px 'DM Mono', monospace; letter-spacing: .14em; }.focus-stats strong { margin-top: 10px; color: var(--paper); font: 500 22px 'DM Mono', monospace; }.focus-stats small { align-self: end; color: #a29bb8; font: 10px 'DM Mono', monospace; }
-.lower-flow { position: relative; overflow: hidden; background: linear-gradient(180deg, #35205d 0%, #30205a 24%, #291b4d 52%, #201638 78%, #120f22 100%); }
+.lower-flow { position: relative; overflow: hidden; }
 .lower-flow > section, .lower-flow > footer { position: relative; scroll-snap-align: start; scroll-snap-stop: always; }
 .lower-flow .tool-section { background: transparent; }
-.lower-flow .focus-section { background: linear-gradient(180deg, rgba(53, 32, 93, .22), rgba(41, 22, 80, .25) 70%, rgba(52, 32, 93, .16)); }
-.lower-flow .ecosystem-section { background: linear-gradient(180deg, rgba(52, 32, 93, .2), rgba(70, 43, 126, .1) 48%, transparent); }
-.lower-flow .closing-section { background: radial-gradient(ellipse at 50% 0%, rgba(104, 64, 164, .2), transparent 66%); }
-.lower-flow footer { background: transparent; }
 footer { display: flex; justify-content: space-between; max-width: none; margin: 0; padding: 56px max(36px, calc((100vw - 1240px) / 2)) 35px; color: #626170; font: 10px 'DM Mono', monospace; letter-spacing: .08em; background: linear-gradient(180deg, #291650 0%, #20143e 34%, #120e24 72%, var(--ink) 100%); }
 footer a { font-size: 10px; }
 .reveal { opacity: 0; transform: translateY(28px); transition: opacity .9s ease, transform .9s ease; }
@@ -183,3 +179,20 @@ footer a { font-size: 10px; }
 	.feature-grid { min-height: auto; margin-bottom: 70px; }
 	.focus-section { min-height: 820px; padding-top: 105px; padding-bottom: 145px; }
 }
+
+/* Lower page: one surface, one rhythm, one snap per section. */
+html { scroll-snap-type: y mandatory; }
+.lower-flow { position: relative; background: transparent !important; }
+.lower-flow > section,
+.lower-flow > footer { margin-top: 0 !important; margin-bottom: 0 !important; background: transparent !important; }
+.lower-flow > section { scroll-snap-align: start; scroll-snap-stop: always; padding-top: 150px !important; padding-bottom: 150px !important; }
+.lower-flow > footer { scroll-snap-align: start; scroll-snap-stop: always; padding-top: 150px !important; padding-bottom: 50px !important; }
+.lower-flow > section::before,
+.lower-flow > footer::before { display: none !important; }
+.lower-flow > section::after { position: absolute; z-index: -1; content: ""; pointer-events: none; filter: blur(36px); opacity: .8; }
+.lower-flow > section::after { border: 0 !important; border-radius: 0 !important; box-shadow: none !important; transform: none !important; }
+.lower-flow .tool-section::after { top: 22%; right: 4%; width: 38%; height: 42%; background: radial-gradient(ellipse, rgba(146, 116, 255, .16), transparent 70%); }
+.lower-flow .focus-section::after { top: 18%; right: 3%; width: 48%; height: 58%; background: radial-gradient(ellipse, rgba(140, 236, 255, .12), transparent 68%); }
+.lower-flow .ecosystem-section::after { top: 14%; left: 2%; width: 42%; height: 54%; background: radial-gradient(ellipse, rgba(146, 116, 255, .14), transparent 70%); }
+.lower-flow .closing-section::after { top: 6%; left: 25%; width: 50%; height: 44%; background: radial-gradient(ellipse, rgba(140, 236, 255, .1), transparent 70%); }
+.lower-flow > footer { background: transparent !important; }
