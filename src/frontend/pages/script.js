@@ -4,6 +4,37 @@ import { renderNavbar } from '../components/navbar.js';
 
 document.querySelector('#navbar').innerHTML = renderNavbar();
 
+const frenchCopy = {
+  'Lumaris — Study in your orbit': 'Lumaris — Apprendre dans votre orbite',
+  'Academic pulse': 'Rythme scolaire',
+  'Cloud workspace': 'Espace cloud',
+  Cloud: 'Cloud',
+  'Intelligence, with intent': 'Intelligence, avec intention',
+  Workspace: 'Espace de travail',
+  'Study notes': "Notes d'étude",
+  'Smart assistant': 'Assistant intelligent',
+  'Rich editor': 'Éditeur riche',
+  Reasoning: 'Raisonnement',
+  'Web search': 'Recherche web',
+  Vision: 'Vision',
+  'Small tools. Serious momentum.': 'Des outils simples, un vrai élan',
+  'Deep work, made visible': 'Le travail profond, visible',
+  'Made to fit your life': 'Pensé pour votre quotidien',
+  'One calm place for everything': 'Tout au même endroit',
+  'One platform. Every next step.': 'Une plateforme, chaque prochaine étape',
+  'Built for curious minds': 'Créé pour les esprits curieux',
+  'YOUR': 'VOTRE',
+  'RHYTHM': 'RYTHME'
+};
+const copyWalker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+const copyNodes = [];
+while (copyWalker.nextNode()) copyNodes.push(copyWalker.currentNode);
+copyNodes.forEach((node) => {
+  Object.entries(frenchCopy).forEach(([english, french]) => {
+    node.nodeValue = node.nodeValue.replaceAll(english, french);
+  });
+});
+
 const canvas = document.querySelector('#scene');
 const stage = document.querySelector('.hero-stage');
 const experience = document.querySelector('.experience-shell');
@@ -47,10 +78,10 @@ let activeStep = -1;
 const isPortraitLayout = () => window.matchMedia('(max-width: 760px), (orientation: portrait)').matches;
 
 const experienceScenes = [
-  { kicker: 'Your academic operating system', title: 'Make space<br>for <em>what\'s next.</em>', description: 'Lumaris rassemble vos cours, votre concentration et une intelligence qui vous accompagne vraiment.', location: 'Learning, in motion' },
-  { kicker: 'Academic pulse', title: 'See your progress<br><em>in a new light.</em>', description: 'Notes, devoirs et emploi du temps se réunissent dans une vision claire de votre parcours scolaire.', location: '01 / Academic pulse' },
-  { kicker: 'Intelligence, with intent', title: 'Understand more.<br><em>Struggle less.</em>', description: 'Une IA qui explique les concepts, guide vos raisonnements et vous aide à devenir autonome.', location: '02 / Lumaris intelligence' },
-  { kicker: 'Deep work, made visible', title: 'Build the rhythm<br>that <em>moves you.</em>', description: 'Focus, Pomodoro et statistiques utiles transforment chaque session en progrès durable.', location: '03 / Deep work' }
+  { kicker: 'Votre système d’apprentissage', title: 'Faites de la place<br>pour <em>la suite.</em>', description: 'Lumaris rassemble vos cours, votre concentration et une intelligence qui vous accompagne vraiment.', location: 'Apprendre en mouvement' },
+  { kicker: 'Votre rythme scolaire', title: 'Voyez vos progrès<br><em>sous un autre angle.</em>', description: 'Notes, devoirs et emploi du temps se réunissent dans une vision claire de votre parcours scolaire.', location: '01 / Rythme scolaire' },
+  { kicker: 'Intelligence, avec intention', title: 'Comprenez mieux.<br><em>Travaillez plus sereinement.</em>', description: 'Une IA qui explique les concepts, guide vos raisonnements et vous aide à devenir autonome.', location: '02 / Intelligence Lumaris' },
+  { kicker: 'Le travail profond, visible', title: 'Construisez le rythme<br>qui vous <em>fait avancer.</em>', description: 'Focus, Pomodoro et statistiques utiles transforment chaque session en progrès durable.', location: '03 / Travail profond' }
 ];
 
 function styleLogo(root) {
