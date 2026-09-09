@@ -10,7 +10,7 @@
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; scroll-snap-type: y proximity; overflow-anchor: none; }
 body { margin: 0; overflow-x: hidden; background: var(--ink); color: var(--paper); font-family: Manrope, sans-serif; }
-section { scroll-snap-align: start; scroll-snap-stop: always; }
+section { scroll-snap-align: start; scroll-snap-stop: normal; }
 .noise { position: fixed; inset: 0; z-index: 10; pointer-events: none; opacity: .045; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.7'/%3E%3C/svg%3E"); }
 .site-header { position: fixed; z-index: 20; top: 0; width: 100%; border-bottom: 1px solid var(--line); background: rgba(8, 9, 18, .28); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
 .nav-shell { display: flex; align-items: center; justify-content: space-between; height: 88px; max-width: 1240px; margin: auto; padding: 0 36px; }
@@ -76,7 +76,7 @@ section { scroll-snap-align: start; scroll-snap-stop: always; }
 .focus-stats { position: absolute; right: max(36px, calc((100vw - 1240px) / 2)); bottom: 48px; left: max(36px, calc((100vw - 1240px) / 2)); z-index: 2; display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; padding-top: 20px; border-top: 1px solid rgba(255, 255, 255, .18); }
 .focus-stats div { display: grid; grid-template-columns: 1fr auto; column-gap: 14px; }.focus-stats span { grid-column: 1 / -1; color: var(--cyan); font: 9px 'DM Mono', monospace; letter-spacing: .14em; }.focus-stats strong { margin-top: 10px; color: var(--paper); font: 500 22px 'DM Mono', monospace; }.focus-stats small { align-self: end; color: #a29bb8; font: 10px 'DM Mono', monospace; }
 .lower-flow { position: relative; overflow: hidden; }
-.lower-flow > section, .lower-flow > footer { position: relative; scroll-snap-align: start; scroll-snap-stop: always; }
+.lower-flow > section, .lower-flow > footer { position: relative; scroll-snap-align: start; scroll-snap-stop: normal; }
 .lower-flow .tool-section { background: transparent; }
 footer { display: flex; justify-content: space-between; max-width: none; margin: 0; padding: 56px max(36px, calc((100vw - 1240px) / 2)) 35px; color: #626170; font: 10px 'DM Mono', monospace; letter-spacing: .08em; background: linear-gradient(180deg, #291650 0%, #20143e 34%, #120e24 72%, var(--ink) 100%); }
 footer a { font-size: 10px; }
@@ -180,13 +180,13 @@ footer a { font-size: 10px; }
 	.focus-section { min-height: 820px; padding-top: 105px; padding-bottom: 145px; }
 }
 
-/* Lower page: one surface, one rhythm, one snap per section. */
-html { scroll-snap-type: y mandatory; }
+/* Lower page: gentle section guidance without forcing the scroll position. */
+html { scroll-snap-type: y proximity; }
 .lower-flow { position: relative; background: transparent !important; }
 .lower-flow > section,
 .lower-flow > footer { margin-top: 0 !important; margin-bottom: 0 !important; background: transparent !important; }
-.lower-flow > section { scroll-snap-align: start; scroll-snap-stop: always; padding-top: 150px !important; padding-bottom: 150px !important; }
-.lower-flow > footer { scroll-snap-align: start; scroll-snap-stop: always; padding-top: 150px !important; padding-bottom: 50px !important; }
+.lower-flow > section { scroll-snap-align: start; scroll-snap-stop: normal; padding-top: 150px !important; padding-bottom: 150px !important; }
+.lower-flow > footer { scroll-snap-align: start; scroll-snap-stop: normal; padding-top: 150px !important; padding-bottom: 50px !important; }
 .lower-flow > section::before,
 .lower-flow > footer::before { display: none !important; }
 .lower-flow > section::after { position: absolute; z-index: -1; content: ""; pointer-events: none; filter: blur(36px); opacity: .8; }
