@@ -74,6 +74,7 @@ let galaxySpinY = 0;
 let galaxySpinZ = 0;
 let logoSpinAngle = 0;
 const logoBaseY = 1.36;
+const logoViewTilt = Math.atan2(logoBaseY - camera.position.y, camera.position.z - 0.15);
 let activeStep = -1;
 const isPortraitLayout = () => window.matchMedia('(max-width: 760px), (orientation: portrait)').matches;
 
@@ -199,7 +200,7 @@ function animate(time = 0) {
   if (logo) {
     logoSpinAngle += 0.0018 + scrollRotationMomentum * 0.7;
     logo.rotation.y = logoSpinAngle;
-    logo.rotation.x = 0;
+    logo.rotation.x = logoViewTilt;
     logo.position.y = logoBaseY + Math.sin(time * 0.001) * 0.035;
   }
   scrollRotationMomentum *= 0.92;
