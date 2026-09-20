@@ -96,13 +96,6 @@ const experienceScenes = [
   { kicker: 'Le travail profond, visible', title: 'Construisez le rythme<br>qui vous <em>fait avancer.</em>', description: 'Focus, Pomodoro et statistiques utiles transforment chaque session en progrès durable.', location: '03 / Travail profond' }
 ];
 
-function styleLogo(root) {
-  root.traverse((child) => {
-    if (!child.isMesh) return;
-    child.material = new THREE.MeshPhysicalMaterial({ color: 0x8cecff, emissive: 0x4825bd, emissiveIntensity: 1.4, metalness: 0.5, roughness: 0.18, clearcoat: 0.9, clearcoatRoughness: 0.12 });
-  });
-}
-
 function styleGalaxy(root) {
   root.traverse((child) => {
     if (!child.isPoints) return;
@@ -125,7 +118,6 @@ export function loadModel() {
 export function loadLogo() {
   return new Promise((resolve, reject) => loader.load('/assets/logo/3d.glb', (gltf) => {
     logo = gltf.scene;
-    styleLogo(logo);
     logo.scale.setScalar(0.015);
     logo.position.set(0, logoBaseY, 0.15);
     scene.add(logo);
