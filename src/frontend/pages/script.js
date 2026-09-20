@@ -75,7 +75,41 @@ let galaxySpinZ = 0;
 let logoSpinAngle = 0;
 const logoBaseY = 1.36;
 let activeStep = -1;
+let wheelTarget = window.scrollY;
+let wheelFrame = 0;
 const isPortraitLayout = () => window.matchMedia('(max-width: 760px), (orientation: portrait)').matches;
+
+function getWheelFactor() {
+  const viewportCenter = window.innerHeight / 2;
+  const centeredSection = [...document.querySelectorAll('main section')].some((section) => {
+    const bounds = section.getBoundingClientRect();
+    const sectionCenter = bounds.top + bounds.height / 2;
+    return Math.abs(sectionCenter - viewportCenter) < window.innerHeight * 0.28;
+  });
+  return centeredSection ? 0.28 : 0.42;
+}
+
+function animateWheelScroll() {
+  const currentScroll = window.scrollY;
+  const distance = wheelTarget - currentScroll;
+  if (Math.abs(distance) < 0.4) {
+    window.scrollTo(0, wheelTarget);
+    wheelFrame = 0;
+    return;
+  }
+  window.scrollTo(0, currentScroll + distance * 0.14);
+  wheelFrame = window.requestAnimationFrame(animateWheelScroll);
+}
+
+window.addEventListener('wheel', (event) => {
+  if (event.ctrlKey) return;
+  event.preventDefault();
+  const delta = event.deltaMode === 1 ? event.deltaY * 16 : event.deltaY;
+  const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+  if (!wheelFrame) wheelTarget = window.scrollY;
+  wheelTarget = THREE.MathUtils.clamp(wheelTarget + delta * getWheelFactor(), 0, maxScroll);
+  if (!wheelFrame) wheelFrame = window.requestAnimationFrame(animateWheelScroll);
+}, { passive: false });
 
 function fitExperienceTitle() {
   experienceTitle.style.fontSize = '';
@@ -199,7 +233,7 @@ function animate(time = 0) {
   if (logo) {
     logoSpinAngle += 0.0018 + scrollRotationMomentum * 0.7;
     logo.rotation.y = logoSpinAngle;
-    logo.rotation.x = Math.sin(time * 0.0006) * 0.08;
+    logo.rotation.x = 0;
     logo.position.y = logoBaseY + Math.sin(time * 0.001) * 0.035;
   }
   scrollRotationMomentum *= 0.92;
