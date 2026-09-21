@@ -75,6 +75,7 @@ let galaxySpinZ = 0;
 let logoSpinAngle = 0;
 const logoBaseY = 1.36;
 const logoViewTilt = Math.atan2(logoBaseY - camera.position.y, camera.position.z - 0.15);
+let isExperienceVisible = true;
 let activeStep = -1;
 const isPortraitLayout = () => window.matchMedia('(max-width: 760px), (orientation: portrait)').matches;
 
@@ -182,6 +183,7 @@ window.addEventListener('resize', fitExperienceTitle);
 
 function animate(time = 0) {
   requestAnimationFrame(animate);
+  if (!isExperienceVisible) return;
   modelScrollProgress += (scrollProgress - modelScrollProgress) * 0.06;
   if (galaxy) {
     currentRotation += (targetRotation - currentRotation) * 0.09;
@@ -207,6 +209,11 @@ function animate(time = 0) {
   renderer.render(scene, camera);
 }
 animate();
+
+const experienceVisibilityObserver = new IntersectionObserver(([entry]) => {
+  isExperienceVisible = entry.isIntersecting;
+}, { threshold: 0 });
+experienceVisibilityObserver.observe(experienceFrame);
 
 const observer = new IntersectionObserver((entries) => entries.forEach((entry) => { if (entry.isIntersecting) entry.target.classList.add('is-visible'); }), { threshold: 0.14 });
 document.querySelectorAll('.reveal').forEach((element) => observer.observe(element));
