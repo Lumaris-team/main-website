@@ -195,7 +195,8 @@ function getLowerScrollFactor() {
   let nearestDistance = Infinity;
   let nearestHeight = window.innerHeight;
   lowerSections.forEach((section) => {
-    const sectionCenter = section.offsetTop + section.offsetHeight / 2;
+    const sectionTop = section.getBoundingClientRect().top + window.scrollY;
+    const sectionCenter = sectionTop + section.offsetHeight / 2;
     const distance = Math.abs(viewportCenter - sectionCenter);
     if (distance < nearestDistance) {
       nearestDistance = distance;
@@ -208,7 +209,7 @@ function getLowerScrollFactor() {
 
 window.addEventListener('wheel', (event) => {
   if (event.ctrlKey) return;
-  const lowerStart = lowerFlow.offsetTop;
+  const lowerStart = lowerFlow.getBoundingClientRect().top + window.scrollY;
   const lowerEnd = lowerStart + lowerFlow.offsetHeight;
   const inExperience = window.scrollY >= experience.offsetTop && scrollProgress < 1;
   const inLowerFlow = window.scrollY >= lowerStart && window.scrollY < lowerEnd;
