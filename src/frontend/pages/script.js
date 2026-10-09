@@ -181,6 +181,19 @@ function updateScroll() {
 window.addEventListener('scroll', updateScroll, { passive: true });
 window.addEventListener('resize', fitExperienceTitle);
 
+function getExperienceScrollFactor() {
+  const scenePosition = scrollProgress * experienceScenes.length;
+  const distanceToPresentation = Math.abs((scenePosition % 1) - 0.5);
+  const presentationWeight = THREE.MathUtils.clamp(1 - distanceToPresentation / 0.5, 0, 1);
+  return THREE.MathUtils.lerp(1.45, 0.28, presentationWeight ** 2);
+}
+
+window.addEventListener('wheel', (event) => {
+  if (event.ctrlKey || scrollProgress >= 1 || window.scrollY < experience.offsetTop) return;
+  event.preventDefault();
+  window.scrollBy({ top: event.deltaY * getExperienceScrollFactor(), left: 0, behavior: 'auto' });
+}, { passive: false });
+
 function animate(time = 0) {
   requestAnimationFrame(animate);
   if (!isExperienceVisible) return;
