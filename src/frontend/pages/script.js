@@ -204,7 +204,7 @@ function getLowerScrollFactor() {
     }
   });
   const presentationWeight = THREE.MathUtils.clamp(1 - nearestDistance / (nearestHeight * 0.52), 0, 1);
-  return THREE.MathUtils.lerp(1.5, 0.34, presentationWeight ** 2);
+  return THREE.MathUtils.lerp(0.92, 0.46, presentationWeight ** 2);
 }
 
 window.addEventListener('wheel', (event) => {
