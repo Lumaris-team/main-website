@@ -183,7 +183,7 @@ footer a { font-size: 10px; }
 /* Lower page: gentle section guidance without forcing the scroll position. */
 html { scroll-snap-type: y proximity; }
 .lower-flow { position: relative; background: transparent !important; }
-.lower-flow { display: flex; flex-direction: column; gap: 18vh; }
+.lower-flow { display: flex; flex-direction: column; gap: 100vh; }
 .lower-flow > section,
 .lower-flow > footer { margin-top: 0 !important; margin-bottom: 0 !important; background: transparent !important; }
 .lower-flow > section { scroll-snap-align: start; scroll-snap-stop: normal; padding-top: 150px !important; padding-bottom: 150px !important; }
