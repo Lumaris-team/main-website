@@ -47,6 +47,8 @@ const experienceIndex = document.querySelector('#experience-index');
 const experienceLocation = document.querySelector('#experience-location');
 const experienceProgressBar = document.querySelector('#experience-progress-bar');
 const experienceFrame = document.querySelector('.experience-frame');
+const lowerFlow = document.querySelector('.lower-flow');
+const lowerSections = [...document.querySelectorAll('.lower-flow > section, .lower-flow > footer')];
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(28, 1, 0.1, 100);
 camera.position.set(0, 0, 8.8);
@@ -188,10 +190,32 @@ function getExperienceScrollFactor() {
   return THREE.MathUtils.lerp(1.45, 0.28, presentationWeight ** 2);
 }
 
+function getLowerScrollFactor() {
+  const viewportCenter = window.scrollY + window.innerHeight / 2;
+  let nearestDistance = Infinity;
+  let nearestHeight = window.innerHeight;
+  lowerSections.forEach((section) => {
+    const sectionCenter = section.offsetTop + section.offsetHeight / 2;
+    const distance = Math.abs(viewportCenter - sectionCenter);
+    if (distance < nearestDistance) {
+      nearestDistance = distance;
+      nearestHeight = section.offsetHeight;
+    }
+  });
+  const presentationWeight = THREE.MathUtils.clamp(1 - nearestDistance / (nearestHeight * 0.52), 0, 1);
+  return THREE.MathUtils.lerp(1.5, 0.34, presentationWeight ** 2);
+}
+
 window.addEventListener('wheel', (event) => {
-  if (event.ctrlKey || scrollProgress >= 1 || window.scrollY < experience.offsetTop) return;
+  if (event.ctrlKey) return;
+  const lowerStart = lowerFlow.offsetTop;
+  const lowerEnd = lowerStart + lowerFlow.offsetHeight;
+  const inExperience = window.scrollY >= experience.offsetTop && scrollProgress < 1;
+  const inLowerFlow = window.scrollY >= lowerStart && window.scrollY < lowerEnd;
+  if (!inExperience && !inLowerFlow) return;
   event.preventDefault();
-  window.scrollBy({ top: event.deltaY * getExperienceScrollFactor(), left: 0, behavior: 'auto' });
+  const factor = inExperience ? getExperienceScrollFactor() : getLowerScrollFactor();
+  window.scrollBy({ top: event.deltaY * factor, left: 0, behavior: 'auto' });
 }, { passive: false });
 
 function animate(time = 0) {
