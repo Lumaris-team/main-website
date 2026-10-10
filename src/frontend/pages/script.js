@@ -192,19 +192,12 @@ function getExperienceScrollFactor() {
 
 function getLowerScrollFactor() {
   const viewportCenter = window.scrollY + window.innerHeight / 2;
-  let nearestDistance = Infinity;
-  let nearestHeight = window.innerHeight;
-  lowerSections.forEach((section) => {
+  const overPresentation = lowerSections.some((section) => {
     const sectionTop = section.getBoundingClientRect().top + window.scrollY;
-    const sectionCenter = sectionTop + section.offsetHeight / 2;
-    const distance = Math.abs(viewportCenter - sectionCenter);
-    if (distance < nearestDistance) {
-      nearestDistance = distance;
-      nearestHeight = section.offsetHeight;
-    }
+    const sectionBottom = sectionTop + section.offsetHeight;
+    return viewportCenter >= sectionTop && viewportCenter <= sectionBottom;
   });
-  const presentationWeight = THREE.MathUtils.clamp(1 - nearestDistance / (nearestHeight * 0.52), 0, 1);
-  return THREE.MathUtils.lerp(0.92, 0.46, presentationWeight ** 2);
+  return overPresentation ? 0.46 : 0.92;
 }
 
 window.addEventListener('wheel', (event) => {
