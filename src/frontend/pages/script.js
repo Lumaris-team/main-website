@@ -50,8 +50,8 @@ const experienceFrame = document.querySelector('.experience-frame');
 const lowerFlow = document.querySelector('.lower-flow');
 const lowerSections = [...document.querySelectorAll('.lower-flow > section, .lower-flow > footer')];
 let lowerMetrics = { start: 0, end: 0, sections: [] };
-let pendingWheelDelta = 0;
-let wheelFrame = 0;
+let smoothScrollTarget = null;
+let smoothScrollFrame = 0;
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(28, 1, 0.1, 100);
 camera.position.set(0, 0, 8.8);
@@ -213,15 +213,24 @@ function getLowerScrollFactor() {
   return overPresentation ? 0.25 : 1.6;
 }
 
-function applyWheelDelta() {
-  wheelFrame = 0;
-  const delta = pendingWheelDelta;
-  pendingWheelDelta = 0;
+function animateSmoothScroll() {
+  smoothScrollFrame = 0;
+  if (smoothScrollTarget === null) return;
   const inExperience = window.scrollY >= experience.offsetTop && scrollProgress < 1;
   const inLowerFlow = window.scrollY >= lowerMetrics.start && window.scrollY < lowerMetrics.end;
-  if (!inExperience && !inLowerFlow) return;
-  const factor = inExperience ? getExperienceScrollFactor() : getLowerScrollFactor();
-  window.scrollBy({ top: delta * factor, left: 0, behavior: 'auto' });
+  if (!inExperience && !inLowerFlow) {
+    smoothScrollTarget = null;
+    return;
+  }
+  const currentScroll = window.scrollY;
+  const distance = smoothScrollTarget - currentScroll;
+  if (Math.abs(distance) < 0.5) {
+    window.scrollTo({ top: smoothScrollTarget, left: 0, behavior: 'auto' });
+    smoothScrollTarget = null;
+    return;
+  }
+  window.scrollTo({ top: currentScroll + distance * 0.18, left: 0, behavior: 'auto' });
+  smoothScrollFrame = requestAnimationFrame(animateSmoothScroll);
 }
 
 window.addEventListener('wheel', (event) => {
@@ -230,8 +239,12 @@ window.addEventListener('wheel', (event) => {
   const inLowerFlow = window.scrollY >= lowerMetrics.start && window.scrollY < lowerMetrics.end;
   if (!inExperience && !inLowerFlow) return;
   event.preventDefault();
-  pendingWheelDelta += event.deltaY;
-  if (!wheelFrame) wheelFrame = requestAnimationFrame(applyWheelDelta);
+  const factor = inExperience ? getExperienceScrollFactor() : getLowerScrollFactor();
+  if (smoothScrollTarget === null) smoothScrollTarget = window.scrollY;
+  smoothScrollTarget += event.deltaY * factor;
+  const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+  smoothScrollTarget = THREE.MathUtils.clamp(smoothScrollTarget, 0, maxScroll);
+  if (!smoothScrollFrame) smoothScrollFrame = requestAnimationFrame(animateSmoothScroll);
 }, { passive: false });
 
 function animate(time = 0) {
