@@ -186,11 +186,11 @@ html { scroll-snap-type: y proximity; }
 .lower-flow { display: flex; flex-direction: column; gap: 100vh; }
 .lower-flow > section,
 .lower-flow > footer { margin-top: 0 !important; margin-bottom: 0 !important; background: transparent !important; }
-.lower-flow > section { scroll-snap-align: start; scroll-snap-stop: normal; padding-top: 150px !important; padding-bottom: 150px !important; }
+.lower-flow > section { isolation: isolate; scroll-snap-align: start; scroll-snap-stop: normal; padding-top: 150px !important; padding-bottom: 150px !important; }
 .lower-flow > footer { scroll-snap-align: start; scroll-snap-stop: normal; padding-top: 150px !important; padding-bottom: 50px !important; }
 .lower-flow > section::before,
 .lower-flow > footer::before { display: none !important; }
-.lower-flow > section::after { position: absolute; z-index: -1; content: ""; pointer-events: none; filter: blur(36px); opacity: .8; }
+.lower-flow > section::after { position: absolute; z-index: -1; content: ""; pointer-events: none; opacity: .8; }
 .lower-flow > section::after { border: 0 !important; border-radius: 0 !important; box-shadow: none !important; transform: none !important; }
 .lower-flow .tool-section::after { top: 22%; right: 4%; width: 38%; height: 42%; background: radial-gradient(ellipse, rgba(146, 116, 255, .16), transparent 70%); }
 .lower-flow .focus-section::after { top: 18%; right: 3%; width: 48%; height: 58%; background: radial-gradient(ellipse, rgba(140, 236, 255, .12), transparent 68%); }
