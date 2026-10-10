@@ -197,7 +197,7 @@ function getLowerScrollFactor() {
     const sectionBottom = sectionTop + section.offsetHeight;
     return viewportCenter >= sectionTop && viewportCenter <= sectionBottom;
   });
-  return overPresentation ? 0.46 : 0.92;
+  return overPresentation ? 0.25 : 1.6;
 }
 
 window.addEventListener('wheel', (event) => {
