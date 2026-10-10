@@ -49,6 +49,9 @@ const experienceProgressBar = document.querySelector('#experience-progress-bar')
 const experienceFrame = document.querySelector('.experience-frame');
 const lowerFlow = document.querySelector('.lower-flow');
 const lowerSections = [...document.querySelectorAll('.lower-flow > section, .lower-flow > footer')];
+let lowerMetrics = { start: 0, end: 0, sections: [] };
+let pendingWheelDelta = 0;
+let wheelFrame = 0;
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(28, 1, 0.1, 100);
 camera.position.set(0, 0, 8.8);
@@ -145,9 +148,23 @@ function updateLogoPosition() {
   logo.position.y = logoBaseY;
 }
 
-function resize() { const { width, height } = stage.getBoundingClientRect(); renderer.setSize(width, height, false); camera.aspect = width / height; camera.updateProjectionMatrix(); updateLogoPosition(); updateScroll(); }
+function refreshLowerMetrics() {
+  const flowTop = lowerFlow.getBoundingClientRect().top + window.scrollY;
+  lowerMetrics = {
+    start: flowTop,
+    end: flowTop + lowerFlow.offsetHeight,
+    sections: lowerSections.map((section) => {
+      const top = section.getBoundingClientRect().top + window.scrollY;
+      return { top, bottom: top + section.offsetHeight };
+    })
+  };
+}
+
+function resize() { const { width, height } = stage.getBoundingClientRect(); renderer.setSize(width, height, false); camera.aspect = width / height; camera.updateProjectionMatrix(); updateLogoPosition(); refreshLowerMetrics(); updateScroll(); }
 loadModel().catch((error) => console.error('Lumaris model failed to load', error));
 loadLogo().catch((error) => console.error('Lumaris logo failed to load', error));
+window.addEventListener('load', refreshLowerMetrics, { once: true });
+if (document.fonts?.ready) document.fonts.ready.then(refreshLowerMetrics);
 window.addEventListener('resize', resize); resize();
 window.addEventListener('pointermove', (event) => {
   targetRotation = (event.clientX / window.innerWidth - 0.5) * 0.9;
@@ -192,24 +209,29 @@ function getExperienceScrollFactor() {
 
 function getLowerScrollFactor() {
   const viewportCenter = window.scrollY + window.innerHeight / 2;
-  const overPresentation = lowerSections.some((section) => {
-    const sectionTop = section.getBoundingClientRect().top + window.scrollY;
-    const sectionBottom = sectionTop + section.offsetHeight;
-    return viewportCenter >= sectionTop && viewportCenter <= sectionBottom;
-  });
+  const overPresentation = lowerMetrics.sections.some(({ top, bottom }) => viewportCenter >= top && viewportCenter <= bottom);
   return overPresentation ? 0.25 : 1.6;
+}
+
+function applyWheelDelta() {
+  wheelFrame = 0;
+  const delta = pendingWheelDelta;
+  pendingWheelDelta = 0;
+  const inExperience = window.scrollY >= experience.offsetTop && scrollProgress < 1;
+  const inLowerFlow = window.scrollY >= lowerMetrics.start && window.scrollY < lowerMetrics.end;
+  if (!inExperience && !inLowerFlow) return;
+  const factor = inExperience ? getExperienceScrollFactor() : getLowerScrollFactor();
+  window.scrollBy({ top: delta * factor, left: 0, behavior: 'auto' });
 }
 
 window.addEventListener('wheel', (event) => {
   if (event.ctrlKey) return;
-  const lowerStart = lowerFlow.getBoundingClientRect().top + window.scrollY;
-  const lowerEnd = lowerStart + lowerFlow.offsetHeight;
   const inExperience = window.scrollY >= experience.offsetTop && scrollProgress < 1;
-  const inLowerFlow = window.scrollY >= lowerStart && window.scrollY < lowerEnd;
+  const inLowerFlow = window.scrollY >= lowerMetrics.start && window.scrollY < lowerMetrics.end;
   if (!inExperience && !inLowerFlow) return;
   event.preventDefault();
-  const factor = inExperience ? getExperienceScrollFactor() : getLowerScrollFactor();
-  window.scrollBy({ top: event.deltaY * factor, left: 0, behavior: 'auto' });
+  pendingWheelDelta += event.deltaY;
+  if (!wheelFrame) wheelFrame = requestAnimationFrame(applyWheelDelta);
 }, { passive: false });
 
 function animate(time = 0) {
