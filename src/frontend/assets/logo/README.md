@@ -7,4 +7,3 @@ This folder must have :
  - square_white.jpg (800x800)
  - square_black.png (800x800)
  - square_black.jpg (800x800)
- - logo.png -> The Lumaris logo without background
