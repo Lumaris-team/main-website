@@ -1,7 +1,7 @@
 export function renderNavbar() {
   return `
     <a class="brand" href="/" aria-label="Lumaris, accueil">
-      <img src="/assets/logo/logo.png" alt="" width="36" height="36">
+      <img src="https://shared-assets.danielersen.workers.dev/assets/logo/logo.png" alt="" width="36" height="36">
       <span>Lumaris</span>
     </a>
     <nav class="nav-links" aria-label="Navigation principale">
