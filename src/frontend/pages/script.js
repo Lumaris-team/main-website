@@ -1,8 +1,9 @@
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js';
 import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/loaders/GLTFLoader.js';
-import { renderNavbar } from '../components/navbar.js';
+import { renderNavbar, setupNavbar } from '../components/navbar.js';
 
 document.querySelector('#navbar').innerHTML = renderNavbar();
+setupNavbar();
 
 const frenchCopy = {
   'Lumaris — Study in your orbit': 'Lumaris — Apprendre dans votre orbite',
