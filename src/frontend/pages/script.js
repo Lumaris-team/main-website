@@ -45,6 +45,9 @@ const experienceProgressBar = document.querySelector('#experience-progress-bar')
 const experienceFrame = document.querySelector('.experience-frame');
 const lowerFlow = document.querySelector('.lower-flow');
 const lowerSections = [...document.querySelectorAll('.lower-flow > section, .lower-flow > footer')];
+const longTubeSection = document.querySelector('.long-tube-section');
+const longTubeStage = document.querySelector('.long-tube-stage');
+const longTubeCanvas = document.querySelector('#long-tube-scene');
 let lowerMetrics = { start: 0, end: 0, sections: [] };
 let smoothScrollTarget = null;
 let smoothScrollFrame = 0;
@@ -74,6 +77,11 @@ let galaxySpinX = 0;
 let galaxySpinY = 0;
 let galaxySpinZ = 0;
 let logoSpinAngle = 0;
+let longTube;
+let longTubeProgress = 0;
+let longTubeTargetProgress = 0;
+let longTubeRenderer;
+let longTubeCamera;
 const logoBaseY = 1.36;
 const logoViewTilt = Math.atan2(logoBaseY - camera.position.y, camera.position.z - 0.15);
 let isExperienceVisible = true;
@@ -129,6 +137,56 @@ export function loadLogo() {
   }, undefined, reject));
 }
 
+function styleLongTube(root) {
+  root.traverse((child) => {
+    if (child.isPoints) {
+      child.material = new THREE.PointsMaterial({ size: 0.072, color: 0x8cecff, transparent: true, opacity: 0.92, blending: THREE.AdditiveBlending, depthWrite: false, sizeAttenuation: true });
+    }
+    if (child.isMesh) {
+      child.material = new THREE.MeshStandardMaterial({ color: 0x24194f, emissive: 0x7048b8, emissiveIntensity: 1.5, metalness: 0.25, roughness: 0.42, transparent: true, opacity: 0.88 });
+    }
+  });
+}
+
+function loadLongTube() {
+  return new Promise((resolve, reject) => loader.load('/assets/models/long-tube.glb', (gltf) => {
+    longTube = gltf.scene;
+    styleLongTube(longTube);
+    longTube.scale.set(0.72, 3.9, 0.72);
+    longTube.position.set(0, 2.4, 0);
+    longTubeRenderer = new THREE.WebGLRenderer({ canvas: longTubeCanvas, antialias: true, alpha: true, powerPreference: 'high-performance' });
+    longTubeRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    longTubeRenderer.outputColorSpace = THREE.SRGBColorSpace;
+    longTubeRenderer.toneMapping = THREE.ACESFilmicToneMapping;
+    longTubeRenderer.toneMappingExposure = 1.25;
+    longTubeCamera = new THREE.PerspectiveCamera(24, 1, 0.1, 100);
+    longTubeCamera.position.set(0, 0, 9.2);
+    const longTubeScene = new THREE.Scene();
+    longTubeScene.add(new THREE.AmbientLight(0x38266f, 1.8));
+    const tubeCyanLight = new THREE.PointLight(0x8cecff, 18, 12); tubeCyanLight.position.set(-2, 3, 4); longTubeScene.add(tubeCyanLight);
+    const tubeVioletLight = new THREE.PointLight(0xb550ff, 24, 12); tubeVioletLight.position.set(2, -3, 2); longTubeScene.add(tubeVioletLight);
+    longTubeScene.add(longTube);
+    longTube.userData.scene = longTubeScene;
+    resizeLongTube();
+    resolve(longTube);
+  }, undefined, reject));
+}
+
+function resizeLongTube() {
+  if (!longTubeRenderer || !longTubeCamera || !longTubeStage) return;
+  const { width, height } = longTubeStage.getBoundingClientRect();
+  longTubeRenderer.setSize(width, height, false);
+  longTubeCamera.aspect = width / height;
+  longTubeCamera.updateProjectionMatrix();
+}
+
+function updateLongTubeScroll() {
+  if (!longTubeSection) return;
+  const start = longTubeSection.offsetTop;
+  const distance = Math.max(longTubeSection.offsetHeight - window.innerHeight, 1);
+  longTubeTargetProgress = THREE.MathUtils.clamp((window.scrollY - start) / distance, 0, 1);
+}
+
 function updateLogoPosition() {
   if (!logo) return;
   const stageBounds = stage.getBoundingClientRect();
@@ -159,9 +217,11 @@ function refreshLowerMetrics() {
 function resize() { const { width, height } = stage.getBoundingClientRect(); renderer.setSize(width, height, false); camera.aspect = width / height; camera.updateProjectionMatrix(); updateLogoPosition(); refreshLowerMetrics(); updateScroll(); }
 loadModel().catch((error) => console.error('Lumaris model failed to load', error));
 loadLogo().catch((error) => console.error('Lumaris logo failed to load', error));
+loadLongTube().catch((error) => console.error('Lumaris long tube failed to load', error));
 window.addEventListener('load', refreshLowerMetrics, { once: true });
 if (document.fonts?.ready) document.fonts.ready.then(refreshLowerMetrics);
-window.addEventListener('resize', resize); resize();
+window.addEventListener('resize', () => { resize(); resizeLongTube(); updateLongTubeScroll(); }); resize();
+updateLongTubeScroll();
 window.addEventListener('pointermove', (event) => {
   targetRotation = (event.clientX / window.innerWidth - 0.5) * 0.9;
   targetTilt = (event.clientY / window.innerHeight - 0.5) * 0.45;
@@ -194,6 +254,7 @@ function updateScroll() {
   }
 }
 window.addEventListener('scroll', updateScroll, { passive: true });
+window.addEventListener('scroll', updateLongTubeScroll, { passive: true });
 window.addEventListener('resize', fitExperienceTitle);
 
 function getExperienceScrollFactor() {
@@ -245,9 +306,10 @@ window.addEventListener('wheel', (event) => {
 
 function animate(time = 0) {
   requestAnimationFrame(animate);
-  if (!isExperienceVisible) return;
-  modelScrollProgress += (scrollProgress - modelScrollProgress) * 0.06;
-  if (galaxy) {
+  if (isExperienceVisible) {
+    modelScrollProgress += (scrollProgress - modelScrollProgress) * 0.06;
+  }
+  if (isExperienceVisible && galaxy) {
     currentRotation += (targetRotation - currentRotation) * 0.09;
     currentTilt += (targetTilt + Math.sin(modelScrollProgress * Math.PI) * 0.25 - currentTilt) * 0.08;
     galaxySpinX += 0.00045 + scrollRotationMomentum * 0.8;
@@ -261,14 +323,26 @@ function animate(time = 0) {
     galaxy.position.x = (portrait ? 0 : 1.75) + Math.sin(modelScrollProgress * Math.PI * 1.5) * (portrait ? 0.2 : 0.38);
     galaxy.scale.setScalar((portrait ? 0.2 : 0.3) + Math.sin(modelScrollProgress * Math.PI) * (portrait ? 0.018 : 0.025));
   }
-  if (logo) {
+  if (isExperienceVisible && logo) {
     logoSpinAngle += 0.0018 + scrollRotationMomentum * 0.7;
     logo.rotation.y = logoSpinAngle;
     logo.rotation.x = logoViewTilt;
     logo.position.y = logoBaseY + Math.sin(time * 0.001) * 0.035;
   }
   scrollRotationMomentum *= 0.92;
-  renderer.render(scene, camera);
+  if (isExperienceVisible) renderer.render(scene, camera);
+  longTubeProgress += (longTubeTargetProgress - longTubeProgress) * 0.06;
+  if (longTube && longTubeRenderer && longTubeCamera) {
+    const tubeScene = longTube.userData.scene;
+    const portrait = isPortraitLayout();
+    const descend = THREE.MathUtils.lerp(2.4, -2.4, longTubeProgress);
+    longTube.position.y = descend + Math.sin(time * 0.0007) * 0.08;
+    longTube.position.x = portrait ? 0 : Math.sin(longTubeProgress * Math.PI) * 0.12;
+    longTube.rotation.x = longTubeProgress * Math.PI * 0.45 + Math.sin(time * 0.0004) * 0.04;
+    longTube.rotation.y += 0.0022 + scrollRotationMomentum * 0.9;
+    longTube.rotation.z = Math.sin(longTubeProgress * Math.PI * 2) * 0.08;
+    longTubeRenderer.render(tubeScene, longTubeCamera);
+  }
 }
 animate();
 
