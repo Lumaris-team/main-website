@@ -46,8 +46,17 @@ const experienceFrame = document.querySelector('.experience-frame');
 const lowerFlow = document.querySelector('.lower-flow');
 const lowerSections = [...document.querySelectorAll('.lower-flow > section, .lower-flow > footer')];
 const longTubeSection = document.querySelector('.long-tube-section');
+const longTubeFrame = document.querySelector('.long-tube-frame');
 const longTubeStage = document.querySelector('.long-tube-stage');
 const longTubeCanvas = document.querySelector('#long-tube-scene');
+const longTubeCopy = document.querySelector('.long-tube-copy');
+const longTubeKicker = document.querySelector('#long-tube-kicker');
+const longTubeStep = document.querySelector('#long-tube-step');
+const longTubeTitle = document.querySelector('#long-tube-title');
+const longTubeDescription = document.querySelector('#long-tube-description');
+const longTubeIndex = document.querySelector('#long-tube-index');
+const longTubeLocation = document.querySelector('#long-tube-location');
+const longTubeProgressBar = document.querySelector('#long-tube-progress-bar');
 let lowerMetrics = { start: 0, end: 0, sections: [] };
 let smoothScrollTarget = null;
 let smoothScrollFrame = 0;
@@ -86,6 +95,7 @@ const logoBaseY = 1.36;
 const logoViewTilt = Math.atan2(logoBaseY - camera.position.y, camera.position.z - 0.15);
 let isExperienceVisible = true;
 let activeStep = -1;
+let longTubeActiveStep = -1;
 const isPortraitLayout = () => window.matchMedia('(max-width: 760px), (orientation: portrait)').matches;
 
 function fitExperienceTitle() {
@@ -100,11 +110,30 @@ function fitExperienceTitle() {
   }
 }
 
+function fitLongTubeTitle() {
+  longTubeTitle.style.fontSize = '';
+  const computed = window.getComputedStyle(longTubeTitle);
+  const lineHeight = parseFloat(computed.lineHeight);
+  const maxHeight = lineHeight * 2.4;
+  let fontSize = parseFloat(computed.fontSize);
+  while (longTubeTitle.scrollHeight > maxHeight && fontSize > 34) {
+    fontSize -= 2;
+    longTubeTitle.style.fontSize = `${fontSize}px`;
+  }
+}
+
 const experienceScenes = [
   { kicker: 'Votre système d’apprentissage', title: 'Faites de la place<br>pour <em>la suite.</em>', description: 'Lumaris rassemble vos cours, votre concentration et une intelligence qui vous accompagne vraiment.', location: 'Apprendre en mouvement' },
   { kicker: 'Votre rythme scolaire', title: 'Voyez vos progrès<br><em>sous un autre angle.</em>', description: 'Notes, devoirs et emploi du temps se réunissent dans une vision claire de votre parcours scolaire.', location: '01 / Rythme scolaire' },
   { kicker: 'Intelligence, avec intention', title: 'Comprenez mieux.<br><em>Travaillez plus sereinement.</em>', description: 'Une IA qui explique les concepts, guide vos raisonnements et vous aide à devenir autonome.', location: '02 / Intelligence Lumaris' },
   { kicker: 'Le travail profond, visible', title: 'Construisez le rythme<br>qui vous <em>fait avancer.</em>', description: 'Focus, Pomodoro et statistiques utiles transforment chaque session en progrès durable.', location: '03 / Travail profond' }
+];
+
+const longTubeScenes = [
+  { kicker: 'Votre système d’apprentissage', title: 'Tout ce dont vous avez besoin pour <em>avancer.</em>', description: "Une plateforme pensée pour diminuer le bruit et donner de la profondeur à chaque journée d'étude.", location: 'Une plateforme, chaque prochaine étape' },
+  { kicker: 'Votre rythme scolaire', title: 'Votre scolarité,<br><em>en un regard.</em>', description: 'Notes, devoirs, emploi du temps et progression réunis dans un espace calme qui comprend vos priorités.', location: '01 / Rythme scolaire' },
+  { kicker: 'Espace de travail', title: 'Votre savoir,<br><em>toujours à portée.</em>', description: 'Notes, documents et ressources se rangent naturellement. Retrouvez l’essentiel, au bon moment.', location: '02 / Espace cloud' },
+  { kicker: 'Intelligence, avec intention', title: 'Une aide qui explique,<br><em>pas qui remplace.</em>', description: 'Posez une question, joignez un document et explorez un raisonnement étape par étape.', location: '03 / Assistant Lumaris' }
 ];
 
 function styleGalaxy(root) {
@@ -182,9 +211,26 @@ function resizeLongTube() {
 
 function updateLongTubeScroll() {
   if (!longTubeSection) return;
-  const start = longTubeSection.offsetTop;
+  const start = longTubeSection.getBoundingClientRect().top + window.scrollY;
   const distance = Math.max(longTubeSection.offsetHeight - window.innerHeight, 1);
   longTubeTargetProgress = THREE.MathUtils.clamp((window.scrollY - start) / distance, 0, 1);
+  const nextStep = Math.min(Math.floor(longTubeTargetProgress * longTubeScenes.length), longTubeScenes.length - 1);
+  longTubeProgressBar.style.transform = `scaleX(${longTubeTargetProgress})`;
+  longTubeIndex.textContent = String(nextStep + 1).padStart(2, '0');
+  if (nextStep !== longTubeActiveStep) {
+    longTubeActiveStep = nextStep;
+    const sceneData = longTubeScenes[nextStep];
+    longTubeCopy.classList.add('is-changing');
+    window.setTimeout(() => {
+      longTubeKicker.textContent = sceneData.kicker;
+      longTubeStep.textContent = `${String(nextStep + 1).padStart(2, '0')} / 04`;
+      longTubeTitle.innerHTML = sceneData.title;
+      longTubeDescription.textContent = sceneData.description;
+      longTubeLocation.textContent = sceneData.location;
+      fitLongTubeTitle();
+      longTubeCopy.classList.remove('is-changing');
+    }, 390);
+  }
 }
 
 function updateLogoPosition() {
@@ -255,7 +301,7 @@ function updateScroll() {
 }
 window.addEventListener('scroll', updateScroll, { passive: true });
 window.addEventListener('scroll', updateLongTubeScroll, { passive: true });
-window.addEventListener('resize', fitExperienceTitle);
+window.addEventListener('resize', () => { fitExperienceTitle(); fitLongTubeTitle(); });
 
 function getExperienceScrollFactor() {
   const scenePosition = scrollProgress * experienceScenes.length;
@@ -350,6 +396,11 @@ const experienceVisibilityObserver = new IntersectionObserver(([entry]) => {
   isExperienceVisible = entry.isIntersecting;
 }, { threshold: 0 });
 experienceVisibilityObserver.observe(experienceFrame);
+
+const longTubeVisibilityObserver = new IntersectionObserver(([entry]) => {
+  if (entry.isIntersecting) longTubeCopy.classList.add('is-visible');
+}, { threshold: 0.05 });
+longTubeVisibilityObserver.observe(longTubeFrame);
 
 const observer = new IntersectionObserver((entries) => entries.forEach((entry) => { if (entry.isIntersecting) entry.target.classList.add('is-visible'); }), { threshold: 0.14 });
 document.querySelectorAll('.reveal').forEach((element) => observer.observe(element));

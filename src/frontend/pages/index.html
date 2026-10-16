@@ -23,7 +23,7 @@
       if (!initialScrollLocked) return;
       document.documentElement.style.scrollBehavior = 'auto';
       document.documentElement.scrollTop = 0;
-      document.body.scrollTop = 0;
+      if (document.body) document.body.scrollTop = 0;
       window.scrollTo(0, 0);
     };
     ['wheel', 'touchstart', 'pointerdown', 'keydown'].forEach((eventName) => {
@@ -62,44 +62,20 @@
     </section>
 
     <div class="lower-flow">
-    <section class="long-tube-section" id="long-tube">
-      <div class="long-tube-stage" aria-label="Modèle 3D du rythme Lumaris"><canvas id="long-tube-scene"></canvas><div class="long-tube-label label-top">LUMARIS / <span>04</span></div><div class="long-tube-label label-bottom">RHYTHM IN MOTION <span>↘</span></div></div>
-      <div class="long-tube-copy reveal"><p class="eyebrow"><span class="pulse"></span>Un rythme qui descend avec vous</p><p class="experience-step">04 / 04</p><h2>Chaque idée<br>trouve <em>sa trajectoire.</em></h2><p>Un espace continu pour transformer le bruit en mouvement : vos cours, vos fichiers et votre concentration avancent dans le même axe.</p><a class="button button-light" href="#workspace">Voir l'espace de travail <span>↗</span></a></div>
-      <div class="long-tube-meta"><span>RHYTHM ENGINE</span><span>Concentration / Progression / Clarté</span><span>04 — 04</span></div>
-    </section>
-    <section class="statement reveal" id="platform"><p class="eyebrow">A clearer way forward</p><h2>Tout ce dont vous avez besoin pour <span>avancer.</span></h2><p>Une plateforme pensée pour diminuer le bruit et donner de la profondeur à chaque journée d'étude.</p></section>
-    <section class="feature-grid">
-      <article class="feature feature-large reveal"><span class="feature-number">01</span><div><p class="eyebrow">Academic pulse</p><h3>Votre scolarité,<br><strong>en un regard.</strong></h3><p>Notes, devoirs, emploi du temps et progression réunis dans un espace calme qui comprend vos priorités.</p><a href="#focus" class="arrow-link" aria-label="Découvrir le suivi académique">↗</a></div><div class="mini-chart"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div></article>
-      <article class="feature reveal"><span class="feature-number">02</span><p class="eyebrow">Cloud workspace</p><h3>Votre savoir,<br><strong>toujours à portée.</strong></h3><p>Notes, documents et ressources se rangent naturellement. Retrouvez l'essentiel, au bon moment.</p><div class="file-orbit">✦</div></article>
-      <article class="feature accent reveal" id="intelligence"><span class="feature-number">03</span><p class="eyebrow">Intelligence, with intent</p><h3>Une IA qui<br><strong>vous explique.</strong></h3><p>Du premier indice à la compréhension complète, l'assistant Lumaris s'adapte à votre manière d'apprendre.</p><div class="orbit-ring"><span>AI</span></div></article>
-    </section>
-
-    <section class="signals-section reveal" id="dashboard">
-      <div class="section-heading"><p class="eyebrow">Votre rythme scolaire</p><h2>Les bons signaux<br><span>au bon moment.</span></h2><p>Lumaris rassemble les informations qui vous aident à décider quoi faire ensuite, sans imposer une nouvelle interface avant l'heure.</p></div>
-        <div class="signals-field"><div class="signal-orbit orbit-one"><span>NOTES</span><strong>15,8</strong><small>progression</small></div><div class="signal-orbit orbit-two"><span>FOCUS</span><strong>06:42</strong><small>cette semaine</small></div><div class="signal-orbit orbit-three"><span>À VENIR</span><strong>02</strong><small>échéances</small></div><div class="signal-core"><i></i><span>VOTRE<br>RYTHME</span></div><div class="signal-line line-one"></div><div class="signal-line line-two"></div><div class="signal-line line-three"></div></div>
-    </section>
-
-    <section class="capabilities-section" id="workspace">
-      <div class="section-heading reveal"><p class="eyebrow">One calm place for everything</p><h2>Du premier cours<br>au <span>dernier fichier.</span></h2></div>
-      <div class="capability-list">
-        <article class="capability reveal"><span class="capability-index">01</span><div><p class="eyebrow">Workspace</p><h3>Vos fichiers, sans friction.</h3><p>Créez des dossiers, importez, téléchargez, prévisualisez et partagez vos ressources avec vos camarades ou vos enseignants.</p></div><div class="capability-tags"><span>Upload</span><span>Share</span><span>Cloud</span></div></article>
-        <article class="capability reveal"><span class="capability-index">02</span><div><p class="eyebrow">Study notes</p><h3>Les idées deviennent structurées.</h3><p>Notes riches par matière, recherche instantanée, favoris, modèles et export en PDF ou Markdown pour garder vos connaissances.</p></div><div class="capability-tags"><span>Rich editor</span><span>PDF</span><span>Markdown</span></div></article>
-        <article class="capability reveal"><span class="capability-index">03</span><div><p class="eyebrow">Smart assistant</p><h3>Une aide qui explique, pas qui remplace.</h3><p>Posez une question, joignez un document, demandez une analyse ou explorez un raisonnement étape par étape.</p></div><div class="capability-tags"><span>Reasoning</span><span>Web search</span><span>Vision</span></div></article>
+    <section class="long-tube-section" id="platform">
+      <div class="long-tube-frame">
+        <div class="long-tube-copy">
+          <p class="eyebrow"><span class="pulse"></span><span id="long-tube-kicker">Votre système d’apprentissage</span></p>
+          <p class="experience-step" id="long-tube-step">01 / 04</p>
+          <h2 id="long-tube-title">Tout ce dont vous avez besoin pour <em>avancer.</em></h2>
+          <p id="long-tube-description">Une plateforme pensée pour diminuer le bruit et donner de la profondeur à chaque journée d'étude.</p>
+          <a class="button button-light" href="#top">Revenir au début <span>↗</span></a>
+        </div>
+        <div class="long-tube-stage" aria-label="Modèle 3D du rythme Lumaris"><canvas id="long-tube-scene"></canvas><div class="long-tube-label label-top">LUMARIS / <span id="long-tube-index">01</span></div><div class="long-tube-label label-bottom">RHYTHM IN MOTION <span>↘</span></div></div>
+        <div class="long-tube-progress"><span id="long-tube-progress-bar"></span></div>
+        <div class="long-tube-meta"><span>RHYTHM ENGINE</span><span id="long-tube-location">Une plateforme, chaque prochaine étape</span><span>01 — 04</span></div>
       </div>
     </section>
-
-    <section class="tool-section reveal">
-      <div class="tool-intro"><p class="eyebrow">Small tools. Serious momentum.</p><h2>Chaque minute<br><span>peut compter.</span></h2><p>Des outils simples pour travailler mieux : chronométrez vos sessions, calculez, convertissez et protégez votre attention.</p></div>
-      <div class="tool-grid"><div class="tool-item"><span class="tool-icon">25</span><div><h3>Pomodoro</h3><p>Sessions de travail, pauses et statistiques de concentration.</p></div><b>↗</b></div><div class="tool-item"><span class="tool-icon">∑</span><div><h3>Calculatrice</h3><p>Opérations scientifiques et historique de vos calculs.</p></div><b>↗</b></div><div class="tool-item"><span class="tool-icon">⇄</span><div><h3>Convertisseur</h3><p>Longueur, poids, température, temps et données.</p></div><b>↗</b></div><div class="tool-item"><span class="tool-icon">◌</span><div><h3>Mode Focus</h3><p>Bloquez les distractions et gardez vos objectifs visibles.</p></div><b>↗</b></div></div>
-    </section>
-
-    <section class="focus-section" id="focus"><div class="focus-number">04</div><div class="focus-copy reveal"><p class="eyebrow">Deep work, made visible</p><h2>Le prochain chapitre<br>commence <em>maintenant.</em></h2><p>Pomodoro, blocage des distractions, statistiques utiles : construisez le rythme qui vous ressemble.</p><a class="button button-light" href="#top">Commencer une session <span>↗</span></a></div><div class="focus-dial"><div class="dial-center">25<small>MIN</small></div><span class="dial-tick tick-a"></span><span class="dial-tick tick-b"></span><span class="dial-tick tick-c"></span></div><div class="focus-stats"><div><span>SESSION</span><strong>04 / 08</strong><small>Pomodoro en cours</small></div><div><span>CONCENTRATION</span><strong>84%</strong><small>+12% cette semaine</small></div><div><span>DISTRACTIONS</span><strong>07</strong><small>sites bloqués</small></div></div></section>
-    <section class="ecosystem-section reveal">
-      <div class="ecosystem-heading"><p class="eyebrow">Made to fit your life</p><h2>Votre espace.<br><span>Vos règles.</span></h2><p>Thème, typographie, arrière-plan, taille du texte : Lumaris se règle à votre manière de travailler et reste synchronisé partout.</p></div>
-      <div class="ecosystem-panel"><div class="ecosystem-row"><span class="ecosystem-symbol">◐</span><div><h3>Une interface qui vous ressemble</h3><p>Mode clair ou sombre, couleurs, dégradés et familles de caractères personnalisables.</p></div><b>01</b></div><div class="ecosystem-row"><span class="ecosystem-symbol">⌁</span><div><h3>Vos données, sous contrôle</h3><p>Sessions sécurisées, confidentialité configurable et statistiques anonymisées.</p></div><b>02</b></div><div class="ecosystem-row"><span class="ecosystem-symbol">↗</span><div><h3>Partout où vous apprenez</h3><p>Une expérience pensée pour mobile, tablette et desktop, avec navigation clavier et support accessible.</p></div><b>03</b></div></div>
-    </section>
-    <section class="closing-section reveal"><div><p class="eyebrow">One platform. Every next step.</p><h2>Tout votre élan,<br><em>au même endroit.</em></h2></div><div class="closing-side"><p>Du premier devoir à la prochaine grande idée, Lumaris transforme le bruit quotidien en mouvement visible.</p><a class="button button-primary" href="#top">Explorer Lumaris <span>↗</span></a></div></section>
-    <footer><span>© 2026 Lumaris</span><span>Built for curious minds</span><a href="#top">Retour en haut ↑</a></footer>
     </div>
   </main>
   <script type="module" src="https://shared-assets.lumaris.fr.eu.org/navbar.js?v=20261016-icons"></script>
