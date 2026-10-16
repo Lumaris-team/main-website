@@ -54,6 +54,7 @@ const longTubeKicker = document.querySelector('#long-tube-kicker');
 const longTubeStep = document.querySelector('#long-tube-step');
 const longTubeTitle = document.querySelector('#long-tube-title');
 const longTubeDescription = document.querySelector('#long-tube-description');
+const longTubeDetail = document.querySelector('#long-tube-detail');
 const longTubeIndex = document.querySelector('#long-tube-index');
 const longTubeLocation = document.querySelector('#long-tube-location');
 let lowerMetrics = { start: 0, end: 0, sections: [] };
@@ -131,10 +132,12 @@ const experienceScenes = [
 ];
 
 const longTubeScenes = [
-  { kicker: 'Votre système d’apprentissage', title: 'Tout ce dont vous avez besoin pour <em>avancer.</em>', description: "Une plateforme pensée pour diminuer le bruit et donner de la profondeur à chaque journée d'étude.", location: 'Une plateforme, chaque prochaine étape' },
-  { kicker: 'Votre rythme scolaire', title: 'Votre scolarité,<br><em>en un regard.</em>', description: 'Notes, devoirs, emploi du temps et progression réunis dans un espace calme qui comprend vos priorités.', location: '01 / Rythme scolaire' },
-  { kicker: 'Espace de travail', title: 'Votre savoir,<br><em>toujours à portée.</em>', description: 'Notes, documents et ressources se rangent naturellement. Retrouvez l’essentiel, au bon moment.', location: '02 / Espace cloud' },
-  { kicker: 'Intelligence, avec intention', title: 'Une aide qui explique,<br><em>pas qui remplace.</em>', description: 'Posez une question, joignez un document et explorez un raisonnement étape par étape.', location: '03 / Assistant Lumaris' }
+  { kicker: 'Votre rythme scolaire', title: 'Votre scolarité,<br><em>en un regard.</em>', description: 'Notes, devoirs, emploi du temps et progression réunis dans une vision calme de votre parcours.', detail: '<span>Notes et moyennes par matière</span><span>Devoirs classés par échéance</span><span>Emploi du temps toujours lisible</span>', location: '01 / Rythme scolaire' },
+  { kicker: 'Espace cloud', title: 'Votre savoir,<br><em>toujours à portée.</em>', description: 'Vos fichiers et vos ressources se rangent naturellement pour que chaque document revienne au bon moment.', detail: '<span>Dossiers et fichiers centralisés</span><span>Import, prévisualisation et partage</span><span>Ressources accessibles partout</span>', location: '02 / Espace de travail' },
+  { kicker: "Notes d'étude", title: 'Les idées deviennent<br><em>structurées.</em>', description: 'Un éditeur riche transforme les cours dispersés en connaissances retrouvables, reliées et prêtes à être révisées.', detail: '<span>Recherche instantanée par matière</span><span>Favoris, modèles et notes riches</span><span>Export PDF ou Markdown</span>', location: '03 / Study notes' },
+  { kicker: 'Intelligence, avec intention', title: 'Une aide qui explique,<br><em>pas qui remplace.</em>', description: 'L’assistant accompagne vos raisonnements avec des réponses guidées, des documents analysés et des explications étape par étape.', detail: '<span>Raisonnement progressif et clair</span><span>Recherche web et analyse de documents</span><span>Vision et contexte réunis</span>', location: '04 / Assistant Lumaris' },
+  { kicker: 'Des outils, un vrai élan', title: 'Chaque minute peut<br><em>compter.</em>', description: 'Pomodoro, calculatrice et convertisseur réduisent les petits frottements pour préserver votre énergie mentale.', detail: '<span>Sessions Pomodoro et pauses</span><span>Calculs scientifiques et historique</span><span>Conversions rapides au même endroit</span>', location: '05 / Tools' },
+  { kicker: 'Le travail profond, visible', title: 'Construisez le rythme<br>qui vous <em>fait avancer.</em>', description: 'Le mode Focus protège votre attention, rend vos sessions mesurables et transforme chaque effort en progression durable.', detail: '<span>Blocage des distractions</span><span>Objectifs et sessions visibles</span><span>Statistiques utiles, sans bruit</span>', location: '06 / Deep work' }
 ];
 
 function styleGalaxy(root) {
@@ -167,39 +170,27 @@ export function loadLogo() {
   }, undefined, reject));
 }
 
-function styleLongTube(root) {
-  root.traverse((child) => {
-    if (child.isPoints) {
-      child.material = new THREE.PointsMaterial({ size: 0.072, color: 0x8cecff, transparent: true, opacity: 0.92, blending: THREE.AdditiveBlending, depthWrite: false, sizeAttenuation: true });
-    }
-    if (child.isMesh) {
-      child.material = new THREE.MeshStandardMaterial({ color: 0x24194f, emissive: 0x7048b8, emissiveIntensity: 1.5, metalness: 0.25, roughness: 0.42, transparent: true, opacity: 0.88 });
-    }
-  });
-}
-
 function loadLongTube() {
-  return new Promise((resolve, reject) => loader.load('/assets/models/long-tube.glb', (gltf) => {
-    longTube = gltf.scene;
-    styleLongTube(longTube);
-    longTube.scale.set(0.48, 2.8, 0.48);
-    longTube.position.set(0, 2.4, 0);
-    longTubeRenderer = new THREE.WebGLRenderer({ canvas: longTubeCanvas, antialias: true, alpha: true, powerPreference: 'high-performance' });
-    longTubeRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    longTubeRenderer.outputColorSpace = THREE.SRGBColorSpace;
-    longTubeRenderer.toneMapping = THREE.ACESFilmicToneMapping;
-    longTubeRenderer.toneMappingExposure = 1.25;
-    longTubeCamera = new THREE.PerspectiveCamera(24, 1, 0.1, 100);
-    longTubeCamera.position.set(0, 0, 18);
-    const longTubeScene = new THREE.Scene();
-    longTubeScene.add(new THREE.AmbientLight(0x38266f, 1.8));
-    const tubeCyanLight = new THREE.PointLight(0x8cecff, 18, 12); tubeCyanLight.position.set(-2, 3, 4); longTubeScene.add(tubeCyanLight);
-    const tubeVioletLight = new THREE.PointLight(0xb550ff, 24, 12); tubeVioletLight.position.set(2, -3, 2); longTubeScene.add(tubeVioletLight);
-    longTubeScene.add(longTube);
-    longTube.userData.scene = longTubeScene;
-    resizeLongTube();
-    resolve(longTube);
-  }, undefined, reject));
+  longTube = new THREE.Mesh(
+    new THREE.CylinderGeometry(1.15, 1.15, 7.4, 96, 1, false),
+    new THREE.MeshStandardMaterial({ color: 0x6048c2, emissive: 0x38206e, emissiveIntensity: 1.2, metalness: 0.18, roughness: 0.3 })
+  );
+  longTube.position.set(0, 2.4, 0);
+  longTubeRenderer = new THREE.WebGLRenderer({ canvas: longTubeCanvas, antialias: true, alpha: true, powerPreference: 'high-performance' });
+  longTubeRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  longTubeRenderer.outputColorSpace = THREE.SRGBColorSpace;
+  longTubeRenderer.toneMapping = THREE.ACESFilmicToneMapping;
+  longTubeRenderer.toneMappingExposure = 1.25;
+  longTubeCamera = new THREE.PerspectiveCamera(24, 1, 0.1, 100);
+  longTubeCamera.position.set(0, 0, 18);
+  const longTubeScene = new THREE.Scene();
+  longTubeScene.add(new THREE.AmbientLight(0x38266f, 1.8));
+  const tubeCyanLight = new THREE.PointLight(0x8cecff, 18, 12); tubeCyanLight.position.set(-2, 3, 4); longTubeScene.add(tubeCyanLight);
+  const tubeVioletLight = new THREE.PointLight(0xb550ff, 24, 12); tubeVioletLight.position.set(2, -3, 2); longTubeScene.add(tubeVioletLight);
+  longTubeScene.add(longTube);
+  longTube.userData.scene = longTubeScene;
+  resizeLongTube();
+  return Promise.resolve(longTube);
 }
 
 function resizeLongTube() {
@@ -226,9 +217,10 @@ function updateLongTubeScroll() {
     longTubeCopy.classList.add('is-changing');
     window.setTimeout(() => {
       longTubeKicker.textContent = sceneData.kicker;
-      longTubeStep.textContent = `${String(nextStep + 1).padStart(2, '0')} / 04`;
+      longTubeStep.textContent = `${String(nextStep + 1).padStart(2, '0')} / 06`;
       longTubeTitle.innerHTML = sceneData.title;
       longTubeDescription.textContent = sceneData.description;
+      longTubeDetail.innerHTML = sceneData.detail;
       longTubeLocation.textContent = sceneData.location;
       fitLongTubeTitle();
       longTubeCopy.classList.remove('is-changing');

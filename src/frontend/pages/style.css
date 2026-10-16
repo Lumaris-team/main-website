@@ -245,11 +245,14 @@ html { scroll-snap-type: y proximity; }
 .long-tube-section { position: relative; height: 700vh; min-height: 0; overflow: visible; background: radial-gradient(circle at 18% 48%, rgba(39, 25, 87, .62), transparent 40%), linear-gradient(180deg, var(--ink), #17102e 68%, #261547); }
 .long-tube-frame { position: sticky; top: 0; display: block; height: 100vh; min-height: 700px; overflow: hidden; padding: 0; }
 .long-tube-stage { position: absolute; inset: 0 auto 0 0; width: 44%; height: 100%; min-height: 0; overflow: hidden; }
-.long-tube-stage::before { inset: 0; background: radial-gradient(ellipse at 50% 50%, rgba(140, 236, 255, .14), transparent 30%), radial-gradient(ellipse at 45% 50%, rgba(181, 80, 255, .16), transparent 68%); }
+.long-tube-stage::before { display: none; }
 .long-tube-copy { position: absolute; top: 50%; right: max(36px, calc((100vw - 1240px) / 2)); width: min(48vw, 610px); min-height: 0; margin: 0; padding: 0; transform: translateY(-50%); transition: opacity .78s ease, transform .78s ease; }
 .long-tube-copy.is-changing { opacity: 0; transform: translateY(calc(-50% + 10px)); }
 .long-tube-copy.is-visible { opacity: 1; }
 .long-tube-copy h2 { max-width: 620px; }
+.long-tube-detail { display: grid; gap: 9px; max-width: 430px; margin-top: 26px; padding-top: 18px; border-top: 1px solid rgba(140, 236, 255, .24); }
+.long-tube-detail span { position: relative; padding-left: 18px; color: #b9b5c6; font: 11px 'DM Mono', monospace; letter-spacing: .03em; }
+.long-tube-detail span::before { position: absolute; top: .45em; left: 0; width: 6px; height: 6px; border-radius: 50%; background: var(--cyan); box-shadow: 0 0 10px rgba(140, 236, 255, .65); content: ""; }
 .long-tube-meta { right: max(36px, calc((100vw - 1240px) / 2)); bottom: 34px; left: max(36px, calc((100vw - 1240px) / 2)); z-index: 3; }
 .long-tube-copy, .long-tube-stage, .long-tube-meta { z-index: 3; }
 
@@ -260,6 +263,7 @@ html { scroll-snap-type: y proximity; }
 	.long-tube-copy { top: 57%; right: 20px; left: 20px; width: calc(100% - 40px); transform: translateY(-50%); }
 	.long-tube-copy.is-changing { transform: translateY(calc(-50% + 10px)); }
 	.long-tube-copy h2 { font-size: 58px; }
+	.long-tube-detail { margin-top: 20px; }
 	.long-tube-meta { right: 20px; bottom: 22px; left: 20px; }
 	.long-tube-meta span:nth-child(2) { display: none; }
 }
