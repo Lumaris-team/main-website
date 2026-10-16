@@ -56,7 +56,6 @@ const longTubeTitle = document.querySelector('#long-tube-title');
 const longTubeDescription = document.querySelector('#long-tube-description');
 const longTubeIndex = document.querySelector('#long-tube-index');
 const longTubeLocation = document.querySelector('#long-tube-location');
-const longTubeProgressBar = document.querySelector('#long-tube-progress-bar');
 let lowerMetrics = { start: 0, end: 0, sections: [] };
 let smoothScrollTarget = null;
 let smoothScrollFrame = 0;
@@ -89,6 +88,7 @@ let logoSpinAngle = 0;
 let longTube;
 let longTubeProgress = 0;
 let longTubeTargetProgress = 0;
+let previousLongTubeProgress = 0;
 let longTubeRenderer;
 let longTubeCamera;
 const logoBaseY = 1.36;
@@ -96,6 +96,7 @@ const logoViewTilt = Math.atan2(logoBaseY - camera.position.y, camera.position.z
 let isExperienceVisible = true;
 let activeStep = -1;
 let longTubeActiveStep = -1;
+const TEXT_CHANGE_DELAY_MS = 390;
 const isPortraitLayout = () => window.matchMedia('(max-width: 760px), (orientation: portrait)').matches;
 
 function fitExperienceTitle() {
@@ -181,7 +182,7 @@ function loadLongTube() {
   return new Promise((resolve, reject) => loader.load('/assets/models/long-tube.glb', (gltf) => {
     longTube = gltf.scene;
     styleLongTube(longTube);
-    longTube.scale.set(0.72, 3.9, 0.72);
+    longTube.scale.set(0.48, 2.8, 0.48);
     longTube.position.set(0, 2.4, 0);
     longTubeRenderer = new THREE.WebGLRenderer({ canvas: longTubeCanvas, antialias: true, alpha: true, powerPreference: 'high-performance' });
     longTubeRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -189,7 +190,7 @@ function loadLongTube() {
     longTubeRenderer.toneMapping = THREE.ACESFilmicToneMapping;
     longTubeRenderer.toneMappingExposure = 1.25;
     longTubeCamera = new THREE.PerspectiveCamera(24, 1, 0.1, 100);
-    longTubeCamera.position.set(0, 0, 9.2);
+    longTubeCamera.position.set(0, 0, 18);
     const longTubeScene = new THREE.Scene();
     longTubeScene.add(new THREE.AmbientLight(0x38266f, 1.8));
     const tubeCyanLight = new THREE.PointLight(0x8cecff, 18, 12); tubeCyanLight.position.set(-2, 3, 4); longTubeScene.add(tubeCyanLight);
@@ -214,8 +215,10 @@ function updateLongTubeScroll() {
   const start = longTubeSection.getBoundingClientRect().top + window.scrollY;
   const distance = Math.max(longTubeSection.offsetHeight - window.innerHeight, 1);
   longTubeTargetProgress = THREE.MathUtils.clamp((window.scrollY - start) / distance, 0, 1);
+  const scrollDelta = longTubeTargetProgress - previousLongTubeProgress;
+  scrollRotationMomentum = THREE.MathUtils.clamp(scrollRotationMomentum + scrollDelta * 1.2, -0.1, 0.1);
+  previousLongTubeProgress = longTubeTargetProgress;
   const nextStep = Math.min(Math.floor(longTubeTargetProgress * longTubeScenes.length), longTubeScenes.length - 1);
-  longTubeProgressBar.style.transform = `scaleX(${longTubeTargetProgress})`;
   longTubeIndex.textContent = String(nextStep + 1).padStart(2, '0');
   if (nextStep !== longTubeActiveStep) {
     longTubeActiveStep = nextStep;
@@ -229,7 +232,7 @@ function updateLongTubeScroll() {
       longTubeLocation.textContent = sceneData.location;
       fitLongTubeTitle();
       longTubeCopy.classList.remove('is-changing');
-    }, 390);
+    }, TEXT_CHANGE_DELAY_MS);
   }
 }
 
@@ -296,7 +299,7 @@ function updateScroll() {
       experienceLocation.textContent = sceneData.location;
       fitExperienceTitle();
       experienceCopy.classList.remove('is-changing');
-    }, 390);
+    }, TEXT_CHANGE_DELAY_MS);
   }
 }
 window.addEventListener('scroll', updateScroll, { passive: true });
@@ -311,9 +314,10 @@ function getExperienceScrollFactor() {
 }
 
 function getLowerScrollFactor() {
-  const viewportCenter = window.scrollY + window.innerHeight / 2;
-  const overPresentation = lowerMetrics.sections.some(({ top, bottom }) => viewportCenter >= top && viewportCenter <= bottom);
-  return overPresentation ? 0.25 : 1.6;
+  const scenePosition = longTubeTargetProgress * longTubeScenes.length;
+  const distanceToPresentation = Math.abs((scenePosition % 1) - 0.5);
+  const presentationWeight = THREE.MathUtils.clamp(1 - distanceToPresentation / 0.5, 0, 1);
+  return THREE.MathUtils.lerp(1.45, 0.28, presentationWeight ** 2);
 }
 
 function animateSmoothScroll() {
