@@ -55,7 +55,6 @@ const longTubeSceneTitleText = document.querySelector('#long-tube-scene-title-te
 const longTubeCopy = document.querySelector('.long-tube-copy');
 const longTubeKicker = document.querySelector('#long-tube-kicker');
 const longTubeStep = document.querySelector('#long-tube-step');
-const longTubeTitle = document.querySelector('#long-tube-title');
 const longTubeDescription = document.querySelector('#long-tube-description');
 const longTubeDetail = document.querySelector('#long-tube-detail');
 const longTubeLocation = document.querySelector('#long-tube-location');
@@ -114,18 +113,6 @@ function fitExperienceTitle() {
   }
 }
 
-function fitLongTubeTitle() {
-  longTubeTitle.style.fontSize = '';
-  const computed = window.getComputedStyle(longTubeTitle);
-  const lineHeight = parseFloat(computed.lineHeight);
-  const maxHeight = lineHeight * 2.4;
-  let fontSize = parseFloat(computed.fontSize);
-  while (longTubeTitle.scrollHeight > maxHeight && fontSize > 34) {
-    fontSize -= 2;
-    longTubeTitle.style.fontSize = `${fontSize}px`;
-  }
-}
-
 const experienceScenes = [
   { kicker: 'Votre système d’apprentissage', title: 'Faites de la place<br>pour <em>la suite.</em>', description: 'Lumaris rassemble vos cours, votre concentration et une intelligence qui vous accompagne vraiment.', location: 'Apprendre en mouvement' },
   { kicker: 'Votre rythme scolaire', title: 'Voyez vos progrès<br><em>sous un autre angle.</em>', description: 'Notes, devoirs et emploi du temps se réunissent dans une vision claire de votre parcours scolaire.', location: '01 / Rythme scolaire' },
@@ -178,6 +165,7 @@ function loadLongTube() {
     longTube.traverse((child) => {
       if (child.isPoints) child.material = new THREE.PointsMaterial({ size: 0.042, vertexColors: true, transparent: true, opacity: 0.88, blending: THREE.AdditiveBlending, depthWrite: false, sizeAttenuation: true });
     });
+    longTube.scale.set(1.25, 1.45, 1.25);
     longTube.position.set(0, 11, 0);
     longTubeRenderer = new THREE.WebGLRenderer({ canvas: longTubeCanvas, antialias: true, alpha: true, powerPreference: 'high-performance' });
     longTubeRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -222,14 +210,12 @@ function updateLongTubeScroll() {
     window.setTimeout(() => {
       longTubeKicker.textContent = sceneData.kicker;
       longTubeStep.textContent = `${String(nextStep + 1).padStart(2, '0')} / 06`;
-      longTubeTitle.innerHTML = sceneData.title;
       longTubeDescription.textContent = sceneData.description;
       longTubeDetail.innerHTML = sceneData.detail;
       longTubeSceneKicker.textContent = sceneData.kicker;
       longTubeSceneTitleText.textContent = sceneData.title.replaceAll('<br>', ' ').replaceAll('<em>', '').replaceAll('</em>', '');
       longTubeSceneTitle.classList.remove('is-changing');
       longTubeLocation.textContent = sceneData.location;
-      fitLongTubeTitle();
       longTubeCopy.classList.remove('is-changing');
     }, TEXT_CHANGE_DELAY_MS);
   }
@@ -303,7 +289,7 @@ function updateScroll() {
 }
 window.addEventListener('scroll', updateScroll, { passive: true });
 window.addEventListener('scroll', updateLongTubeScroll, { passive: true });
-window.addEventListener('resize', () => { fitExperienceTitle(); fitLongTubeTitle(); });
+window.addEventListener('resize', fitExperienceTitle);
 
 function getExperienceScrollFactor() {
   const scenePosition = scrollProgress * experienceScenes.length;
@@ -392,7 +378,7 @@ function animate(time = 0) {
     longTube.rotation.z = verticalPhase * Math.PI * 0.12;
     longTubeCamera.position.x = Math.sin(orbitAngle) * 18;
     longTubeCamera.position.z = Math.cos(orbitAngle) * 18;
-    longTubeCamera.lookAt(0, 0, 0);
+    longTubeCamera.lookAt(0, longTube.position.y, 0);
     longTubeRenderer.render(tubeScene, longTubeCamera);
   }
 }
