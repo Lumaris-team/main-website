@@ -132,12 +132,12 @@ const experienceScenes = [
 ];
 
 const longTubeScenes = [
-  { kicker: 'Votre rythme scolaire', title: 'Votre scolarité,<br><em>en un regard.</em>', description: 'Notes, devoirs, emploi du temps et progression réunis dans une vision calme de votre parcours.', detail: '<span>Notes et moyennes par matière</span><span>Devoirs classés par échéance</span><span>Emploi du temps toujours lisible</span>', location: '01 / Rythme scolaire' },
-  { kicker: 'Espace cloud', title: 'Votre savoir,<br><em>toujours à portée.</em>', description: 'Vos fichiers et vos ressources se rangent naturellement pour que chaque document revienne au bon moment.', detail: '<span>Dossiers et fichiers centralisés</span><span>Import, prévisualisation et partage</span><span>Ressources accessibles partout</span>', location: '02 / Espace de travail' },
-  { kicker: "Notes d'étude", title: 'Les idées deviennent<br><em>structurées.</em>', description: 'Un éditeur riche transforme les cours dispersés en connaissances retrouvables, reliées et prêtes à être révisées.', detail: '<span>Recherche instantanée par matière</span><span>Favoris, modèles et notes riches</span><span>Export PDF ou Markdown</span>', location: '03 / Study notes' },
-  { kicker: 'Intelligence, avec intention', title: 'Une aide qui explique,<br><em>pas qui remplace.</em>', description: 'L’assistant accompagne vos raisonnements avec des réponses guidées, des documents analysés et des explications étape par étape.', detail: '<span>Raisonnement progressif et clair</span><span>Recherche web et analyse de documents</span><span>Vision et contexte réunis</span>', location: '04 / Assistant Lumaris' },
-  { kicker: 'Des outils, un vrai élan', title: 'Chaque minute peut<br><em>compter.</em>', description: 'Pomodoro, calculatrice et convertisseur réduisent les petits frottements pour préserver votre énergie mentale.', detail: '<span>Sessions Pomodoro et pauses</span><span>Calculs scientifiques et historique</span><span>Conversions rapides au même endroit</span>', location: '05 / Tools' },
-  { kicker: 'Le travail profond, visible', title: 'Construisez le rythme<br>qui vous <em>fait avancer.</em>', description: 'Le mode Focus protège votre attention, rend vos sessions mesurables et transforme chaque effort en progression durable.', detail: '<span>Blocage des distractions</span><span>Objectifs et sessions visibles</span><span>Statistiques utiles, sans bruit</span>', location: '06 / Deep work' }
+  { kicker: 'Votre rythme scolaire', title: 'Votre scolarité,<br><em>en un regard.</em>', description: 'Notes, devoirs, emploi du temps et progression se réunissent dans une vision calme de votre parcours. Vous voyez ce qui est terminé, ce qui arrive ensuite et les matières qui demandent réellement votre attention, sans ouvrir cinq outils différents.', detail: '<span>Notes et moyennes par matière, avec leur évolution</span><span>Devoirs classés par échéance et priorité</span><span>Emploi du temps lisible pour préparer chaque journée</span>', location: '01 / Rythme scolaire' },
+  { kicker: 'Espace cloud', title: 'Votre savoir,<br><em>toujours à portée.</em>', description: 'Vos fichiers et vos ressources se rangent naturellement dans un espace de travail qui reste compréhensible même après des semaines de cours. Importez, prévisualisez, téléchargez et partagez sans perdre le fil entre un document et le projet auquel il appartient.', detail: '<span>Dossiers et fichiers centralisés par projet</span><span>Import, prévisualisation et partage immédiats</span><span>Ressources accessibles sur chaque appareil</span>', location: '02 / Espace de travail' },
+  { kicker: "Notes d'étude", title: 'Les idées deviennent<br><em>structurées.</em>', description: 'Un éditeur riche transforme les cours dispersés en connaissances retrouvables, reliées et prêtes à être révisées. Chaque note peut garder son contexte, ses favoris et ses repères afin que la relecture ressemble à une progression plutôt qu’à une recherche dans le désordre.', detail: '<span>Recherche instantanée par matière et mot-clé</span><span>Favoris, modèles et notes riches pour apprendre</span><span>Export PDF ou Markdown pour conserver vos cours</span>', location: '03 / Study notes' },
+  { kicker: 'Intelligence, avec intention', title: 'Une aide qui explique,<br><em>pas qui remplace.</em>', description: 'L’assistant accompagne vos raisonnements avec des réponses guidées, des documents analysés et des explications étape par étape. Il peut chercher une information, observer une image ou reprendre un problème depuis le premier indice pour vous laisser comprendre au lieu de simplement livrer une réponse.', detail: '<span>Raisonnement progressif, vérifiable et clair</span><span>Recherche web et analyse de documents joints</span><span>Vision, contexte et explications réunis</span>', location: '04 / Assistant Lumaris' },
+  { kicker: 'Des outils, un vrai élan', title: 'Chaque minute peut<br><em>compter.</em>', description: 'Pomodoro, calculatrice et convertisseur réduisent les petits frottements qui fragmentent une session de travail. Lancez un cycle, reprenez un calcul ou convertissez une valeur sans quitter votre espace ni abandonner votre concentration pour une tâche secondaire.', detail: '<span>Sessions Pomodoro, pauses et historique de focus</span><span>Calculs scientifiques avec reprise de l’historique</span><span>Conversions rapides pour les cours et projets</span>', location: '05 / Tools' },
+  { kicker: 'Le travail profond, visible', title: 'Construisez le rythme<br>qui vous <em>fait avancer.</em>', description: 'Le mode Focus protège votre attention, rend vos sessions mesurables et transforme chaque effort en progression durable. Les distractions sont écartées, les objectifs restent visibles et les statistiques vous aident à comprendre votre rythme sans vous transformer en tableau de chiffres.', detail: '<span>Blocage des distractions pendant les sessions</span><span>Objectifs, cycles et temps de travail visibles</span><span>Statistiques utiles pour ajuster votre rythme</span>', location: '06 / Deep work' }
 ];
 
 function styleGalaxy(root) {
@@ -174,8 +174,12 @@ function loadLongTube() {
   return new Promise((resolve, reject) => loader.load('/assets/models/long-tube.glb', (gltf) => {
     longTube = gltf.scene;
     longTube.traverse((child) => {
-      if (!child.isPoints) return;
-      child.material = new THREE.PointsMaterial({ size: 0.042, vertexColors: true, transparent: true, opacity: 0.88, blending: THREE.AdditiveBlending, depthWrite: false, sizeAttenuation: true });
+      if (child.isPoints) {
+        child.material = new THREE.PointsMaterial({ size: 0.042, vertexColors: true, transparent: true, opacity: 0.88, blending: THREE.AdditiveBlending, depthWrite: false, sizeAttenuation: true });
+      }
+      if (child.isLineSegments || child.isLine) {
+        child.material = new THREE.LineBasicMaterial({ vertexColors: true, transparent: true, opacity: 0.98, blending: THREE.AdditiveBlending, depthWrite: false });
+      }
     });
     longTube.position.set(0, 11, 0);
     longTubeRenderer = new THREE.WebGLRenderer({ canvas: longTubeCanvas, antialias: true, alpha: true, powerPreference: 'high-performance' });
@@ -381,11 +385,15 @@ function animate(time = 0) {
     const tubeScene = longTube.userData.scene;
     const portrait = isPortraitLayout();
     const descend = THREE.MathUtils.lerp(11, -11, longTubeProgress);
+    const orbitAngle = longTubeProgress * Math.PI * 2.4 + Math.sin(time * 0.00025) * 0.05;
     longTube.position.y = descend + Math.sin(time * 0.0007) * 0.08;
     longTube.position.x = portrait ? 0 : Math.sin(longTubeProgress * Math.PI) * 0.12;
     longTube.rotation.x = longTubeProgress * Math.PI * 0.45 + Math.sin(time * 0.0004) * 0.04;
-    longTube.rotation.y += 0.006 + scrollRotationMomentum * 1.8;
+    longTube.rotation.y = longTubeProgress * Math.PI * 3.2 + scrollRotationMomentum * 5;
     longTube.rotation.z = Math.sin(longTubeProgress * Math.PI * 2) * 0.08;
+    longTubeCamera.position.x = Math.sin(orbitAngle) * 18;
+    longTubeCamera.position.z = Math.cos(orbitAngle) * 18;
+    longTubeCamera.lookAt(0, 0, 0);
     longTubeRenderer.render(tubeScene, longTubeCamera);
   }
 }
