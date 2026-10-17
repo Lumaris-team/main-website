@@ -171,25 +171,29 @@ export function loadLogo() {
 }
 
 function loadLongTube() {
-  const tubeGeometry = new THREE.CylinderGeometry(1.2, 1.2, 22, 112, 320, false);
-  const tubeMaterial = new THREE.PointsMaterial({ color: 0x8cecff, size: 0.045, transparent: true, opacity: 0.92, blending: THREE.AdditiveBlending, depthWrite: false, sizeAttenuation: true });
-  longTube = new THREE.Points(tubeGeometry, tubeMaterial);
-  longTube.position.set(0, 11, 0);
-  longTubeRenderer = new THREE.WebGLRenderer({ canvas: longTubeCanvas, antialias: true, alpha: true, powerPreference: 'high-performance' });
-  longTubeRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-  longTubeRenderer.outputColorSpace = THREE.SRGBColorSpace;
-  longTubeRenderer.toneMapping = THREE.ACESFilmicToneMapping;
-  longTubeRenderer.toneMappingExposure = 1.25;
-  longTubeCamera = new THREE.PerspectiveCamera(24, 1, 0.1, 100);
-  longTubeCamera.position.set(0, 0, 18);
-  const longTubeScene = new THREE.Scene();
-  longTubeScene.add(new THREE.AmbientLight(0x38266f, 1.8));
-  const tubeCyanLight = new THREE.PointLight(0x8cecff, 18, 12); tubeCyanLight.position.set(-2, 3, 4); longTubeScene.add(tubeCyanLight);
-  const tubeVioletLight = new THREE.PointLight(0xb550ff, 24, 12); tubeVioletLight.position.set(2, -3, 2); longTubeScene.add(tubeVioletLight);
-  longTubeScene.add(longTube);
-  longTube.userData.scene = longTubeScene;
-  resizeLongTube();
-  return Promise.resolve(longTube);
+  return new Promise((resolve, reject) => loader.load('/assets/models/long-tube.glb', (gltf) => {
+    longTube = gltf.scene;
+    longTube.traverse((child) => {
+      if (!child.isPoints) return;
+      child.material = new THREE.PointsMaterial({ size: 0.042, vertexColors: true, transparent: true, opacity: 0.88, blending: THREE.AdditiveBlending, depthWrite: false, sizeAttenuation: true });
+    });
+    longTube.position.set(0, 11, 0);
+    longTubeRenderer = new THREE.WebGLRenderer({ canvas: longTubeCanvas, antialias: true, alpha: true, powerPreference: 'high-performance' });
+    longTubeRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    longTubeRenderer.outputColorSpace = THREE.SRGBColorSpace;
+    longTubeRenderer.toneMapping = THREE.ACESFilmicToneMapping;
+    longTubeRenderer.toneMappingExposure = 1.25;
+    longTubeCamera = new THREE.PerspectiveCamera(24, 1, 0.1, 100);
+    longTubeCamera.position.set(0, 0, 18);
+    const longTubeScene = new THREE.Scene();
+    longTubeScene.add(new THREE.AmbientLight(0x38266f, 1.8));
+    const tubeCyanLight = new THREE.PointLight(0x8cecff, 18, 12); tubeCyanLight.position.set(-2, 3, 4); longTubeScene.add(tubeCyanLight);
+    const tubeVioletLight = new THREE.PointLight(0xb550ff, 24, 12); tubeVioletLight.position.set(2, -3, 2); longTubeScene.add(tubeVioletLight);
+    longTubeScene.add(longTube);
+    longTube.userData.scene = longTubeScene;
+    resizeLongTube();
+    resolve(longTube);
+  }, undefined, reject));
 }
 
 function resizeLongTube() {
