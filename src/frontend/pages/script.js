@@ -49,13 +49,15 @@ const longTubeSection = document.querySelector('.long-tube-section');
 const longTubeFrame = document.querySelector('.long-tube-frame');
 const longTubeStage = document.querySelector('.long-tube-stage');
 const longTubeCanvas = document.querySelector('#long-tube-scene');
+const longTubeSceneTitle = document.querySelector('#long-tube-scene-title');
+const longTubeSceneKicker = document.querySelector('#long-tube-scene-kicker');
+const longTubeSceneTitleText = document.querySelector('#long-tube-scene-title-text');
 const longTubeCopy = document.querySelector('.long-tube-copy');
 const longTubeKicker = document.querySelector('#long-tube-kicker');
 const longTubeStep = document.querySelector('#long-tube-step');
 const longTubeTitle = document.querySelector('#long-tube-title');
 const longTubeDescription = document.querySelector('#long-tube-description');
 const longTubeDetail = document.querySelector('#long-tube-detail');
-const longTubeIndex = document.querySelector('#long-tube-index');
 const longTubeLocation = document.querySelector('#long-tube-location');
 let lowerMetrics = { start: 0, end: 0, sections: [] };
 let smoothScrollTarget = null;
@@ -174,12 +176,7 @@ function loadLongTube() {
   return new Promise((resolve, reject) => loader.load('/assets/models/long-tube.glb', (gltf) => {
     longTube = gltf.scene;
     longTube.traverse((child) => {
-      if (child.isPoints) {
-        child.material = new THREE.PointsMaterial({ size: 0.042, vertexColors: true, transparent: true, opacity: 0.88, blending: THREE.AdditiveBlending, depthWrite: false, sizeAttenuation: true });
-      }
-      if (child.isLineSegments || child.isLine) {
-        child.material = new THREE.LineBasicMaterial({ vertexColors: true, transparent: true, opacity: 0.98, blending: THREE.AdditiveBlending, depthWrite: false });
-      }
+      if (child.isPoints) child.material = new THREE.PointsMaterial({ size: 0.042, vertexColors: true, transparent: true, opacity: 0.88, blending: THREE.AdditiveBlending, depthWrite: false, sizeAttenuation: true });
     });
     longTube.position.set(0, 11, 0);
     longTubeRenderer = new THREE.WebGLRenderer({ canvas: longTubeCanvas, antialias: true, alpha: true, powerPreference: 'high-performance' });
@@ -217,17 +214,20 @@ function updateLongTubeScroll() {
   scrollRotationMomentum = THREE.MathUtils.clamp(scrollRotationMomentum + scrollDelta * 1.2, -0.1, 0.1);
   previousLongTubeProgress = longTubeTargetProgress;
   const nextStep = Math.min(Math.floor(longTubeTargetProgress * longTubeScenes.length), longTubeScenes.length - 1);
-  longTubeIndex.textContent = String(nextStep + 1).padStart(2, '0');
   if (nextStep !== longTubeActiveStep) {
     longTubeActiveStep = nextStep;
     const sceneData = longTubeScenes[nextStep];
     longTubeCopy.classList.add('is-changing');
+    longTubeSceneTitle.classList.add('is-changing');
     window.setTimeout(() => {
       longTubeKicker.textContent = sceneData.kicker;
       longTubeStep.textContent = `${String(nextStep + 1).padStart(2, '0')} / 06`;
       longTubeTitle.innerHTML = sceneData.title;
       longTubeDescription.textContent = sceneData.description;
       longTubeDetail.innerHTML = sceneData.detail;
+      longTubeSceneKicker.textContent = sceneData.kicker;
+      longTubeSceneTitleText.textContent = sceneData.title.replaceAll('<br>', ' ').replaceAll('<em>', '').replaceAll('</em>', '');
+      longTubeSceneTitle.classList.remove('is-changing');
       longTubeLocation.textContent = sceneData.location;
       fitLongTubeTitle();
       longTubeCopy.classList.remove('is-changing');
@@ -383,14 +383,13 @@ function animate(time = 0) {
   longTubeProgress += (longTubeTargetProgress - longTubeProgress) * 0.12;
   if (longTube && longTubeRenderer && longTubeCamera) {
     const tubeScene = longTube.userData.scene;
-    const portrait = isPortraitLayout();
-    const descend = THREE.MathUtils.lerp(11, -11, longTubeProgress);
-    const orbitAngle = longTubeProgress * Math.PI * 2.4 + Math.sin(time * 0.00025) * 0.05;
-    longTube.position.y = descend + Math.sin(time * 0.0007) * 0.08;
-    longTube.position.x = portrait ? 0 : Math.sin(longTubeProgress * Math.PI) * 0.12;
-    longTube.rotation.x = longTubeProgress * Math.PI * 0.45 + Math.sin(time * 0.0004) * 0.04;
-    longTube.rotation.y = longTubeProgress * Math.PI * 3.2 + scrollRotationMomentum * 5;
-    longTube.rotation.z = Math.sin(longTubeProgress * Math.PI * 2) * 0.08;
+    const verticalPhase = longTubeProgress < 0.5 ? longTubeProgress * 2 : (1 - longTubeProgress) * 2;
+    const orbitAngle = longTubeProgress * Math.PI * 2.4;
+    longTube.position.y = THREE.MathUtils.lerp(11, -11, verticalPhase);
+    longTube.position.x = 0;
+    longTube.rotation.x = verticalPhase * Math.PI * 0.35;
+    longTube.rotation.y = longTubeProgress * Math.PI * 4;
+    longTube.rotation.z = verticalPhase * Math.PI * 0.12;
     longTubeCamera.position.x = Math.sin(orbitAngle) * 18;
     longTubeCamera.position.z = Math.cos(orbitAngle) * 18;
     longTubeCamera.lookAt(0, 0, 0);

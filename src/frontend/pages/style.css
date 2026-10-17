@@ -243,8 +243,8 @@ html { scroll-snap-type: y proximity; }
 /* The second 3D story follows the same sticky-frame architecture as the hero. */
 .lower-flow { display: block; gap: 0; overflow: visible; }
 .long-tube-section { position: relative; height: 700vh; min-height: 0; overflow: visible; background: radial-gradient(circle at 18% 48%, rgba(39, 25, 87, .62), transparent 40%), linear-gradient(180deg, var(--ink), #17102e 68%, #261547); }
-.long-tube-frame { position: sticky; top: 0; display: block; height: 100vh; min-height: 700px; overflow: hidden; padding: 0; }
-.long-tube-stage { position: absolute; inset: 0 auto 0 0; width: 44%; height: 100%; min-height: 0; overflow: hidden; }
+.long-tube-frame { position: sticky; top: 0; display: block; height: 100vh; min-height: 700px; overflow: visible; padding: 0; }
+.long-tube-stage { position: absolute; inset: 0 auto 0 0; width: 44%; height: 100%; min-height: 0; overflow: visible; }
 .long-tube-stage::before { display: none; }
 .long-tube-copy { position: absolute; top: 50%; right: max(36px, calc((100vw - 1240px) / 2)); width: min(48vw, 610px); min-height: 0; margin: 0; padding: 0; transform: translateY(-50%); transition: opacity .78s ease, transform .78s ease; }
 .long-tube-copy::before { position: absolute; z-index: -1; inset: -90px -100px; content: ""; border-radius: 50%; background: rgba(8, 9, 18, .2); filter: blur(28px); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); mask-image: radial-gradient(ellipse, #000 0%, transparent 72%); pointer-events: none; }
@@ -252,6 +252,11 @@ html { scroll-snap-type: y proximity; }
 .long-tube-copy.is-changing { opacity: 0; transform: translateY(calc(-50% + 10px)); }
 .long-tube-copy.is-visible { opacity: 1; }
 .long-tube-copy h2 { max-width: 620px; }
+.long-tube-scene-title { position: absolute; top: 15%; left: max(36px, calc((100vw - 1240px) / 2)); z-index: 4; display: grid; gap: 8px; max-width: 300px; padding: 14px 18px; border-left: 1px solid rgba(140, 236, 255, .45); background: rgba(8, 9, 18, .16); filter: blur(0); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); transition: opacity .78s ease, transform .78s ease; }
+.long-tube-scene-title::before { position: absolute; z-index: -1; inset: -22px -40px; border-radius: 50%; background: rgba(8, 9, 18, .16); filter: blur(25px); content: ""; pointer-events: none; }
+.long-tube-scene-title span { color: var(--cyan); font: 9px 'DM Mono', monospace; letter-spacing: .15em; text-transform: uppercase; }
+.long-tube-scene-title strong { color: var(--paper); font-size: 20px; font-weight: 500; line-height: 1.1; letter-spacing: -.04em; }
+.long-tube-scene-title.is-changing { opacity: 0; transform: translateY(8px); }
 .long-tube-detail { display: grid; gap: 9px; max-width: 430px; margin-top: 26px; padding-top: 18px; border-top: 1px solid rgba(140, 236, 255, .24); }
 .long-tube-detail span { position: relative; padding-left: 18px; color: #b9b5c6; font: 11px 'DM Mono', monospace; letter-spacing: .03em; }
 .long-tube-detail span::before { position: absolute; top: .45em; left: 0; width: 6px; height: 6px; border-radius: 50%; background: var(--cyan); box-shadow: 0 0 10px rgba(140, 236, 255, .65); content: ""; }
@@ -262,6 +267,7 @@ html { scroll-snap-type: y proximity; }
 	.long-tube-section { height: 700vh; min-height: 0; }
 	.long-tube-frame { min-height: 0; }
 	.long-tube-stage { inset: 0; width: 100%; height: 100%; }
+	.long-tube-scene-title { top: 12%; left: 20px; max-width: 260px; }
 	.long-tube-copy { top: 57%; right: 20px; left: 20px; width: calc(100% - 40px); transform: translateY(-50%); }
 	.long-tube-copy.is-changing { transform: translateY(calc(-50% + 10px)); }
 	.long-tube-copy h2 { font-size: 58px; }
