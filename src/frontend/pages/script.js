@@ -370,15 +370,13 @@ function animate(time = 0) {
   if (longTube && longTubeRenderer && longTubeCamera) {
     const tubeScene = longTube.userData.scene;
     const verticalPhase = longTubeProgress < 0.5 ? longTubeProgress * 2 : (1 - longTubeProgress) * 2;
-    const orbitAngle = longTubeProgress * Math.PI * 2.4;
     longTube.position.y = THREE.MathUtils.lerp(11, -11, verticalPhase);
     longTube.position.x = 0;
-    longTube.rotation.x = verticalPhase * Math.PI * 0.35;
-    longTube.rotation.y = longTubeProgress * Math.PI * 4;
-    longTube.rotation.z = verticalPhase * Math.PI * 0.12;
-    longTubeCamera.position.x = Math.sin(orbitAngle) * 18;
-    longTubeCamera.position.z = Math.cos(orbitAngle) * 18;
-    longTubeCamera.lookAt(0, longTube.position.y, 0);
+    longTube.rotation.x = 0;
+    longTube.rotation.y = longTubeProgress * Math.PI * 8;
+    longTube.rotation.z = 0;
+    longTubeCamera.position.set(0, 0, 18);
+    longTubeCamera.lookAt(0, 0, 0);
     longTubeRenderer.render(tubeScene, longTubeCamera);
   }
 }
