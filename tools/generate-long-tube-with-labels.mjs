@@ -79,7 +79,7 @@ const json = JSON.stringify({
   accessors: [
     { bufferView: 0, componentType: 5126, count: pointCount, type: 'VEC3', min: [-1.4, -11, -1.4], max: [1.4, 11, 1.4] },
     { bufferView: 1, componentType: 5126, count: pointCount, type: 'VEC3' },
-    { bufferView: 2, componentType: 5126, count: labelPositions.length / 3, type: 'VEC3' },
+    { bufferView: 2, componentType: 5126, count: labelPositions.length / 3, type: 'VEC3', min: [-2, -12.3, 1.23], max: [2, 8.3, 1.23] },
     { bufferView: 3, componentType: 5126, count: labelColors.length / 3, type: 'VEC3' }
   ],
   bufferViews: [
@@ -100,7 +100,9 @@ glb.writeUInt32LE(2, offset); offset += 4;
 glb.writeUInt32LE(totalLength, offset); offset += 4;
 glb.writeUInt32LE(jsonBytes.length + jsonPadding.length, offset); offset += 4;
 glb.writeUInt32LE(0x4e4f534a, offset); offset += 4;
-jsonBytes.copy(glb, offset); offset += jsonBytes.length + jsonPadding.length;
+jsonBytes.copy(glb, offset);
+jsonPadding.copy(glb, offset + jsonBytes.length);
+offset += jsonBytes.length + jsonPadding.length;
 glb.writeUInt32LE(binary.length + binPadding.length, offset); offset += 4;
 glb.writeUInt32LE(0x004e4942, offset); offset += 4;
 binary.copy(glb, offset);
