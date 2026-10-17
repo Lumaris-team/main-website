@@ -243,6 +243,7 @@ html { scroll-snap-type: y proximity; }
 /* The second 3D story follows the same sticky-frame architecture as the hero. */
 .lower-flow { display: block; gap: 0; overflow: visible; }
 .long-tube-section { position: relative; height: 700vh; min-height: 0; overflow: visible; background: radial-gradient(circle at 18% 48%, rgba(39, 25, 87, .62), transparent 40%), linear-gradient(180deg, var(--ink), #17102e 68%, #261547); }
+.lower-flow > section.long-tube-section { padding-top: 0 !important; padding-bottom: 0 !important; }
 .long-tube-frame { position: sticky; top: 0; display: block; height: 100vh; min-height: 700px; overflow: visible; padding: 0; }
 .long-tube-stage { position: absolute; inset: 0 auto 0 0; width: 44%; height: 100%; min-height: 0; overflow: visible; }
 .long-tube-stage::before { display: none; }
