@@ -171,11 +171,10 @@ export function loadLogo() {
 }
 
 function loadLongTube() {
-  longTube = new THREE.Mesh(
-    new THREE.CylinderGeometry(1.15, 1.15, 7.4, 96, 1, false),
-    new THREE.MeshStandardMaterial({ color: 0x6048c2, emissive: 0x38206e, emissiveIntensity: 1.2, metalness: 0.18, roughness: 0.3 })
-  );
-  longTube.position.set(0, 2.4, 0);
+  const tubeGeometry = new THREE.CylinderGeometry(1.2, 1.2, 22, 112, 320, false);
+  const tubeMaterial = new THREE.PointsMaterial({ color: 0x8cecff, size: 0.045, transparent: true, opacity: 0.92, blending: THREE.AdditiveBlending, depthWrite: false, sizeAttenuation: true });
+  longTube = new THREE.Points(tubeGeometry, tubeMaterial);
+  longTube.position.set(0, 11, 0);
   longTubeRenderer = new THREE.WebGLRenderer({ canvas: longTubeCanvas, antialias: true, alpha: true, powerPreference: 'high-performance' });
   longTubeRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   longTubeRenderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -373,15 +372,15 @@ function animate(time = 0) {
   }
   scrollRotationMomentum *= 0.92;
   if (isExperienceVisible) renderer.render(scene, camera);
-  longTubeProgress += (longTubeTargetProgress - longTubeProgress) * 0.06;
+  longTubeProgress += (longTubeTargetProgress - longTubeProgress) * 0.12;
   if (longTube && longTubeRenderer && longTubeCamera) {
     const tubeScene = longTube.userData.scene;
     const portrait = isPortraitLayout();
-    const descend = THREE.MathUtils.lerp(2.4, -2.4, longTubeProgress);
+    const descend = THREE.MathUtils.lerp(11, -11, longTubeProgress);
     longTube.position.y = descend + Math.sin(time * 0.0007) * 0.08;
     longTube.position.x = portrait ? 0 : Math.sin(longTubeProgress * Math.PI) * 0.12;
     longTube.rotation.x = longTubeProgress * Math.PI * 0.45 + Math.sin(time * 0.0004) * 0.04;
-    longTube.rotation.y += 0.0022 + scrollRotationMomentum * 0.9;
+    longTube.rotation.y += 0.006 + scrollRotationMomentum * 1.8;
     longTube.rotation.z = Math.sin(longTubeProgress * Math.PI * 2) * 0.08;
     longTubeRenderer.render(tubeScene, longTubeCamera);
   }
