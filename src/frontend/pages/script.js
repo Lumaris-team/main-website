@@ -99,6 +99,7 @@ let isExperienceVisible = true;
 let activeStep = -1;
 let longTubeActiveStep = -1;
 const TEXT_CHANGE_DELAY_MS = 390;
+const GLOBAL_SCROLL_FACTOR = 0.55;
 const isPortraitLayout = () => window.matchMedia('(max-width: 760px), (orientation: portrait)').matches;
 
 function fitExperienceTitle() {
@@ -330,9 +331,9 @@ window.addEventListener('wheel', (event) => {
   if (event.ctrlKey) return;
   const inExperience = window.scrollY >= experience.offsetTop && scrollProgress < 1;
   const inLowerFlow = window.scrollY >= lowerMetrics.start && window.scrollY < lowerMetrics.end;
-  if (!inExperience && !inLowerFlow) return;
   event.preventDefault();
-  const factor = inExperience ? getExperienceScrollFactor() : getLowerScrollFactor();
+  const sectionFactor = inExperience ? getExperienceScrollFactor() : inLowerFlow ? getLowerScrollFactor() : 1;
+  const factor = sectionFactor * GLOBAL_SCROLL_FACTOR;
   if (smoothScrollTarget === null) smoothScrollTarget = window.scrollY;
   smoothScrollTarget += event.deltaY * factor;
   const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
