@@ -371,7 +371,7 @@ function animate(time = 0) {
   longTubeProgress += (longTubeTargetProgress - longTubeProgress) * 0.12;
   if (longTube && longTubeRenderer && longTubeCamera) {
     const tubeScene = longTube.userData.scene;
-    const verticalPhase = longTubeProgress < 0.5 ? longTubeProgress * 2 : (1 - longTubeProgress) * 2;
+    const verticalPhase = longTubeProgress;
     longTube.position.y = THREE.MathUtils.lerp(11, -11, verticalPhase);
     longTube.position.x = 0;
     longTube.rotation.x = 0;
