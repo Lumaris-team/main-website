@@ -210,9 +210,13 @@ function updateLongTubeScroll() {
   const start = longTubeSection.getBoundingClientRect().top + window.scrollY;
   const distance = Math.max(longTubeSection.offsetHeight - window.innerHeight, 1);
   longTubeTargetProgress = THREE.MathUtils.clamp((window.scrollY - start) / distance, 0, 1);
-  // Entrance choreography: the tube frame fades/rises in during the first
-  // viewport of its section, mirroring the galaxy frame's exit.
-  const enterProgress = THREE.MathUtils.clamp((window.scrollY - start) / window.innerHeight, 0, 1);
+  // 4) Entrance only once the tube section reaches the viewport: before that,
+  // keep it fully transparent so the two sticky frames never fight.
+  // Because .lower-flow overlaps the galaxy track by 1 viewport (-100vh),
+  // delay the entrance by that same viewport so the handoff starts ONLY at
+  // the very end of the first 3D part.
+  const rawEnter = (window.scrollY - start - window.innerHeight) / window.innerHeight;
+  const enterProgress = THREE.MathUtils.clamp(rawEnter, 0, 1);
   const easedEnter = enterProgress * enterProgress * (3 - 2 * enterProgress);
   if (longTubeFrame) longTubeFrame.style.setProperty('--long-tube-enter', easedEnter.toFixed(3));
   const scrollDelta = longTubeTargetProgress - previousLongTubeProgress;
@@ -285,8 +289,12 @@ function updateScroll() {
   scrollRotationMomentum = THREE.MathUtils.clamp(scrollRotationMomentum + scrollDelta * 1.2, -0.1, 0.1);
   if (scrollProgress >= 0.999) scrollRotationMomentum = 0;
   previousScrollProgress = scrollProgress;
-  const exitProgress = THREE.MathUtils.clamp((scrollProgress - 0.82) / 0.18, 0, 1);
-  experienceFrame.style.setProperty('--experience-exit', exitProgress.toFixed(3));
+  // 4) The handoff starts ONLY at the very end of the first 3D part: hold the
+  // galaxy fully visible until its track is complete, then exit fast so it
+  // never overlaps the rising tube frame.
+  const exitProgress = THREE.MathUtils.clamp((scrollProgress - 0.985) / 0.015, 0, 1);
+  const easedExit = exitProgress * exitProgress * (3 - 2 * exitProgress);
+  experienceFrame.style.setProperty('--experience-exit', easedExit.toFixed(3));
   const nextStep = Math.min(Math.floor(scrollProgress * experienceScenes.length), experienceScenes.length - 1);
   experienceProgressBar.style.transform = `scaleX(${scrollProgress})`;
   experienceIndex.textContent = String(nextStep + 1).padStart(2, '0');
