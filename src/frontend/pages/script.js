@@ -102,9 +102,9 @@ let longTubeActiveStep = -1;
 const TEXT_FADE_MS = 320;
 let experienceFadeTimer = 0;
 let longTubeFadeTimer = 0;
-// The tube handoff completes within half a viewport after the galaxy track
-// ends (was a full viewport — too long to read scene 0 through the blur).
-const TUBE_ENTER_VIEWPORTS = 0.5;
+// The tube handoff completes within a quarter of a viewport after the galaxy
+// track ends (was 0.5 — the crossfade should feel snappy).
+const TUBE_ENTER_VIEWPORTS = 0.25;
 // Fit the scene title into its height-capped slot synchronously. It runs
 // while the block is faded out, so the shrink is never visible and the new
 // scene appears already at the right size.
@@ -312,9 +312,9 @@ function updateScroll() {
   if (scrollProgress >= 0.999) scrollRotationMomentum = 0;
   previousScrollProgress = scrollProgress;
   // 4) The handoff starts ONLY at the very end of the first 3D part: hold the
-  // galaxy fully visible until its track is complete, then exit fast so it
-  // never overlaps the rising tube frame.
-  const exitProgress = THREE.MathUtils.clamp((scrollProgress - 0.985) / 0.015, 0, 1);
+  // galaxy fully visible until its track is complete, then exit fast — the
+  // exit window is half the tube entrance's so both halves stay in sync.
+  const exitProgress = THREE.MathUtils.clamp((scrollProgress - 0.9925) / 0.0075, 0, 1);
   const easedExit = exitProgress * exitProgress * (3 - 2 * exitProgress);
   experienceFrame.style.setProperty('--experience-exit', easedExit.toFixed(3));
   const nextStep = Math.min(Math.floor(scrollProgress * experienceScenes.length), experienceScenes.length - 1);
