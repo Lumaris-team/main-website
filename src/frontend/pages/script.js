@@ -121,6 +121,20 @@ function fitExperienceTitle() {
     experienceTitle.style.fontSize = `${fontSize}px`;
   }
 }
+// Boot: the copy block starts hidden (CSS .is-booting) so the title fit is
+// computed out of sight on the real webfont; the whole block — title AND
+// description together — then fades in as one, half a second after load.
+const BOOT_FADE_DELAY_MS = 500;
+let experienceCopyRevealed = false;
+function revealExperienceCopy() {
+  if (experienceCopyRevealed) return;
+  experienceCopyRevealed = true;
+  fitExperienceTitle();
+  experienceCopy.style.transition = 'opacity .5s ease, transform .5s ease';
+  experienceCopy.classList.remove('is-booting');
+  window.setTimeout(() => { experienceCopy.style.transition = ''; }, 650);
+}
+const scheduleBootReveal = () => window.setTimeout(revealExperienceCopy, BOOT_FADE_DELAY_MS);
 const GLOBAL_SCROLL_FACTOR = 0.55;
 const isPortraitLayout = () => window.matchMedia('(max-width: 760px), (orientation: portrait)').matches;
 
@@ -297,8 +311,10 @@ function resize() { const { width, height } = stage.getBoundingClientRect(); ren
 loadModel().catch((error) => console.error('Lumaris model failed to load', error));
 loadLogo().catch((error) => console.error('Lumaris logo failed to load', error));
 loadLongTube().catch((error) => console.error('Lumaris long tube failed to load', error));
-window.addEventListener('load', refreshLowerMetrics, { once: true });
-if (document.fonts?.ready) document.fonts.ready.then(() => { refreshLowerMetrics(); fitExperienceTitle(); });
+// Reveal once the real webfont is loaded (accurate fit), with the window
+// load event as a fallback in case fonts.ready stalls.
+if (document.fonts?.ready) document.fonts.ready.then(() => { refreshLowerMetrics(); scheduleBootReveal(); });
+window.addEventListener('load', () => { refreshLowerMetrics(); scheduleBootReveal(); }, { once: true });
 window.addEventListener('resize', () => { resize(); resizeLongTube(); updateLongTubeScroll(); }); resize();
 updateLongTubeScroll();
 window.addEventListener('pointermove', (event) => {
