@@ -179,6 +179,13 @@ function loadLongTube() {
     longTubeScene.add(new THREE.AmbientLight(0x38266f, 1.8));
     const tubeCyanLight = new THREE.PointLight(0x8cecff, 18, 12); tubeCyanLight.position.set(-2, 3, 4); longTubeScene.add(tubeCyanLight);
     const tubeVioletLight = new THREE.PointLight(0xb550ff, 24, 12); tubeVioletLight.position.set(2, -3, 2); longTubeScene.add(tubeVioletLight);
+    // Fade the tube ends into the shared fresco so it dives out of the dark
+    // instead of popping against a flat background.
+    const tubeFogColor = new THREE.Color(0x1a1240);
+    longTubeScene.fog = new THREE.Fog(tubeFogColor, 12, 30);
+    longTube.traverse((child) => {
+      if (child.isPoints && child.material) child.material.fog = true;
+    });
     longTubeScene.add(longTube);
     longTube.userData.scene = longTubeScene;
     resizeLongTube();
@@ -199,6 +206,11 @@ function updateLongTubeScroll() {
   const start = longTubeSection.getBoundingClientRect().top + window.scrollY;
   const distance = Math.max(longTubeSection.offsetHeight - window.innerHeight, 1);
   longTubeTargetProgress = THREE.MathUtils.clamp((window.scrollY - start) / distance, 0, 1);
+  // Entrance choreography: the tube frame fades/rises in during the first
+  // viewport of its section, mirroring the galaxy frame's exit.
+  const enterProgress = THREE.MathUtils.clamp((window.scrollY - start) / window.innerHeight, 0, 1);
+  const easedEnter = enterProgress * enterProgress * (3 - 2 * enterProgress);
+  if (longTubeFrame) longTubeFrame.style.setProperty('--long-tube-enter', easedEnter.toFixed(3));
   const scrollDelta = longTubeTargetProgress - previousLongTubeProgress;
   scrollRotationMomentum = THREE.MathUtils.clamp(scrollRotationMomentum + scrollDelta * 1.2, -0.1, 0.1);
   previousLongTubeProgress = longTubeTargetProgress;
