@@ -61,6 +61,18 @@ if (url.pathname.startsWith("/api/")) {
         headers: pageResponse.headers
       });
     }
+    const siteRoutes = {
+      '/how-it-works': '/pages/how-it-works/index.html',
+      '/about-us': '/pages/about-us/index.html',
+      '/security': '/pages/security/index.html',
+      '/sign-in': '/pages/sign-in/index.html',
+    };
+    const cleanPath = url.pathname.length > 1 ? url.pathname.replace(/\/+$/, '') : url.pathname;
+    if (siteRoutes[cleanPath]) {
+      const assetUrl = new URL(request.url);
+      assetUrl.pathname = siteRoutes[cleanPath];
+      return env.ASSETS.fetch(new Request(assetUrl, request));
+    }
     return env.ASSETS.fetch(request);
   }
 };
