@@ -223,15 +223,21 @@ function updateLongTubeScroll() {
   // keep it fully transparent so the two sticky frames never fight.
   // Because .lower-flow overlaps the galaxy track by 1 viewport (-100vh),
   // delay the entrance by that same viewport so the handoff starts ONLY at
-  // the very end of the first 3D part.
-  const rawEnter = (window.scrollY - start - window.innerHeight) / window.innerHeight;
+  // the very end of the first 3D part. The window itself is short (half a
+  // viewport) so the crossfade doesn't drag on.
+  const rawEnter = (window.scrollY - start - window.innerHeight) / (window.innerHeight * TUBE_ENTER_VIEWPORTS);
   const enterProgress = THREE.MathUtils.clamp(rawEnter, 0, 1);
   const easedEnter = enterProgress * enterProgress * (3 - 2 * enterProgress);
   if (longTubeFrame) longTubeFrame.style.setProperty('--long-tube-enter', easedEnter.toFixed(3));
   const scrollDelta = longTubeTargetProgress - previousLongTubeProgress;
   scrollRotationMomentum = THREE.MathUtils.clamp(scrollRotationMomentum + scrollDelta * 1.2, -0.1, 0.1);
   previousLongTubeProgress = longTubeTargetProgress;
-  const nextStep = Math.min(Math.floor(longTubeTargetProgress * longTubeScenes.length), longTubeScenes.length - 1);
+  // Scene 0 is held until the entrance blur is fully gone, then each scene
+  // gets an equal slice of the remaining track — so the first presentation
+  // stays readable instead of being consumed by the crossfade.
+  const entranceEnd = Math.min((window.innerHeight * (1 + TUBE_ENTER_VIEWPORTS)) / distance, 0.9);
+  const sceneProgress = THREE.MathUtils.clamp((longTubeTargetProgress - entranceEnd) / (1 - entranceEnd), 0, 1);
+  const nextStep = Math.min(Math.floor(sceneProgress * longTubeScenes.length), longTubeScenes.length - 1);
   if (nextStep !== longTubeActiveStep) {
     const isFirstPaint = longTubeActiveStep === -1;
     longTubeActiveStep = nextStep;
