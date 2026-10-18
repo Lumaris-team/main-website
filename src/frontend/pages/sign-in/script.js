@@ -8,7 +8,7 @@ if (toggle && password) {
     const show = password.type === "password";
     password.type = show ? "text" : "password";
     toggle.setAttribute("aria-pressed", String(show));
-    toggle.setAttribute("aria-label", show ? "Hide password" : "Show password");
+    toggle.setAttribute("aria-label", show ? "Masquer le mot de passe" : "Afficher le mot de passe");
   });
   document.querySelectorAll("[data-icon]").forEach(async (el) => {
     try { const r = await fetch(el.dataset.icon); if (r.ok) el.innerHTML = await r.text(); } catch (e) {}
