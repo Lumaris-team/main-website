@@ -156,15 +156,17 @@ main { position: relative; background: var(--ink); }
 main::before { position: absolute; inset: 0; z-index: 0; content: ""; pointer-events: none; background:
   radial-gradient(1100px 620px at 76% 8%, rgba(64, 46, 140, .34), transparent 62%),
   radial-gradient(900px 700px at 18% 46%, rgba(39, 25, 87, .5), transparent 64%),
-  radial-gradient(1000px 600px at 70% 78%, rgba(52, 32, 93, .32), transparent 62%),
-  linear-gradient(180deg, #0d0d1b 0%, #12102a 34%, #1a1240 52%, #261547 68%, var(--ink) 100%); }
+  /* 1) Deep dark blue wash (was violet) melting into black for the tube half. */
+  radial-gradient(1100px 640px at 30% 62%, rgba(10, 32, 66, .72), transparent 64%),
+  radial-gradient(900px 620px at 70% 82%, rgba(8, 24, 52, .6), transparent 62%),
+  linear-gradient(180deg, #0d0d1b 0%, #101a36 34%, #0a1830 52%, #050b18 68%, var(--ink) 100%); }
 main > * { position: relative; z-index: 1; }
 .experience-shell { position: relative; height: 700vh; scroll-margin-top: 0; scroll-snap-align: none; scroll-snap-stop: normal; }
 .experience-frame { position: sticky; top: 0; display: grid; grid-template-columns: 45% 55%; align-items: center; height: 100vh; min-height: 700px; overflow: hidden; padding: 120px max(36px, calc((100vw - 1240px) / 2)) 60px; background: transparent; }
 /* Cinematic exit: the whole galaxy frame sinks, blurs and fades while the
    tube section rises — driven by --experience-exit (0 → 1). */
 .experience-frame { opacity: calc(1 - var(--experience-exit, 0)); transform: translateY(calc(var(--experience-exit, 0) * -9vh)) scale(calc(1 - var(--experience-exit, 0) * .035)); filter: blur(calc(var(--experience-exit, 0) * 7px)) saturate(calc(1 - var(--experience-exit, 0) * .35)); transition: opacity .08s linear, transform .08s linear, filter .08s linear; will-change: opacity, transform, filter; }
-.experience-frame::before { position: absolute; inset: 0; z-index: 2; content: ""; pointer-events: none; background: linear-gradient(180deg, transparent 0%, transparent 78%, rgba(26, 18, 64, .55) 100%); }
+.experience-frame::before { position: absolute; inset: 0; z-index: 2; content: ""; pointer-events: none; background: linear-gradient(180deg, transparent 0%, transparent 78%, rgba(16, 26, 54, .55) 100%); }
 .experience-frame::after { position: absolute; inset: 0; content: ""; opacity: .3; pointer-events: none; background: linear-gradient(90deg, transparent 49.9%, var(--line) 50%, transparent 50.1%), linear-gradient(0deg, transparent 49.9%, var(--line) 50%, transparent 50.1%); background-size: 50% 100%, 100% 50%; }
 .experience-copy { position: relative; z-index: 2; max-width: 550px; }
 .experience-step { margin: -12px 0 28px; color: var(--muted); font: 11px 'DM Mono', monospace; letter-spacing: .12em; }
@@ -261,7 +263,7 @@ html { scroll-snap-type: y proximity; }
 .lower-flow > section.long-tube-section { padding-top: 0 !important; padding-bottom: 0 !important; }
 /* Symmetric entrance to the galaxy exit: rises, sharpens, fades in. */
 .long-tube-frame { position: sticky; top: 0; display: block; height: 100vh; min-height: 700px; overflow: visible; padding: 0; opacity: var(--long-tube-enter, 0); transform: translateY(calc((1 - var(--long-tube-enter, 0)) * 9vh)) scale(calc(.965 + var(--long-tube-enter, 0) * .035)); filter: blur(calc((1 - var(--long-tube-enter, 0)) * 7px)) saturate(calc(.65 + var(--long-tube-enter, 0) * .35)); transition: opacity .08s linear, transform .08s linear, filter .08s linear; will-change: opacity, transform, filter; }
-.long-tube-frame::before { position: absolute; inset: 0; z-index: 2; content: ""; pointer-events: none; background: linear-gradient(180deg, rgba(18, 16, 42, .55) 0%, transparent 22%, transparent 100%); }
+.long-tube-frame::before { position: absolute; inset: 0; z-index: 2; content: ""; pointer-events: none; background: linear-gradient(180deg, rgba(16, 26, 54, .55) 0%, transparent 22%, transparent 100%); }
 .long-tube-stage { position: absolute; inset: 0 auto 0 0; width: 44%; height: 100%; min-height: 0; overflow: visible; }
 .long-tube-stage::before { display: none; }
 .long-tube-copy { position: absolute; top: 50%; right: max(36px, calc((100vw - 1240px) / 2)); width: min(48vw, 610px); min-height: 0; margin: 0; padding: 0; transform: translateY(-50%); transition: opacity .78s ease, transform .78s ease; }

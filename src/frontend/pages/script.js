@@ -176,15 +176,19 @@ function loadLongTube() {
     longTubeCamera = new THREE.PerspectiveCamera(24, 1, 0.1, 100);
     longTubeCamera.position.set(0, 0, 18);
     const longTubeScene = new THREE.Scene();
-    longTubeScene.add(new THREE.AmbientLight(0x38266f, 1.8));
-    const tubeCyanLight = new THREE.PointLight(0x8cecff, 18, 12); tubeCyanLight.position.set(-2, 3, 4); longTubeScene.add(tubeCyanLight);
-    const tubeVioletLight = new THREE.PointLight(0xb550ff, 24, 12); tubeVioletLight.position.set(2, -3, 2); longTubeScene.add(tubeVioletLight);
+    longTubeScene.add(new THREE.AmbientLight(0x1c3a66, 2.2));
+    const tubeKeyLight = new THREE.PointLight(0x8cecff, 26, 14); tubeKeyLight.position.set(-2, 3, 4); longTubeScene.add(tubeKeyLight);
+    const tubeRimLight = new THREE.PointLight(0x1e6fff, 30, 14); tubeRimLight.position.set(2, -3, 2); longTubeScene.add(tubeRimLight);
     // Fade the tube ends into the shared fresco so it dives out of the dark
     // instead of popping against a flat background.
-    const tubeFogColor = new THREE.Color(0x1a1240);
+    const tubeFogColor = new THREE.Color(0x0a1830);
     longTubeScene.fog = new THREE.Fog(tubeFogColor, 12, 30);
     longTube.traverse((child) => {
-      if (child.isPoints && child.material) child.material.fog = true;
+      if (child.isPoints && child.material) {
+        child.material.fog = true;
+        // 3) Thicker particles matched to the ice-blue palette.
+        if (typeof child.material.size === 'number') child.material.size = 0.13;
+      }
     });
     longTubeScene.add(longTube);
     longTube.userData.scene = longTubeScene;
