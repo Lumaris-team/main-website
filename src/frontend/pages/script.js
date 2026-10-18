@@ -98,6 +98,10 @@ const logoViewTilt = Math.atan2(logoBaseY - camera.position.y, camera.position.z
 let isExperienceVisible = true;
 let activeStep = -1;
 let longTubeActiveStep = -1;
+// Shared fade timing for every text-block swap on the page.
+const TEXT_FADE_MS = 320;
+let experienceFadeTimer = 0;
+let longTubeFadeTimer = 0;
 const GLOBAL_SCROLL_FACTOR = 0.55;
 const isPortraitLayout = () => window.matchMedia('(max-width: 760px), (orientation: portrait)').matches;
 
@@ -214,15 +218,28 @@ function updateLongTubeScroll() {
   previousLongTubeProgress = longTubeTargetProgress;
   const nextStep = Math.min(Math.floor(longTubeTargetProgress * longTubeScenes.length), longTubeScenes.length - 1);
   if (nextStep !== longTubeActiveStep) {
+    const isFirstPaint = longTubeActiveStep === -1;
     longTubeActiveStep = nextStep;
     const sceneData = longTubeScenes[nextStep];
-    longTubeKicker.textContent = sceneData.kicker;
-    longTubeStep.textContent = `${String(nextStep + 1).padStart(2, '0')} / 06`;
-    longTubeDescription.textContent = sceneData.description;
-    longTubeDetail.innerHTML = sceneData.detail;
-    longTubeSceneKicker.textContent = sceneData.kicker;
-    longTubeSceneTitleText.textContent = sceneData.title.replaceAll('<br>', ' ').replaceAll('<em>', '').replaceAll('</em>', '');
-    longTubeLocation.textContent = sceneData.location;
+    const applyScene = () => {
+      longTubeKicker.textContent = sceneData.kicker;
+      longTubeStep.textContent = `${String(nextStep + 1).padStart(2, '0')} / 06`;
+      longTubeDescription.textContent = sceneData.description;
+      longTubeDetail.innerHTML = sceneData.detail;
+      longTubeSceneKicker.textContent = sceneData.kicker;
+      longTubeSceneTitleText.textContent = sceneData.title.replaceAll('<br>', ' ').replaceAll('<em>', '').replaceAll('</em>', '');
+      longTubeLocation.textContent = sceneData.location;
+      longTubeCopy.classList.remove('is-changing');
+      longTubeSceneTitle.classList.remove('is-changing');
+    };
+    if (isFirstPaint) {
+      applyScene();
+    } else {
+      longTubeCopy.classList.add('is-changing');
+      longTubeSceneTitle.classList.add('is-changing');
+      window.clearTimeout(longTubeFadeTimer);
+      longTubeFadeTimer = window.setTimeout(applyScene, TEXT_FADE_MS);
+    }
   }
 }
 
@@ -283,13 +300,26 @@ function updateScroll() {
   experienceProgressBar.style.transform = `scaleX(${scrollProgress})`;
   experienceIndex.textContent = String(nextStep + 1).padStart(2, '0');
   if (nextStep !== activeStep) {
+    const isFirstPaint = activeStep === -1;
     activeStep = nextStep;
     const sceneData = experienceScenes[activeStep];
-    experienceKicker.textContent = sceneData.kicker;
-    experienceStep.textContent = `${String(activeStep + 1).padStart(2, '0')} / 04`;
-    experienceTitle.innerHTML = sceneData.title;
-    experienceDescription.textContent = sceneData.description;
-    experienceLocation.textContent = sceneData.location;
+    const applyScene = () => {
+      experienceKicker.textContent = sceneData.kicker;
+      experienceStep.textContent = `${String(activeStep + 1).padStart(2, '0')} / 04`;
+      experienceTitle.innerHTML = sceneData.title;
+      experienceDescription.textContent = sceneData.description;
+      experienceLocation.textContent = sceneData.location;
+      experienceCopy.classList.remove('is-changing');
+    };
+    if (isFirstPaint) {
+      applyScene();
+    } else {
+      // Fade out, swap at the midpoint, fade back in — rapid scrolls coalesce
+      // onto the latest scene instead of stacking timers.
+      experienceCopy.classList.add('is-changing');
+      window.clearTimeout(experienceFadeTimer);
+      experienceFadeTimer = window.setTimeout(applyScene, TEXT_FADE_MS);
+    }
   }
 }
 window.addEventListener('scroll', updateScroll, { passive: true });
