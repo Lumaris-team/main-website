@@ -11,7 +11,7 @@ const random = () => {
   return seed / 4294967296;
 };
 const cyan = [0.549, 0.925, 1];
-const violet = [0.71, 0.314, 1];
+const deepBlue = [0.118, 0.435, 1];
 for (let index = 0; index < pointCount; index += 1) {
   const y = (random() - 0.5) * 22;
   const wave = Math.sin(y * 0.68) * 0.12 + Math.sin(y * 1.73 + 1.2) * 0.06;
@@ -22,9 +22,9 @@ for (let index = 0; index < pointCount; index += 1) {
   positions[index * 3 + 1] = y;
   positions[index * 3 + 2] = Math.sin(angle) * radius + Math.cos(y * 0.29) * 0.1;
   const blend = Math.min(1, Math.max(0, (y + 11) / 22 + (random() - 0.5) * 0.22));
-  colors[index * 3] = cyan[0] + (violet[0] - cyan[0]) * blend;
-  colors[index * 3 + 1] = cyan[1] + (violet[1] - cyan[1]) * blend;
-  colors[index * 3 + 2] = cyan[2] + (violet[2] - cyan[2]) * blend;
+  colors[index * 3] = cyan[0] + (deepBlue[0] - cyan[0]) * blend;
+  colors[index * 3 + 1] = cyan[1] + (deepBlue[1] - cyan[1]) * blend;
+  colors[index * 3 + 2] = cyan[2] + (deepBlue[2] - cyan[2]) * blend;
 }
 
 const glyphs = {
@@ -38,7 +38,7 @@ const labelPositions = [];
 const labelColors = [];
 const addLine = (x1, y1, z1, x2, y2, z2) => {
   labelPositions.push(x1, y1, z1, x2, y2, z2);
-  labelColors.push(0.55, 0.93, 1, 0.71, 0.31, 1);
+  labelColors.push(0.55, 0.93, 1, 0.12, 0.44, 1);
 };
 for (const [text, baseY] of labels) {
   const glyphWidth = 5 * labelScale;
