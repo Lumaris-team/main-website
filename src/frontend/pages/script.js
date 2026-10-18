@@ -98,21 +98,11 @@ const logoViewTilt = Math.atan2(logoBaseY - camera.position.y, camera.position.z
 let isExperienceVisible = true;
 let activeStep = -1;
 let longTubeActiveStep = -1;
-const TEXT_CHANGE_DELAY_MS = 390;
 const GLOBAL_SCROLL_FACTOR = 0.55;
 const isPortraitLayout = () => window.matchMedia('(max-width: 760px), (orientation: portrait)').matches;
 
-function fitExperienceTitle() {
-  experienceTitle.style.fontSize = '';
-  const computed = window.getComputedStyle(experienceTitle);
-  const lineHeight = parseFloat(computed.lineHeight);
-  const maxHeight = lineHeight * 2.05;
-  let fontSize = parseFloat(computed.fontSize);
-  while (experienceTitle.scrollHeight > maxHeight && fontSize > 34) {
-    fontSize -= 2;
-    experienceTitle.style.fontSize = `${fontSize}px`;
-  }
-}
+// Instant scene swap: text updates synchronously with the scroll step,
+// no fade-out / timeout / re-layout — always the right format at once.
 
 const experienceScenes = [
   { kicker: 'Votre système d’apprentissage', title: 'Faites de la place<br>pour <em>la suite.</em>', description: 'Lumaris rassemble vos cours, votre concentration et une intelligence qui vous accompagne vraiment.', location: 'Apprendre en mouvement' },
@@ -226,19 +216,13 @@ function updateLongTubeScroll() {
   if (nextStep !== longTubeActiveStep) {
     longTubeActiveStep = nextStep;
     const sceneData = longTubeScenes[nextStep];
-    longTubeCopy.classList.add('is-changing');
-    longTubeSceneTitle.classList.add('is-changing');
-    window.setTimeout(() => {
-      longTubeKicker.textContent = sceneData.kicker;
-      longTubeStep.textContent = `${String(nextStep + 1).padStart(2, '0')} / 06`;
-      longTubeDescription.textContent = sceneData.description;
-      longTubeDetail.innerHTML = sceneData.detail;
-      longTubeSceneKicker.textContent = sceneData.kicker;
-      longTubeSceneTitleText.textContent = sceneData.title.replaceAll('<br>', ' ').replaceAll('<em>', '').replaceAll('</em>', '');
-      longTubeSceneTitle.classList.remove('is-changing');
-      longTubeLocation.textContent = sceneData.location;
-      longTubeCopy.classList.remove('is-changing');
-    }, TEXT_CHANGE_DELAY_MS);
+    longTubeKicker.textContent = sceneData.kicker;
+    longTubeStep.textContent = `${String(nextStep + 1).padStart(2, '0')} / 06`;
+    longTubeDescription.textContent = sceneData.description;
+    longTubeDetail.innerHTML = sceneData.detail;
+    longTubeSceneKicker.textContent = sceneData.kicker;
+    longTubeSceneTitleText.textContent = sceneData.title.replaceAll('<br>', ' ').replaceAll('<em>', '').replaceAll('</em>', '');
+    longTubeLocation.textContent = sceneData.location;
   }
 }
 
@@ -301,21 +285,15 @@ function updateScroll() {
   if (nextStep !== activeStep) {
     activeStep = nextStep;
     const sceneData = experienceScenes[activeStep];
-    experienceCopy.classList.add('is-changing');
-    window.setTimeout(() => {
-      experienceKicker.textContent = sceneData.kicker;
-      experienceStep.textContent = `${String(activeStep + 1).padStart(2, '0')} / 04`;
-      experienceTitle.innerHTML = sceneData.title;
-      experienceDescription.textContent = sceneData.description;
-      experienceLocation.textContent = sceneData.location;
-      fitExperienceTitle();
-      experienceCopy.classList.remove('is-changing');
-    }, TEXT_CHANGE_DELAY_MS);
+    experienceKicker.textContent = sceneData.kicker;
+    experienceStep.textContent = `${String(activeStep + 1).padStart(2, '0')} / 04`;
+    experienceTitle.innerHTML = sceneData.title;
+    experienceDescription.textContent = sceneData.description;
+    experienceLocation.textContent = sceneData.location;
   }
 }
 window.addEventListener('scroll', updateScroll, { passive: true });
 window.addEventListener('scroll', updateLongTubeScroll, { passive: true });
-window.addEventListener('resize', fitExperienceTitle);
 
 function getExperienceScrollFactor() {
   const scenePosition = scrollProgress * experienceScenes.length;
