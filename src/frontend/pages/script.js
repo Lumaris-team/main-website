@@ -387,11 +387,13 @@ function animate(time = 0) {
   longTubeProgress += (longTubeTargetProgress - longTubeProgress) * 0.12;
   if (longTube && longTubeRenderer && longTubeCamera) {
     const tubeScene = longTube.userData.scene;
-    const verticalPhase = longTubeProgress;
-    longTube.position.y = THREE.MathUtils.lerp(11, -11, verticalPhase);
+    const verticalPhase = 1 - longTubeProgress;
+    // 2) Scroll down => the tube travels upward (and reverse on scroll up).
+    longTube.position.y = THREE.MathUtils.lerp(-11, 11, verticalPhase);
     longTube.position.x = 0;
     longTube.rotation.x = 0;
-    longTube.rotation.y = longTubeProgress * Math.PI * 8;
+    // Keep the spin direction consistent with the inverted travel.
+    longTube.rotation.y = (1 - longTubeProgress) * Math.PI * 8;
     longTube.rotation.z = 0;
     longTubeCamera.position.set(0, 0, 18);
     longTubeCamera.lookAt(0, 0, 0);
