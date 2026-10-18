@@ -102,6 +102,21 @@ let longTubeActiveStep = -1;
 const TEXT_FADE_MS = 320;
 let experienceFadeTimer = 0;
 let longTubeFadeTimer = 0;
+// The tube handoff completes within half a viewport after the galaxy track
+// ends (was a full viewport — too long to read scene 0 through the blur).
+const TUBE_ENTER_VIEWPORTS = 0.5;
+// Fit the scene title into its height-capped slot synchronously. It runs
+// while the block is faded out, so the shrink is never visible and the new
+// scene appears already at the right size.
+function fitExperienceTitle() {
+  experienceTitle.style.fontSize = '';
+  const maxHeight = experienceTitle.clientHeight;
+  let fontSize = parseFloat(window.getComputedStyle(experienceTitle).fontSize);
+  while (experienceTitle.scrollHeight > maxHeight + 0.5 && fontSize > 30) {
+    fontSize -= 2;
+    experienceTitle.style.fontSize = `${fontSize}px`;
+  }
+}
 const GLOBAL_SCROLL_FACTOR = 0.55;
 const isPortraitLayout = () => window.matchMedia('(max-width: 760px), (orientation: portrait)').matches;
 
@@ -275,7 +290,7 @@ loadModel().catch((error) => console.error('Lumaris model failed to load', error
 loadLogo().catch((error) => console.error('Lumaris logo failed to load', error));
 loadLongTube().catch((error) => console.error('Lumaris long tube failed to load', error));
 window.addEventListener('load', refreshLowerMetrics, { once: true });
-if (document.fonts?.ready) document.fonts.ready.then(refreshLowerMetrics);
+if (document.fonts?.ready) document.fonts.ready.then(() => { refreshLowerMetrics(); fitExperienceTitle(); });
 window.addEventListener('resize', () => { resize(); resizeLongTube(); updateLongTubeScroll(); }); resize();
 updateLongTubeScroll();
 window.addEventListener('pointermove', (event) => {
@@ -309,6 +324,7 @@ function updateScroll() {
       experienceTitle.innerHTML = sceneData.title;
       experienceDescription.textContent = sceneData.description;
       experienceLocation.textContent = sceneData.location;
+      fitExperienceTitle();
       experienceCopy.classList.remove('is-changing');
     };
     if (isFirstPaint) {
