@@ -1,8 +1,8 @@
 const PILLARS = [
-  { icon: "https://shared-assets.lumaris.fr.eu.org/icons/homework.svg", title: "School management", text: "Grades, homework and timetable synced from EcoleDirecte into one calm dashboard. Priorities are readable at a glance.", tag: "ED SYNC" },
-  { icon: "https://shared-assets.lumaris.fr.eu.org/icons/sparkles.svg", title: "AI assistance", text: "A tutor that explains, reasons, searches the web and comments on your notes — powered by Workers AI.", tag: "WORKERS AI" },
-  { icon: "https://shared-assets.lumaris.fr.eu.org/icons/database.svg", title: "Workspace", text: "Study notes, files on MEGA.nz, websites, pomodoro and handy tools. Everything you produce has a home.", tag: "MEGA + D1" },
-  { icon: "https://shared-assets.lumaris.fr.eu.org/icons/send.svg", title: "Notifications", text: "Grade surveillance every 4 hours with email alerts. You never miss what matters.", tag: "CRON + MAIL" }
+  { icon: "https://shared-assets.lumaris.fr.eu.org/icons/homework.svg", title: "Gestion scolaire", text: "Notes, devoirs et emploi du temps synchronisés depuis ÉcoleDirecte dans un tableau de bord apaisé. Les priorités se lisent d'un coup d'œil.", tag: "SYNC ED" },
+  { icon: "https://shared-assets.lumaris.fr.eu.org/icons/sparkles.svg", title: "Assistance IA", text: "Un tuteur qui explique, raisonne, cherche sur le web et commente vos notes — propulsé par Workers AI.", tag: "WORKERS AI" },
+  { icon: "https://shared-assets.lumaris.fr.eu.org/icons/database.svg", title: "Espace de travail", text: "Notes d'étude, fichiers sur MEGA.nz, sites web, pomodoro et outils pratiques. Tout ce que vous produisez a sa place.", tag: "MEGA + D1" },
+  { icon: "https://shared-assets.lumaris.fr.eu.org/icons/send.svg", title: "Notifications", text: "Surveillance des notes toutes les 4 heures avec alertes e-mail. Vous ne manquez jamais l'essentiel.", tag: "CRON + MAIL" }
 ];
 const grid = document.getElementById("pillars-grid");
 if (grid) {
