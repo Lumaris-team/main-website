@@ -154,12 +154,12 @@ main { position: relative; background: var(--ink); }
 /* Continuous fresco: one shared gradient under both 3D scenes so the
    handoff from the galaxy to the long tube reads as a single dive. */
 main::before { position: absolute; inset: 0; z-index: 0; content: ""; pointer-events: none; background:
-  radial-gradient(1100px 620px at 76% 8%, rgba(64, 46, 140, .34), transparent 62%),
-  radial-gradient(900px 700px at 18% 46%, rgba(39, 25, 87, .5), transparent 64%),
+  radial-gradient(1100px 620px at 76% 8%, rgba(36, 40, 110, .3), transparent 62%),
+  radial-gradient(900px 700px at 18% 46%, rgba(27, 26, 76, .46), transparent 64%),
   /* 1) Deep dark blue wash (was violet) melting into black for the tube half. */
   radial-gradient(1100px 640px at 30% 62%, rgba(10, 32, 66, .72), transparent 64%),
   radial-gradient(900px 620px at 70% 82%, rgba(8, 24, 52, .6), transparent 62%),
-  linear-gradient(180deg, #0d0d1b 0%, #101a36 34%, #0a1830 52%, #050b18 68%, var(--ink) 100%); }
+  linear-gradient(180deg, #0a0a16 0%, #0b142c 34%, #09142a 52%, #050b18 68%, var(--ink) 100%); }
 main > * { position: relative; z-index: 1; }
 .experience-shell { position: relative; height: 700vh; scroll-margin-top: 0; scroll-snap-align: none; scroll-snap-stop: normal; }
 .experience-frame { position: sticky; top: 0; display: grid; grid-template-columns: 45% 55%; align-items: center; height: 100vh; min-height: 700px; overflow: hidden; padding: 120px max(36px, calc((100vw - 1240px) / 2)) 60px; background: transparent; }

@@ -68,10 +68,10 @@ const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true,
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.25;
-scene.add(new THREE.AmbientLight(0x6860ff, 1.7));
-const keyLight = new THREE.PointLight(0x8cecff, 18, 10); keyLight.position.set(3, 2, 4); scene.add(keyLight);
-const violetLight = new THREE.PointLight(0xb550ff, 22, 8); violetLight.position.set(-3, -2, 2); scene.add(violetLight);
+renderer.toneMappingExposure = 1.1;
+scene.add(new THREE.AmbientLight(0x4a48c2, 1.5));
+const keyLight = new THREE.PointLight(0x6fd4f2, 15, 10); keyLight.position.set(3, 2, 4); scene.add(keyLight);
+const violetLight = new THREE.PointLight(0x7c4dff, 17, 8); violetLight.position.set(-3, -2, 2); scene.add(violetLight);
 const loader = new GLTFLoader();
 let galaxy;
 let logo;
