@@ -39,13 +39,13 @@ if (grid) {
     "<ul>" + s.points.map((p) => "<li>" + p + "</li>").join("") + "</ul>" +
     "<span class='step-route'>" + s.route + "</span></li>"
   )).join("");
-  document.querySelectorAll(".step-icon[data-icon]").forEach(async (el) => {
-    try {
-      const r = await fetch(el.dataset.icon);
-      if (r.ok) el.innerHTML = await r.text();
-    } catch (e) { /* icon optional */ }
-  });
 }
+document.querySelectorAll(".step-icon[data-icon]").forEach(async (el) => {
+  try {
+    const r = await fetch(el.dataset.icon);
+    if (r.ok) el.innerHTML = await r.text();
+  } catch (e) { /* icon optional */ }
+});
 
 const io = new IntersectionObserver((entries) => {
   entries.forEach((e) => { if (e.isIntersecting) e.target.classList.add("is-visible"); });
