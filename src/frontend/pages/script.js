@@ -102,9 +102,9 @@ let longTubeActiveStep = -1;
 const TEXT_FADE_MS = 320;
 let experienceFadeTimer = 0;
 let longTubeFadeTimer = 0;
-// The tube handoff completes within a quarter of a viewport after the galaxy
-// track ends (was 0.5 — the crossfade should feel snappy).
-const TUBE_ENTER_VIEWPORTS = 0.25;
+// The tube handoff completes within a full viewport after the galaxy track
+// ends — the original pacing.
+const TUBE_ENTER_VIEWPORTS = 1.0;
 // Fit the scene title into its height-capped slot synchronously. It runs
 // while the block is faded out, so the shrink is never visible and the new
 // scene appears already at the right size. The cap is expressed in em, so
@@ -223,13 +223,11 @@ function updateLongTubeScroll() {
   const start = longTubeSection.getBoundingClientRect().top + window.scrollY;
   const distance = Math.max(longTubeSection.offsetHeight - window.innerHeight, 1);
   longTubeTargetProgress = THREE.MathUtils.clamp((window.scrollY - start) / distance, 0, 1);
-  // 4) Entrance only once the tube section reaches the viewport: before that,
-  // keep it fully transparent so the two sticky frames never fight.
-  // Because .lower-flow overlaps the galaxy track by 1 viewport (-100vh),
-  // delay the entrance by that same viewport so the handoff starts ONLY at
-  // the very end of the first 3D part. The window itself is short (half a
-  // viewport) so the crossfade doesn't drag on.
-  const rawEnter = (window.scrollY - start - window.innerHeight) / (window.innerHeight * TUBE_ENTER_VIEWPORTS);
+  // 4) The tube entrance begins exactly where the galaxy exit completes (the
+  // galaxy track's end == the tube section's top, because .lower-flow pulls
+  // up by one viewport). No delay: no dead screen between the two, and no
+  // overlap either — the crossfade is continuous.
+  const rawEnter = (window.scrollY - start) / (window.innerHeight * TUBE_ENTER_VIEWPORTS);
   const enterProgress = THREE.MathUtils.clamp(rawEnter, 0, 1);
   const easedEnter = enterProgress * enterProgress * (3 - 2 * enterProgress);
   if (longTubeFrame) longTubeFrame.style.setProperty('--long-tube-enter', easedEnter.toFixed(3));
@@ -239,7 +237,7 @@ function updateLongTubeScroll() {
   // Scene 0 is held until the entrance blur is fully gone, then each scene
   // gets an equal slice of the remaining track — so the first presentation
   // stays readable instead of being consumed by the crossfade.
-  const entranceEnd = Math.min((window.innerHeight * (1 + TUBE_ENTER_VIEWPORTS)) / distance, 0.9);
+  const entranceEnd = Math.min((window.innerHeight * TUBE_ENTER_VIEWPORTS) / distance, 0.9);
   const sceneProgress = THREE.MathUtils.clamp((longTubeTargetProgress - entranceEnd) / (1 - entranceEnd), 0, 1);
   const nextStep = Math.min(Math.floor(sceneProgress * longTubeScenes.length), longTubeScenes.length - 1);
   if (nextStep !== longTubeActiveStep) {
@@ -316,9 +314,9 @@ function updateScroll() {
   if (scrollProgress >= 0.999) scrollRotationMomentum = 0;
   previousScrollProgress = scrollProgress;
   // 4) The handoff starts ONLY at the very end of the first 3D part: hold the
-  // galaxy fully visible until its track is complete, then exit fast — the
-  // exit window is half the tube entrance's so both halves stay in sync.
-  const exitProgress = THREE.MathUtils.clamp((scrollProgress - 0.9925) / 0.0075, 0, 1);
+  // galaxy fully visible until its track is complete, then exit fast so it
+  // never overlaps the rising tube frame.
+  const exitProgress = THREE.MathUtils.clamp((scrollProgress - 0.985) / 0.015, 0, 1);
   const easedExit = exitProgress * exitProgress * (3 - 2 * exitProgress);
   experienceFrame.style.setProperty('--experience-exit', easedExit.toFixed(3));
   const nextStep = Math.min(Math.floor(scrollProgress * experienceScenes.length), experienceScenes.length - 1);
