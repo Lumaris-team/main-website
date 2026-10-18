@@ -107,13 +107,17 @@ let longTubeFadeTimer = 0;
 const TUBE_ENTER_VIEWPORTS = 0.25;
 // Fit the scene title into its height-capped slot synchronously. It runs
 // while the block is faded out, so the shrink is never visible and the new
-// scene appears already at the right size.
+// scene appears already at the right size. The cap is expressed in em, so
+// the allowed height is re-measured at every step. NO size floor: the loop
+// shrinks until the title fits; the step guard only breaks pathological
+// cases (e.g. an unbreakable word taller than the cap).
 function fitExperienceTitle() {
   experienceTitle.style.fontSize = '';
-  const maxHeight = experienceTitle.clientHeight;
   let fontSize = parseFloat(window.getComputedStyle(experienceTitle).fontSize);
-  while (experienceTitle.scrollHeight > maxHeight + 0.5 && fontSize > 30) {
-    fontSize -= 2;
+  let steps = 0;
+  while (experienceTitle.scrollHeight > experienceTitle.clientHeight + 0.5 && steps < 400) {
+    fontSize -= 1;
+    steps += 1;
     experienceTitle.style.fontSize = `${fontSize}px`;
   }
 }
