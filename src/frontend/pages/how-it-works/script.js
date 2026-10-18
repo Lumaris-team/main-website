@@ -1,30 +1,30 @@
 const STEPS = [
   {
     n: "01", icon: "https://shared-assets.lumaris.fr.eu.org/icons/homework.svg",
-    title: "Connect EcoleDirecte",
-    text: "Link your school account once. Grades, averages, homework and timetable sync through dedicated routes.",
-    points: ["Grades + averages + new-grade detection", "Homework list with done / undone sync", "Timetable + school information"],
+    title: "Connecter ÉcoleDirecte",
+    text: "Liez votre compte scolaire une seule fois. Notes, moyennes, devoirs et emploi du temps se synchronisent via des routes dédiées.",
+    points: ["Notes + moyennes + détection des nouvelles notes", "Liste des devoirs avec suivi fait / à faire", "Emploi du temps + informations scolaires"],
     route: "GET /api/ed/grades - /api/ed/homeworks - /api/ed/timetable"
   },
   {
     n: "02", icon: "https://shared-assets.lumaris.fr.eu.org/icons/sparkles.svg",
-    title: "Learn with AI",
-    text: "Ask, reason, search the web, generate pictures, get remarks on your notes. Five Workers AI categories.",
-    points: ["Tutor chat with conversation history", "Web-augmented answers + vision models", "Usage limits surfaced per model"],
+    title: "Apprendre avec l'IA",
+    text: "Posez des questions, raisonnez, cherchez sur le web, générez des images, recevez des remarques sur vos notes. Cinq catégories Workers AI.",
+    points: ["Chat tuteur avec historique des conversations", "Réponses enrichies du web + modèles visuels", "Limites d'usage affichées par modèle"],
     route: "POST /api/ai/ask - GET /api/ai/limits"
   },
   {
     n: "03", icon: "https://shared-assets.lumaris.fr.eu.org/icons/database.svg",
-    title: "Organize everything",
-    text: "Study notes, files on MEGA.nz, saved websites, pomodoro sessions, converters and calculators.",
-    points: ["Rich study-notes editor + file manager", "Pomodoro timer + calculation history", "Unit converter + website bookmarks"],
+    title: "Tout organiser",
+    text: "Notes d'étude, fichiers sur MEGA.nz, sites enregistrés, sessions pomodoro, convertisseurs et calculatrices.",
+    points: ["Éditeur de notes riche + gestionnaire de fichiers", "Minuteur Pomodoro + historique des calculs", "Convertisseur d'unités + favoris web"],
     route: "/api/files/* - /api/study-notes/* - /api/tools/*"
   },
   {
     n: "04", icon: "https://shared-assets.lumaris.fr.eu.org/icons/send.svg",
-    title: "Stay notified",
-    text: "A cron triggers the grade-check workflow every 4 hours. New grade? You get an email automatically.",
-    points: ["Automatic grade surveillance", "Email alerts, no manual refresh", "Customization synced in D1"],
+    title: "Rester prévenu",
+    text: "Un cron déclenche le workflow de vérification des notes toutes les 4 heures. Nouvelle note ? Vous recevez un e-mail automatiquement.",
+    points: ["Surveillance automatique des notes", "Alertes e-mail, sans actualisation manuelle", "Personnalisation synchronisée en D1"],
     route: "scheduled() - CHECK_GRADES - sendMail()"
   }
 ];
