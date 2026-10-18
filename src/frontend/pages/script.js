@@ -157,7 +157,7 @@ function loadLongTube() {
       if (child.isPoints) child.material = new THREE.PointsMaterial({ size: 0.042, vertexColors: true, transparent: true, opacity: 0.88, blending: THREE.AdditiveBlending, depthWrite: false, sizeAttenuation: true });
     });
     longTube.scale.set(1.25, 1.45, 1.25);
-    longTube.position.set(0, 11, 0);
+    longTube.position.set(0, -11, 0);
     longTubeRenderer = new THREE.WebGLRenderer({ canvas: longTubeCanvas, antialias: true, alpha: true, powerPreference: 'high-performance' });
     longTubeRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     longTubeRenderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -373,13 +373,14 @@ function animate(time = 0) {
   longTubeProgress += (longTubeTargetProgress - longTubeProgress) * 0.12;
   if (longTube && longTubeRenderer && longTubeCamera) {
     const tubeScene = longTube.userData.scene;
-    const verticalPhase = 1 - longTubeProgress;
-    // 2) Scroll down => the tube travels upward (and reverse on scroll up).
-    longTube.position.y = THREE.MathUtils.lerp(-11, 11, verticalPhase);
+    // Scroll down => the whole tube object rises in the frame (position -11
+    // to +11) while the camera travels from the tube's top (scene 0, y=8)
+    // down to its bottom (scene 5, y=-12): text and geometry stay in sync.
+    // Scroll up reverses everything.
+    longTube.position.y = THREE.MathUtils.lerp(-11, 11, longTubeProgress);
     longTube.position.x = 0;
     longTube.rotation.x = 0;
-    // Keep the spin direction consistent with the inverted travel.
-    longTube.rotation.y = (1 - longTubeProgress) * Math.PI * 8;
+    longTube.rotation.y = longTubeProgress * Math.PI * 8;
     longTube.rotation.z = 0;
     longTubeCamera.position.set(0, 0, 18);
     longTubeCamera.lookAt(0, 0, 0);
