@@ -191,6 +191,10 @@ main > * { position: relative; z-index: 1; }
 /* Every text swap fades out and back in. */
 .experience-copy { transition: opacity .35s ease, transform .35s ease; }
 .experience-copy.is-changing { opacity: 0; transform: translateY(calc(-50% + 10px)); }
+/* Boot state: hidden from the first paint so the title fit is computed out
+   of sight; the whole block (title + description) fades in together once
+   ready (see revealExperienceCopy in script.js). */
+.experience-copy.is-booting { opacity: 0; }
 .experience-copy::before { position: absolute; z-index: -1; inset: -80px -100px; content: ""; background: rgba(8, 9, 18, .12); border-radius: 50%; filter: blur(26px); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); mask-image: radial-gradient(ellipse, black 0%, transparent 72%); }
 .experience-frame .hero-meta { z-index: 4; }
 .experience-frame .stage-label { z-index: 4; }
