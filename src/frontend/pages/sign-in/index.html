@@ -1,12 +1,12 @@
 <!doctype html>
-<html lang="en">
+<html lang="fr">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#080912">
   <meta name="robots" content="noindex, nofollow">
-  <meta name="description" content="Sign in to Lumaris.">
-  <title>Lumaris — Sign in</title>
+  <meta name="description" content="Se connecter à Lumaris.">
+  <title>Lumaris — Connexion</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -17,32 +17,32 @@
   <div class="noise" aria-hidden="true"></div>
   <header class="site-header"><site-navbar site="main-website"></site-navbar></header>
   <main class="signin-shell">
-    <section class="signin-card" aria-label="Sign in">
+    <section class="signin-card" aria-label="Connexion">
       <img src="https://shared-assets.lumaris.fr.eu.org/logo/logo.png" alt="Lumaris" class="signin-logo">
-      <p class="eyebrow"><span class="pulse"></span>Welcome back</p>
-      <h1>Sign <em>in.</em></h1>
-      <p class="signin-sub">Use your ID or email address and password.</p>
+      <p class="eyebrow"><span class="pulse"></span>Bon retour</p>
+      <h1>Se <em>connecter.</em></h1>
+      <p class="signin-sub">Utilisez votre identifiant ou adresse e-mail et votre mot de passe.</p>
       <form id="signin-form" method="post" action="/sign-in" autocomplete="on">
         <label class="field">
-          <span>ID or email address</span>
-          <input type="text" name="username" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" required placeholder="e.g. daniel or you@example.com">
+          <span>Identifiant ou adresse e-mail</span>
+          <input type="text" name="username" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" required placeholder="p. ex. daniel ou vous@exemple.com">
         </label>
         <label class="field">
-          <span>Password</span>
+          <span>Mot de passe</span>
           <div class="input-wrap">
-            <input id="password" type="password" name="password" autocomplete="current-password" required placeholder="Your password">
-            <button type="button" class="eye" id="toggle-password" aria-label="Show password" aria-pressed="false">
+            <input id="password" type="password" name="password" autocomplete="current-password" required placeholder="Votre mot de passe">
+            <button type="button" class="eye" id="toggle-password" aria-label="Afficher le mot de passe" aria-pressed="false">
               <span data-icon="https://shared-assets.lumaris.fr.eu.org/icons/eye-open.svg" aria-hidden="true"></span>
             </button>
           </div>
         </label>
-        <p id="signin-error" class="form-error" role="alert" hidden>ID / email address or password incorrect.</p>
-        <button type="submit" class="submit">Sign in <span>↗</span></button>
+        <p id="signin-error" class="form-error" role="alert" hidden>Identifiant / adresse e-mail ou mot de passe incorrect.</p>
+        <button type="submit" class="submit">Se connecter <span>↗</span></button>
       </form>
-      <p class="signin-alt">New here? <a href="/how-it-works">Discover how Lumaris works</a></p>
+      <p class="signin-alt">Nouveau ici ? <a href="/how-it-works">Découvrez comment Lumaris fonctionne</a></p>
     </section>
   </main>
-  <script type="module" src="https://shared-assets.lumaris.fr.eu.org/navbar.js?v=20261018-icons"></script>
+  <script type="module" src="https://shared-assets.lumaris.fr.eu.org/navbar.js?v=20261018-fr"></script>
   <script type="module" src="/pages/sign-in/script.js"></script>
 </body>
 </html>
