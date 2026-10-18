@@ -181,13 +181,14 @@ main > * { position: relative; z-index: 1; }
 .experience-frame { display: block; padding: 0; }
 .experience-frame .hero-stage { position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; }
 .experience-frame .hero-stage canvas { width: 100%; height: 100%; }
-.experience-copy { position: absolute; top: 57%; left: max(36px, calc((100vw - 1240px) / 2)); z-index: 3; width: min(650px, 48vw); transform: translateY(-50%); }
-.experience-copy h1 { position: relative; z-index: 4; max-width: 100%; min-height: 2.08em; overflow: visible; padding-bottom: .16em; line-height: 1.04; }
-/* Fixed 2-line slot: the block never reflows, no delayed resize on load. */
-.experience-copy .hero-intro { position: relative; z-index: 4; max-width: 620px; min-height: 3.56em; overflow: visible; padding-bottom: .2em; line-height: 1.78; }
-/* Instant swap: no fade-out/fade-in, the new scene text is there at once. */
-.experience-copy { transition: none; }
-.experience-copy.is-changing { opacity: 1; transform: translateY(-50%); }
+.experience-copy { position: absolute; top: 57%; left: max(36px, calc((100vw - 1240px) / 2)); z-index: 3; width: min(1160px, 70vw); transform: translateY(-50%); }
+/* Height-capped 2-line slot: longer text pushes into the extra right-side
+   width instead of making the block taller. */
+.experience-copy h1 { position: relative; z-index: 4; max-width: 100%; min-height: 2.08em; max-height: 2.3em; overflow: hidden; padding-bottom: .16em; line-height: 1.04; }
+.experience-copy .hero-intro { position: relative; z-index: 4; max-width: 720px; min-height: 3.56em; max-height: 3.8em; overflow: hidden; padding-bottom: .2em; line-height: 1.78; }
+/* Every text swap fades out and back in. */
+.experience-copy { transition: opacity .35s ease, transform .35s ease; }
+.experience-copy.is-changing { opacity: 0; transform: translateY(calc(-50% + 10px)); }
 .experience-copy::before { position: absolute; z-index: -1; inset: -80px -100px; content: ""; background: rgba(8, 9, 18, .12); border-radius: 50%; filter: blur(26px); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); mask-image: radial-gradient(ellipse, black 0%, transparent 72%); }
 .experience-frame .hero-meta { z-index: 4; }
 .experience-frame .stage-label { z-index: 4; }
