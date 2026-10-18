@@ -262,19 +262,21 @@ html { scroll-snap-type: y proximity; }
 /* No own background: the shared main fresco shows through so both 3D scenes
    sit in one continuous gradient instead of two stacked blocks. */
 .long-tube-section { position: relative; height: 700vh; min-height: 0; overflow: visible; background: transparent; }
-.lower-flow > section.long-tube-section { padding-top: 0 !important; padding-bottom: 0 !important; }
+.lower-flow > section.long-tube-section { padding-top: 0 !important; padding-bottom: 0 !important; /* No snap point at the galaxy→tube handoff: the browser's snap engine
+   was fighting the wheel-lerp's programmatic scrolls and stalled the
+   trackpad right between the two 3D parts. */ scroll-snap-align: none; scroll-snap-stop: normal; }
 /* Symmetric entrance to the galaxy exit: rises, sharpens, fades in. */
 .long-tube-frame { position: sticky; top: 0; display: block; height: 100vh; min-height: 700px; overflow: visible; padding: 0; opacity: var(--long-tube-enter, 0); transform: translateY(calc((1 - var(--long-tube-enter, 0)) * 9vh)) scale(calc(.965 + var(--long-tube-enter, 0) * .035)); filter: blur(calc((1 - var(--long-tube-enter, 0)) * 7px)) saturate(calc(.65 + var(--long-tube-enter, 0) * .35)); transition: opacity .08s linear, transform .08s linear, filter .08s linear; will-change: opacity, transform, filter; }
 .long-tube-frame::before { position: absolute; inset: 0; z-index: 2; content: ""; pointer-events: none; background: linear-gradient(180deg, rgba(16, 26, 54, .55) 0%, transparent 22%, transparent 100%); }
 .long-tube-stage { position: absolute; inset: 0 auto 0 0; width: 44%; height: 100%; min-height: 0; overflow: visible; }
 .long-tube-stage::before { display: none; }
-.long-tube-copy { position: absolute; top: 50%; right: max(36px, calc((100vw - 1240px) / 2)); width: min(48vw, 610px); min-height: 0; margin: 0; padding: 0; transform: translateY(-50%); transition: opacity .78s ease, transform .78s ease; }
+.long-tube-copy { position: absolute; top: 50%; right: max(36px, calc((100vw - 1240px) / 2)); width: min(48vw, 610px); min-height: 0; margin: 0; padding: 0; transform: translateY(-50%); transition: opacity .35s ease, transform .35s ease; }
 .long-tube-copy::before { position: absolute; z-index: -1; inset: -90px -100px; content: ""; border-radius: 50%; background: rgba(8, 9, 18, .2); filter: blur(28px); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); mask-image: radial-gradient(ellipse, #000 0%, transparent 72%); pointer-events: none; }
 .long-tube-copy > * { position: relative; z-index: 1; }
-.long-tube-copy.is-changing { opacity: 0; transform: translateY(calc(-50% + 10px)); }
+.long-tube-copy.is-changing, .long-tube-copy.is-visible.is-changing { opacity: 0; transform: translateY(calc(-50% + 10px)); }
 .long-tube-copy.is-visible { opacity: 1; }
 .long-tube-copy h2 { max-width: 620px; }
-.long-tube-scene-title { position: absolute; top: 50%; left: max(36px, calc((100vw - 1240px) / 2)); z-index: 4; display: grid; gap: 12px; width: min(34vw, 430px); padding: 24px 28px; transform: translateY(-50%); filter: blur(0); transition: opacity .78s ease, transform .78s ease; }
+.long-tube-scene-title { position: absolute; top: 50%; left: max(36px, calc((100vw - 1240px) / 2)); z-index: 4; display: grid; gap: 12px; width: min(34vw, 430px); padding: 24px 28px; transform: translateY(-50%); filter: blur(0); transition: opacity .35s ease, transform .35s ease; }
 .long-tube-scene-title::before { position: absolute; z-index: -1; inset: -70px -90px; border-radius: 50%; background: rgba(8, 9, 18, .1); filter: blur(38px); content: ""; pointer-events: none; }
 .long-tube-scene-title span { color: var(--cyan); font: 9px 'DM Mono', monospace; letter-spacing: .15em; text-transform: uppercase; }
 .long-tube-scene-title strong { color: var(--paper); font-size: clamp(28px, 3.1vw, 48px); font-weight: 500; line-height: 1.02; letter-spacing: -.055em; }
