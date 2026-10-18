@@ -30,10 +30,7 @@ for (let index = 0; index < pointCount; index += 1) {
 const glyphs = {
   A: ['01110','10001','10001','11111','10001','10001','10001'], B: ['11110','10001','10001','11110','10001','10001','11110'], C: ['01111','10000','10000','10000','10000','10000','01111'], D: ['11110','10001','10001','10001','10001','10001','11110'], E: ['11111','10000','10000','11110','10000','10000','11111'], F: ['11111','10000','10000','11110','10000','10000','10000'], G: ['01111','10000','10000','10111','10001','10001','01111'], H: ['10001','10001','10001','11111','10001','10001','10001'], I: ['11111','00100','00100','00100','00100','00100','11111'], L: ['10000','10000','10000','10000','10000','10000','11111'], M: ['10001','11011','10101','10101','10001','10001','10001'], N: ['10001','11001','10101','10011','10001','10001','10001'], O: ['01110','10001','10001','10001','10001','10001','01110'], P: ['11110','10001','10001','11110','10000','10000','10000'], R: ['11110','10001','10001','11110','10100','10010','10001'], S: ['01111','10000','10000','01110','00001','00001','11110'], T: ['11111','00100','00100','00100','00100','00100','00100'], U: ['10001','10001','10001','10001','10001','10001','01110'], V: ['10001','10001','10001','10001','10001','01010','00100'], W: ['10001','10001','10001','10101','10101','11011','10001'], Y: ['10001','10001','01010','00100','00100','00100','00100']
 };
-const labels = [
-  ['RYTHME SCOLAIRE', 8], ['ESPACE CLOUD', 4], ['NOTES', 0],
-  ['INTELLIGENCE', -4], ['OUTILS', -8], ['FOCUS', -12]
-];
+const labels = [];
 const labelPositions = [];
 const labelColors = [];
 const addLine = (x1, y1, z1, x2, y2, z2) => {
@@ -64,7 +61,11 @@ const positionBytes = Buffer.from(positions.buffer);
 const colorBytes = Buffer.from(colors.buffer);
 const labelPositionBytes = Buffer.from(new Float32Array(labelPositions).buffer);
 const labelColorBytes = Buffer.from(new Float32Array(labelColors).buffer);
-const chunks = [positionBytes, colorBytes, labelPositionBytes, labelColorBytes];
+// Label strokes are gone (the HTML overlay replaces them): only ship the
+// point cloud — glTF forbids accessors with count 0.
+const hasLabelStrokes = labelPositions.length > 0;
+const chunks = [positionBytes, colorBytes];
+if (hasLabelStrokes) chunks.push(labelPositionBytes, labelColorBytes);
 const offsets = [];
 let binaryLength = 0;
 for (const chunk of chunks) { offsets.push(binaryLength); binaryLength += chunk.length; }
@@ -72,21 +73,27 @@ const binary = Buffer.concat(chunks);
 const json = JSON.stringify({
   asset: { version: '2.0', generator: 'Lumaris long tube with embedded labels' }, scene: 0,
   scenes: [{ nodes: [0] }], nodes: [{ mesh: 0 }],
-  meshes: [{ primitives: [
+  meshes: [{ primitives: hasLabelStrokes ? [
     { attributes: { POSITION: 0, COLOR_0: 1 }, mode: 0 },
     { attributes: { POSITION: 2, COLOR_0: 3 }, mode: 1 }
+  ] : [
+    { attributes: { POSITION: 0, COLOR_0: 1 }, mode: 0 }
   ] }],
   accessors: [
     { bufferView: 0, componentType: 5126, count: pointCount, type: 'VEC3', min: [-1.4, -11, -1.4], max: [1.4, 11, 1.4] },
     { bufferView: 1, componentType: 5126, count: pointCount, type: 'VEC3' },
-    { bufferView: 2, componentType: 5126, count: labelPositions.length / 3, type: 'VEC3', min: [-2, -12.3, 1.23], max: [2, 8.3, 1.23] },
-    { bufferView: 3, componentType: 5126, count: labelColors.length / 3, type: 'VEC3' }
+    ...(hasLabelStrokes ? [
+      { bufferView: 2, componentType: 5126, count: labelPositions.length / 3, type: 'VEC3', min: [-2, -12.3, 1.23], max: [2, 8.3, 1.23] },
+      { bufferView: 3, componentType: 5126, count: labelColors.length / 3, type: 'VEC3' }
+    ] : [])
   ],
   bufferViews: [
     { buffer: 0, byteOffset: offsets[0], byteLength: positionBytes.length, target: 34962 },
     { buffer: 0, byteOffset: offsets[1], byteLength: colorBytes.length, target: 34962 },
-    { buffer: 0, byteOffset: offsets[2], byteLength: labelPositionBytes.length, target: 34962 },
-    { buffer: 0, byteOffset: offsets[3], byteLength: labelColorBytes.length, target: 34962 }
+    ...(hasLabelStrokes ? [
+      { buffer: 0, byteOffset: offsets[2], byteLength: labelPositionBytes.length, target: 34962 },
+      { buffer: 0, byteOffset: offsets[3], byteLength: labelColorBytes.length, target: 34962 }
+    ] : [])
   ], buffers: [{ byteLength: binary.length }]
 });
 const jsonBytes = Buffer.from(json);
