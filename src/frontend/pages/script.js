@@ -312,13 +312,17 @@ function getLowerScrollFactor() {
 function animateSmoothScroll() {
   smoothScrollFrame = 0;
   if (smoothScrollTarget === null) return;
-  const inExperience = window.scrollY >= experience.offsetTop && scrollProgress < 1;
-  const inLowerFlow = window.scrollY >= lowerMetrics.start && window.scrollY < lowerMetrics.end;
-  if (!inExperience && !inLowerFlow) {
+  // One continuous managed region (galaxy track → end of lower flow). Using
+  // the document height instead of cached metrics means a stale measurement
+  // can never open a dead zone where the wheel is swallowed but nothing moves.
+  const regionStart = experience.offsetTop;
+  const regionEnd = document.documentElement.scrollHeight - window.innerHeight;
+  const y = window.scrollY;
+  if (y < regionStart - 1 || y > regionEnd + 1) {
     smoothScrollTarget = null;
     return;
   }
-  const currentScroll = window.scrollY;
+  const currentScroll = y;
   const distance = smoothScrollTarget - currentScroll;
   if (Math.abs(distance) < 0.5) {
     window.scrollTo({ top: smoothScrollTarget, left: 0, behavior: 'auto' });
@@ -331,10 +335,16 @@ function animateSmoothScroll() {
 
 window.addEventListener('wheel', (event) => {
   if (event.ctrlKey) return;
-  const inExperience = window.scrollY >= experience.offsetTop && scrollProgress < 1;
-  const inLowerFlow = window.scrollY >= lowerMetrics.start && window.scrollY < lowerMetrics.end;
+  const regionStart = experience.offsetTop;
+  const regionEnd = document.documentElement.scrollHeight - window.innerHeight;
+  // Outside the scroll-driven region: don't swallow the gesture, let the
+  // browser scroll natively (this also makes any edge case self-healing).
+  if (window.scrollY < regionStart - 1 || window.scrollY > regionEnd + 1) return;
   event.preventDefault();
-  const sectionFactor = inExperience ? getExperienceScrollFactor() : inLowerFlow ? getLowerScrollFactor() : 1;
+  // Contiguous factor switch: experience factor until its track completes,
+  // tube factor right after — no gap and no overlap at the handoff.
+  const inExperience = scrollProgress < 1;
+  const sectionFactor = inExperience ? getExperienceScrollFactor() : getLowerScrollFactor();
   const factor = sectionFactor * GLOBAL_SCROLL_FACTOR;
   if (smoothScrollTarget === null) smoothScrollTarget = window.scrollY;
   smoothScrollTarget += event.deltaY * factor;
