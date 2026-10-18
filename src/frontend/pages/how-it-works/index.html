@@ -42,6 +42,36 @@
       </div>
       <ol class="steps-grid" id="steps-grid"></ol>
     </section>
+    <section class="toolbox" id="toolbox">
+      <div class="section-head">
+        <p class="eyebrow"><span class="pulse"></span>Step 03, in detail</p>
+        <h2>The <em>toolbox.</em></h2>
+        <p>Three real tools ship in the dashboard, served by <code>/api/tools/*</code>, <code>/api/pomodoro/*</code> and the cache layer. Not mockups — working code.</p>
+      </div>
+      <div class="toolbox-grid">
+        <article class="tool-card reveal">
+          <span class="step-icon" data-icon="https://shared-assets.lumaris.fr.eu.org/icons/calculator.svg"></span>
+          <h3>Scientific calculator</h3>
+          <p>Full expression engine with functions, memory and history. Every result can be pushed to the synced history.</p>
+          <ul><li>Trigonometry, logs, powers, roots</li><li>History synced — GET / POST / DELETE calcul-history</li><li>Second-mode keys for advanced ops</li></ul>
+          <span class="step-route">GET /api/tools/calcul-history</span>
+        </article>
+        <article class="tool-card reveal">
+          <span class="step-icon" data-icon="https://shared-assets.lumaris.fr.eu.org/icons/converter.svg"></span>
+          <h3>Unit converter</h3>
+          <p>Length, volume and capacity from local factor tables — plus live currency via exchange-rate API.</p>
+          <ul><li>20+ length units, 30+ volume, 40+ capacity</li><li>Light-years, parsecs, barrels, magnums…</li><li>Currency at real rates, 6-decimal precision</li></ul>
+          <span class="step-route">POST /api/tools/convert</span>
+        </article>
+        <article class="tool-card reveal">
+          <span class="step-icon" data-icon="https://shared-assets.lumaris.fr.eu.org/icons/clock.svg"></span>
+          <h3>Pomodoro timer</h3>
+          <p>Focus sessions persisted per day with streak tracking. State survives reloads via cache + storage.</p>
+          <ul><li>Work / break cycles with day stats</li><li>Streaks and per-day aggregates</li><li>Custom durations in settings</li></ul>
+          <span class="step-route">/api/pomodoro/* + cache layer</span>
+        </article>
+      </div>
+    </section>
     <section class="pipeline" id="pipeline">
       <div class="section-head">
         <p class="eyebrow"><span class="pulse"></span>Under the hood</p>
