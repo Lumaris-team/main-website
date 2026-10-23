@@ -3,37 +3,32 @@
         xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
     <loc>https://lumaris.fr.eu.org/</loc>
-    <lastmod>2026-10-18</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>1.0</priority>
+    <lastmod>2026-10-18T00:00:00+00:00</lastmod>
     <xhtml:link rel="alternate" hreflang="fr" href="https://lumaris.fr.eu.org/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://lumaris.fr.eu.org/"/>
   </url>
   <url>
     <loc>https://lumaris.fr.eu.org/how-it-works</loc>
-    <lastmod>2026-10-18</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
+    <lastmod>2026-10-18T00:00:00+00:00</lastmod>
     <xhtml:link rel="alternate" hreflang="fr" href="https://lumaris.fr.eu.org/how-it-works"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://lumaris.fr.eu.org/how-it-works"/>
   </url>
   <url>
     <loc>https://lumaris.fr.eu.org/about-us</loc>
-    <lastmod>2026-10-18</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <lastmod>2026-10-18T00:00:00+00:00</lastmod>
     <xhtml:link rel="alternate" hreflang="fr" href="https://lumaris.fr.eu.org/about-us"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://lumaris.fr.eu.org/about-us"/>
   </url>
   <url>
     <loc>https://lumaris.fr.eu.org/security</loc>
-    <lastmod>2026-10-18</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
+    <lastmod>2026-10-18T00:00:00+00:00</lastmod>
     <xhtml:link rel="alternate" hreflang="fr" href="https://lumaris.fr.eu.org/security"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://lumaris.fr.eu.org/security"/>
   </url>
   <url>
     <loc>https://lumaris.fr.eu.org/sign-in</loc>
-    <lastmod>2026-10-18</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
+    <lastmod>2026-10-18T00:00:00+00:00</lastmod>
     <xhtml:link rel="alternate" hreflang="fr" href="https://lumaris.fr.eu.org/sign-in"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://lumaris.fr.eu.org/sign-in"/>
   </url>
 </urlset>
