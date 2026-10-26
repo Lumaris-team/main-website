@@ -1,5 +1,11 @@
 export default {
   async fetch(request, env, ctx) {
+    // Redirection forcée HTTP vers HTTPS pour Googlebot et bonne expérience page
+    if (request.url.startsWith("http://")) {
+      const httpsUrl = request.url.replace("http://", "https://");
+      return Response.redirect(httpsUrl, 301);
+    }
+
     const url = new URL(request.url);
     const method = request.method;
     const corsHeaders = {
