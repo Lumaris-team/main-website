@@ -54,6 +54,22 @@ if (url.pathname.startsWith("/api/")) {
       }
       return assetResponse;
     }
+    if (url.pathname === "/sitemap.xml" || url.pathname === "/robots.txt") {
+      const assetResponse = await env.ASSETS.fetch(new Request(request, {
+        redirect: "follow"
+      }));
+      const responseHeaders = new Headers(assetResponse.headers);
+      responseHeaders.set(
+        "Content-Type",
+        url.pathname === "/sitemap.xml"
+          ? "application/xml; charset=UTF-8"
+          : "text/plain; charset=UTF-8"
+      );
+      return new Response(assetResponse.body, {
+        status: assetResponse.status,
+        headers: responseHeaders
+      });
+    }
     if (url.pathname === "/" || url.pathname === "" || url.pathname === "/home") {
       const assetUrl = new URL(request.url);
       assetUrl.pathname = "/pages/index.html";
@@ -77,7 +93,11 @@ if (url.pathname.startsWith("/api/")) {
     if (siteRoutes[cleanPath]) {
       const assetUrl = new URL(request.url);
       assetUrl.pathname = siteRoutes[cleanPath];
-      return env.ASSETS.fetch(new Request(assetUrl, request));
+      return env.ASSETS.fetch(new Request(assetUrl, {
+        method,
+        headers: request.headers,
+        redirect: "follow"
+      }));
     }
     return env.ASSETS.fetch(request);
   }
