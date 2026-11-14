@@ -3,7 +3,6 @@ const errorBox = document.getElementById("signin-error");
 const toggle = document.getElementById("toggle-password");
 const password = document.getElementById("password");
 const turnstileContainer = document.getElementById("turnstile-widget");
-const TURNSTILE_SITE_KEY = "0x4AAAAAAGBRuixsOkHxqB2N";
 let turnstileToken = null;
 let turnstileWidgetId = null;
 
@@ -21,10 +20,15 @@ function loadTurnstile() {
 }
 
 if (turnstileContainer) {
-  loadTurnstile()
-    .then((turnstile) => {
+  fetch("/api/config")
+    .then((response) => response.json())
+    .then(({ turnstileSiteKey }) => {
+      if (!turnstileSiteKey) throw new Error("turnstile_not_configured");
+      return loadTurnstile().then((turnstile) => ({ turnstile, turnstileSiteKey }));
+    })
+    .then(({ turnstile, turnstileSiteKey }) => {
       turnstileWidgetId = turnstile.render(turnstileContainer, {
-        sitekey: TURNSTILE_SITE_KEY,
+        sitekey: turnstileSiteKey,
         callback: (token) => { turnstileToken = token; },
         "expired-callback": () => { turnstileToken = null; },
         "error-callback": () => { turnstileToken = null; },
@@ -51,7 +55,6 @@ if (form) {
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
     event.stopPropagation();
-    const username = String(new FormData(form).get("username") || "").trim();
     if (!turnstileToken) {
       if (errorBox) {
         errorBox.textContent = "Veuillez terminer la vérification de sécurité.";
@@ -59,10 +62,10 @@ if (form) {
       }
       return;
     }
-    const response = await fetch("/api/auth/turnstile", {
+    const response = await fetch("/api/turnstile", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username, token: turnstileToken }),
+      body: JSON.stringify({ token: turnstileToken }),
     });
     const result = await response.json().catch(() => ({}));
     if (!response.ok || result.success !== true) {
