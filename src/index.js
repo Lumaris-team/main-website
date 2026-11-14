@@ -1,4 +1,5 @@
 const ACCOUNT_PATH = /^\/account\/([A-Za-z0-9_-]+)(\/.*)?$/;
+const ACCOUNT_USERNAME = /^[A-Za-z0-9_-]+$/;
 
 function accountBackendUrl(username, path, search) {
   return `https://client-worker.${username}-cloudflare-account.workers.dev${path}${search}`;
@@ -66,11 +67,49 @@ export default {
     if (accountMatch) {
       const username = accountMatch[1];
       const accountPath = accountMatch[2] || "/";
+      if (accountPath === "/pages/auth" || accountPath === "/pages/auth/") {
+        return Response.redirect(new URL("/sign-in", request.url), 302);
+      }
       if (accountPath.startsWith("/api/")) {
         const backendUrl = accountBackendUrl(username, accountPath, url.search);
         return fetch(new Request(backendUrl, request));
       }
       return serveAccountPage(request, env, username, accountPath);
+    }
+
+    if (url.pathname === "/api/auth/turnstile" && method === "POST") {
+      try {
+        const payload = await request.json();
+        const username = String(payload?.username || "");
+        const token = String(payload?.token || "");
+        if (!ACCOUNT_USERNAME.test(username) || !token) {
+          return new Response(JSON.stringify({ success: false, reason: "invalid_request" }), {
+            status: 400,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+        const backendUrl = accountBackendUrl(username, "/api/auth/turnstile", "");
+        const backendResponse = await fetch(backendUrl, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...(request.headers.get("CF-Connecting-IP")
+              ? { "CF-Connecting-IP": request.headers.get("CF-Connecting-IP") }
+              : {}),
+          },
+          body: JSON.stringify({ token }),
+        });
+        return new Response(await backendResponse.text(), {
+          status: backendResponse.status,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      } catch (error) {
+        console.error("TURNSTILE PROXY ERROR:", error?.stack || error);
+        return new Response(JSON.stringify({ success: false, reason: "proxy_error" }), {
+          status: 502,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
     }
     
     // =========================
