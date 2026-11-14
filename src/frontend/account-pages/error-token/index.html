@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#080912">
+    <title>Access denied - Daniel Ersen Dashboard</title>
+    <meta name="description" content="Your session could not be verified.">
+    <meta name="robots" content="noindex, nofollow">
+    <link rel="stylesheet" href="/pages/error-token/style.css">
+    <link rel="icon" href="https://shared-assets.lumaris.fr.eu.org/logo/square_black.png">
+    <link rel="manifest" href="/seo/manifest.json">
+    <meta name="msapplication-config" content="/seo/browserconfig.xml">
+    <script type="module" src="/lib/settings.js"></script>
+    <script type="module" src="/lib/icons.js"></script>
+    <script type="module">
+      import { loadIcons } from '/lib/icons.js';
+      loadIcons();
+    </script>
+  </head>
+  <body>
+    <main class="error-shell">
+      <section class="error-card" role="alert">
+        <span class="error-badge" aria-hidden="true">
+          <span data-icon="https://shared-assets.lumaris.fr.eu.org/icons/warning.svg"></span>
+        </span>
+        <p class="error-eyebrow">Access denied</p>
+        <h1>We couldn't verify your session</h1>
+        <p class="error-text">
+          Your authentication token is missing, expired, or invalid. For your
+          security, this page can't be shown. Please sign in again to continue.
+        </p>
+        <div class="error-actions">
+          <a class="error-btn error-btn-primary" href="/pages/auth">Sign in again</a>
+        </div>
+        <p class="error-hint">Error code: <span>INVALID_SESSION_TOKEN</span></p>
+      </section>
+    </main>
+  </body>
+</html>

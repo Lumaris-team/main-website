@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="fr" data-auth-pending>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#080912">
+    <title>Login - Daniel Ersen Dashboard</title>
+    <meta name="description" content="Login to your personal Dashboard.">
+    <meta name="robots" content="noindex, nofollow">
+    <style>html[data-auth-pending] body { visibility: hidden; }</style>
+    <script type="module" src="/lib/settings.js"></script>
+    <link rel="stylesheet" href="/pages/auth/style.css">
+    <link rel="icon" href="https://shared-assets.lumaris.fr.eu.org/logo/logo.png">
+    <link rel="manifest" href="/seo/manifest.json">
+    <meta name="msapplication-config" content="/seo/browserconfig.xml">
+  </head>
+  <body>
+    <main class="auth-shell">
+      <section class="auth-card" aria-label="Connexion">
+        <img src="https://shared-assets.lumaris.fr.eu.org/logo/logo.png" alt="Logo Dashboard" class="auth-logo">
+        <h1 class="auth-title">Dashboard</h1>
+        <p class="auth-subtitle">Login to access at your space</p>
+
+        <form id="emailForm" class="auth-form" novalidate>
+          <label class="auth-field">
+            <span>Email</span>
+            <input type="email" name="email" autocomplete="username" required placeholder="vous@exemple.com">
+          </label>
+          <label class="auth-field">
+            <span>Password</span>
+            <div class="auth-input-wrap">
+              <input type="password" name="password" autocomplete="current-password" required placeholder="••••••••">
+              <button type="button" class="auth-eye" data-password-toggle aria-label="Afficher le mot de passe" aria-pressed="false">
+                <span class="auth-eye-open" data-icon="https://shared-assets.lumaris.fr.eu.org/icons/eye-open.svg" aria-hidden="true"></span>
+                <span class="auth-eye-closed" data-icon="https://shared-assets.lumaris.fr.eu.org/icons/eye-closed.svg" aria-hidden="true"></span>
+              </button>
+            </div>
+          </label>
+          <label class="auth-remember">
+            <input type="checkbox" name="remember" id="rememberDevice">
+            <span class="auth-remember-box" aria-hidden="true">
+              <span data-icon="https://shared-assets.lumaris.fr.eu.org/icons/checkmark.svg"></span>
+            </span>
+            <span class="auth-remember-label">Se souvenir de cet appareil</span>
+          </label>
+          <div class="auth-form-actions">
+            <button type="submit" class="auth-submit" data-action="signin">Login</button>
+          </div>
+        </form>
+
+        <div class="auth-divider"><span>ou</span></div>
+
+        <div id="providers" class="auth-providers" role="group" aria-label="Fournisseurs de connexion"></div>
+
+        <p id="authMessage" class="auth-message" hidden></p>
+      </section>
+
+      <p class="auth-footer">Designed by AI and managed by Daniel Ersen</p>
+    </main>
+    <script type="module" src="/pages/auth/icons.js"></script>
+    <script type="module" src="/pages/auth/script.js"></script>
+  </body>
+</html>

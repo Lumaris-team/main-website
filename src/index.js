@@ -1,3 +1,51 @@
+const ACCOUNT_PATH = /^\/account\/([A-Za-z0-9_-]+)(\/.*)?$/;
+
+function accountBackendUrl(username, path, search) {
+  return `https://client-worker.${username}-cloudflare-account.workers.dev${path}${search}`;
+}
+
+function rewriteAccountHtml(html, username) {
+  const prefix = `/account/${username}`;
+  return html
+    .replace("</head>", '  <script src="/account-runtime.js"></script>\n</head>')
+    .replaceAll('href="/pages/', `href="${prefix}/pages/`)
+    .replaceAll("href='/pages/", `href='${prefix}/pages/`)
+    .replaceAll('src="/pages/', `src="${prefix}/pages/`)
+    .replaceAll("src='/pages/", `src='${prefix}/pages/`)
+    .replaceAll('href="/assets/', `href="${prefix}/assets/`)
+    .replaceAll('src="/assets/', `src="${prefix}/assets/`)
+    .replaceAll('window.location.href = "/pages/', `window.location.href = "${prefix}/pages/`)
+    .replaceAll("window.location.href = '/pages/", `window.location.href = '${prefix}/pages/`);
+}
+
+async function serveAccountPage(request, env, username, accountPath) {
+  let assetPath = accountPath || "/pages/home";
+  if (assetPath === "/" || assetPath === "/pages" || assetPath === "/pages/") {
+    assetPath = "/pages/home";
+  } else if (assetPath === "/settings" || assetPath === "/study-notes") {
+    assetPath = `/pages${assetPath}`;
+  }
+  if (assetPath.startsWith("/pages/")) {
+    if (!assetPath.match(/\.[a-z0-9]+$/i)) {
+      assetPath = `${assetPath.replace(/\/+$/, "")}/index.html`;
+    }
+    assetPath = `/account-pages/${assetPath.slice("/pages/".length)}`;
+  } else if (assetPath.startsWith("/assets/")) {
+    assetPath = `/account-assets/${assetPath.slice("/assets/".length)}`;
+  }
+
+  const assetUrl = new URL(request.url);
+  assetUrl.pathname = assetPath;
+  const response = await env.ASSETS.fetch(new Request(assetUrl, request));
+  if (!response.ok || !response.headers.get("content-type")?.includes("text/html")) {
+    return response;
+  }
+  const html = rewriteAccountHtml(await response.text(), username);
+  const headers = new Headers(response.headers);
+  headers.set("Content-Type", "text/html; charset=UTF-8");
+  return new Response(html, { status: response.status, headers });
+}
+
 export default {
   async fetch(request, env, ctx) {
     // Redirection forcée HTTP vers HTTPS pour Googlebot et bonne expérience page
@@ -8,11 +56,22 @@ export default {
 
     const url = new URL(request.url);
     const method = request.method;
+    const accountMatch = url.pathname.match(ACCOUNT_PATH);
     const corsHeaders = {
       "Access-Control-Allow-Origin": "*",
       "Access-Control-Allow-Methods": "GET, POST, DELETE, PUT, PATCH, OPTIONS",
       "Access-Control-Allow-Headers": "*"
     };
+
+    if (accountMatch) {
+      const username = accountMatch[1];
+      const accountPath = accountMatch[2] || "/";
+      if (accountPath.startsWith("/api/")) {
+        const backendUrl = accountBackendUrl(username, accountPath, url.search);
+        return fetch(new Request(backendUrl, request));
+      }
+      return serveAccountPage(request, env, username, accountPath);
+    }
     
     // =========================
     // 📶 MAIN API

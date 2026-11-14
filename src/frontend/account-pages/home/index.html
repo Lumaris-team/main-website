@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="fr" data-auth-pending>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#080912">
+    <meta property="og:site_name" content="Daniel Ersen Dashboard">
+    <title>Daniel Ersen Dashboard - Workspace & AI</title>
+    <meta name="description" content="Personal Dashboard by Daniel Ersen - Integrated workspace with grades, homeworks, timetable from EcoleDirecte, AI assistant, file storage and personalized tools.">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://dashboard.danielersen.fr.eu.org/">
+    <link rel="icon" type="image/png" sizes="48x48" href="https://shared-assets.lumaris.fr.eu.org/logo/rectangle_black.png">
+    <link rel="apple-touch-icon" href="https://shared-assets.lumaris.fr.eu.org/logo/rectangle_black.png">
+    <link rel="manifest" href="/seo/manifest.json">
+    <meta name="msapplication-config" content="/seo/browserconfig.xml">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://dashboard.danielersen.fr.eu.org/">
+    <meta property="og:image" content="https://shared-assets.lumaris.fr.eu.org/logo/rectangle_black.png">
+    <meta property="og:description" content="Personal Dashboard by Daniel Ersen - Integrated workspace with grades, homeworks, timetable from EcoleDirecte, AI assistant, file storage and personalized tools.">
+    
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://dashboard.danielersen.fr.eu.org/">
+    <meta property="twitter:title" content="Daniel Ersen Dashboard - Workspace & AI">
+    <meta property="twitter:description" content="Personal Dashboard by Daniel Ersen - Integrated workspace with grades, homeworks, timetable from EcoleDirecte, AI assistant, file storage and personalized tools.">
+    <meta property="twitter:image" content="https://shared-assets.lumaris.fr.eu.org/logo/rectangle_black.png">
+    
+    <!-- Schema.org structured data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "Daniel Ersen Dashboard",
+      "url": "https://dashboard.danielersen.fr.eu.org/",
+      "description": "Personal Dashboard by Daniel Ersen - Integrated workspace with grades, homeworks, timetable from EcoleDirecte, AI assistant, file storage and personalized tools.",
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": "https://dashboard.danielersen.fr.eu.org/search?q={search_term_string}",
+        "query-input": "required name=search_term_string"
+      },
+      "publisher": {
+        "@type": "Person",
+        "name": "Daniel Ersen"
+      }
+    }
+    </script>
+    
+    <!-- BreadcrumbList structured data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Home",
+          "item": "https://dashboard.danielersen.fr.eu.org/"
+        }
+      ]
+    }
+    </script>
+    <style>html[data-auth-pending] body { visibility: hidden; }</style>
+    <script type="module">
+      import { guardPage } from "/lib/auth.js";
+      guardPage().then((ok) => {
+        if (ok) document.documentElement.removeAttribute("data-auth-pending");
+      });
+    </script>
+    <script type="module" src="/lib/settings.js"></script>
+    <link rel="stylesheet" href="/styles/sidebar.css">
+    <link rel="stylesheet" href="/styles/block.css">
+    <link rel="stylesheet" href="/pages/home/style.css">
+    <script type="module" src="https://shared-assets.lumaris.fr.eu.org/navbar.js?v=20261016-icons"></script>
+  </head>
+  <body>
+    <site-navbar site="client-worker" current="home"></site-navbar>
+
+    <main class="home-shell">
+      <section class="bento-grid" aria-label="Accueil">
+        <article class="bento-block block-greeting">
+          <p class="block-eyebrow">Welcome</p>
+          <h1>Hello Daniel</h1>
+        </article>
+
+        <article class="bento-block block-mesh" aria-label="Forme 3D animée">
+          <canvas id="meshCanvas" aria-hidden="true"></canvas>
+        </article>
+
+        <article class="bento-block block-status">
+          <p class="block-eyebrow">Home</p>
+          <strong class="status-title">Dashboard</strong>
+          <p class="status-sync">
+            Last synhronisation&nbsp;:
+            <span id="syncLabel">--:--</span>
+          </p>
+        </article>
+
+        <article class="bento-block block-logo">
+          <img src="https://shared-assets.lumaris.fr.eu.org/logo/rectangle_black.png" alt="Logo Dashboard" class="home-logo">
+        </article>
+
+        <a class="bento-block block-link" href="/pages/workspace">
+          <span class="block-eyebrow">Workspace</span>
+          <span class="block-link-body">
+            <strong>School</strong>
+            <span class="block-desc">Grades, homeworks, timetable from EcoleDirecte; notes, pomodoro.</span>
+          </span>
+        </a>
+
+        <a class="bento-block block-link" href="/pages/ai">
+          <span class="block-eyebrow">Artificial Intelligence</span>
+          <span class="block-link-body">
+            <strong>Intelligence</strong>
+            <span class="block-desc">More than 10 AI models, and some methods.</span>
+          </span>
+        </a>
+
+        <a class="bento-block block-link" href="/pages/study-notes">
+          <span class="block-eyebrow">Study Notes</span>
+          <span class="block-link-body">
+            <strong>Revision</strong>
+            <span class="block-desc">Manage your subjects and revision cards.</span>
+          </span>
+        </a>
+
+        <a class="bento-block block-link" href="/pages/files">
+          <span class="block-eyebrow">Files storage</span>
+          <span class="block-link-body">
+            <strong>Base of files</strong>
+            <span class="block-desc">10 Go of storage, files and folsers.</span>
+          </span>
+        </a>
+
+        <a class="bento-block block-link" href="/pages/tools">
+          <span class="block-eyebrow">Useful tools</span>
+          <span class="block-link-body">
+            <strong>Tools</strong>
+            <span class="block-desc">Scientist calcultor, converter, code compiler..</span>
+          </span>
+        </a>
+
+        <a class="bento-block block-link" href="/pages/settings">
+          <span class="block-eyebrow">Personnalisation</span>
+          <span class="block-link-body">
+            <strong>Settings</strong>
+            <span class="block-desc">Background, font-style, passwords...</span>
+          </span>
+        </a>
+      </section>
+
+      <p class="home-footer">Designed by AI and managed by Daniel Ersen</p>
+    </main>
+    <script type="module" src="/pages/home/script.js"></script>
+  </body>
+</html>
