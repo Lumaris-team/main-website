@@ -20,3 +20,7 @@ https://client-worker.{username}-cloudflare-account.workers.dev/api/...
 The dashboard frontend is served by this repository; `client-worker` is used
 only as the backend. The username is restricted to letters, numbers, `_`, and
 `-` before it is used in the backend hostname.
+
+Turnstile is global to this Worker and is used only on `/sign-in`. The public
+site key is configured as `TURNSTILE_SITE_KEY` in `wrangler.toml`; configure
+the private `TURNSTILE_SECRET_KEY` as a `main-website` Worker secret.
