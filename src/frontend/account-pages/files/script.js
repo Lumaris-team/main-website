@@ -1,0 +1,785 @@
+// ===================== FILES PAGE JAVASCRIPT =====================
+
+import { authedFetch } from "/lib/auth.js";
+import { loadIcons } from "/lib/icons.js";
+
+let currentPath = "";
+let files = [];
+let folders = [];
+let deletingItem = null;
+let selectedFile = null;
+
+// Cache configuration
+const CACHE_PREFIX = 'files_cache_';
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
+// ===================== CACHE FUNCTIONS =====================
+
+function getCacheKey(path) {
+  return `${CACHE_PREFIX}${path}`;
+}
+
+function getCachedData(path) {
+  try {
+    const key = getCacheKey(path);
+    const cached = localStorage.getItem(key);
+    if (!cached) return null;
+    
+    const data = JSON.parse(cached);
+    const now = Date.now();
+    
+    // Check if cache is still valid
+    if (now - data.timestamp > CACHE_DURATION) {
+      localStorage.removeItem(key);
+      return null;
+    }
+    
+    return data.content;
+  } catch (error) {
+    console.error('Error reading cache:', error);
+    return null;
+  }
+}
+
+function setCachedData(path, data) {
+  try {
+    const key = getCacheKey(path);
+    const cacheData = {
+      content: data,
+      timestamp: Date.now()
+    };
+    localStorage.setItem(key, JSON.stringify(cacheData));
+  } catch (error) {
+    console.error('Error writing cache:', error);
+  }
+}
+
+function clearCache() {
+  try {
+    const keys = Object.keys(localStorage);
+    keys.forEach(key => {
+      if (key.startsWith(CACHE_PREFIX)) {
+        localStorage.removeItem(key);
+      }
+    });
+  } catch (error) {
+    console.error('Error clearing cache:', error);
+  }
+}
+
+// ===================== API FUNCTIONS =====================
+
+async function downloadFiles(path = "", useCache = true) {
+  // Try to get cached data first
+  if (useCache) {
+    const cached = getCachedData(path);
+    if (cached) {
+      console.log(`Using cached data for path: ${path || 'root'}`);
+      return cached;
+    }
+  }
+
+  try {
+    const encodedPath = encodeURIComponent(path);
+    const response = await authedFetch(`/api/files/list/${encodedPath}`, {
+      method: 'GET'
+    });
+
+    if (!response.ok) {
+      console.error(`Failed to fetch files for path ${path}: ${response.status}`);
+      // Return empty data instead of throwing error to prevent UI disruption
+      return { files: [], folders: [], path };
+    }
+
+    const data = await response.json();
+    const result = data.resp || { files: [], folders: [], path };
+    
+    // Cache the result
+    setCachedData(path, result);
+    
+    return result;
+  } catch (error) {
+    console.error('Error downloading files:', error);
+    // Return empty data instead of throwing error to prevent UI disruption
+    return { files: [], folders: [], path };
+  }
+}
+
+async function uploadFile(relativePath, file) {
+  try {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('relativePath', relativePath);
+
+    const response = await authedFetch('/api/files/upload', {
+      method: 'POST',
+      body: formData
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Failed to upload file');
+    }
+
+    const data = await response.json();
+    return data.resp;
+  } catch (error) {
+    console.error('Error uploading file:', error);
+    throw error;
+  }
+}
+
+async function createFolder(relativePath) {
+  try {
+    const response = await authedFetch('/api/files/folder', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ relativePath })
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Failed to create folder');
+    }
+
+    const data = await response.json();
+    return data.resp;
+  } catch (error) {
+    console.error('Error creating folder:', error);
+    throw error;
+  }
+}
+
+async function deleteFile(relativePath) {
+  try {
+    const encodedPath = encodeURIComponent(relativePath);
+    const response = await authedFetch(`/api/files/delete/${encodedPath}`, {
+      method: 'DELETE'
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Failed to delete item');
+    }
+
+    const data = await response.json();
+    return data.resp;
+  } catch (error) {
+    console.error('Error deleting item:', error);
+    throw error;
+  }
+}
+
+async function renameItem(oldPath, newName) {
+  try {
+    const response = await authedFetch('/api/files/rename', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ oldPath, newName })
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Failed to rename item');
+    }
+
+    const data = await response.json();
+    return data.resp;
+  } catch (error) {
+    console.error('Error renaming item:', error);
+    throw error;
+  }
+}
+
+// ===================== UTILITY FUNCTIONS =====================
+
+function formatFileSize(bytes) {
+  if (bytes === 0) return '0 B';
+  const k = 1024;
+  const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+}
+
+function getFolderIcon() {
+  return `<span data-icon="https://shared-assets.lumaris.fr.eu.org/icons/folder.svg"></span>`;
+}
+
+function getFileIcon(extension) {
+  // Generic file icon
+  return `<span data-icon="https://shared-assets.lumaris.fr.eu.org/icons/file.svg"></span>`;
+}
+
+async function loadIconsLocal(container) {
+  await loadIcons(container);
+}
+
+// ===================== RENDER FUNCTIONS =====================
+
+function renderBreadcrumb() {
+  const breadcrumb = document.getElementById('files-path');
+  if (!breadcrumb) return;
+
+  if (!currentPath) {
+    breadcrumb.innerHTML = `
+      <span class="path-segment">Root</span>
+    `;
+    return;
+  }
+
+  const segments = currentPath.split('/');
+  let html = '<span class="path-segment" data-path="">Root</span>';
+
+  segments.forEach((segment, index) => {
+    const path = segments.slice(0, index + 1).join('/');
+    html += `<span class="path-separator">›</span>`;
+    html += `<span class="path-segment" data-path="${path}">${segment}</span>`;
+  });
+
+  breadcrumb.innerHTML = html;
+
+  // Add click handlers to segments
+  breadcrumb.querySelectorAll('.path-segment').forEach(segment => {
+    segment.addEventListener('click', () => {
+      const path = segment.dataset.path;
+      navigateTo(path);
+    });
+  });
+}
+
+function renderFiles() {
+  const filesList = document.getElementById('files-list');
+  if (!filesList) return;
+
+  if (folders.length === 0 && files.length === 0) {
+    filesList.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-state-icon" data-icon="https://shared-assets.lumaris.fr.eu.org/icons/folder.svg"></div>
+        <p class="empty-state-text">This folder is empty</p>
+        <p class="empty-state-subtext">Upload files or create a folder to get started</p>
+      </div>
+    `;
+    loadIconsLocal(filesList);
+    return;
+  }
+
+  filesList.innerHTML = '';
+
+  // Render folders first
+  folders.forEach(folder => {
+    const block = createFolderBlock(folder);
+    filesList.appendChild(block);
+  });
+
+  // Render files
+  files.forEach(file => {
+    const block = createFileBlock(file);
+    filesList.appendChild(block);
+  });
+
+  // Load icons
+  loadIconsLocal(filesList);
+}
+
+function createFolderBlock(folder) {
+  const block = document.createElement('div');
+  block.className = 'file-block folder';
+  block.dataset.path = folder.path;
+
+  const icon = document.createElement('div');
+  icon.className = 'file-icon folder-icon';
+  icon.innerHTML = getFolderIcon();
+
+  const info = document.createElement('div');
+  info.className = 'file-info';
+
+  const name = document.createElement('h3');
+  name.className = 'file-name';
+  name.textContent = folder.name;
+
+  const meta = document.createElement('div');
+  meta.className = 'file-meta';
+  meta.innerHTML = `
+    <span class="file-date">${folder.modified || 'No date'}</span>
+  `;
+
+  info.appendChild(name);
+  info.appendChild(meta);
+
+  const actions = document.createElement('div');
+  actions.className = 'file-actions';
+
+  const editBtn = document.createElement('button');
+  editBtn.className = 'file-action-btn edit';
+  editBtn.type = 'button';
+  editBtn.ariaLabel = 'Rename folder';
+  editBtn.innerHTML = `<span data-icon="https://shared-assets.lumaris.fr.eu.org/icons/edit.svg"></span>`;
+  editBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    openEditModal(folder, true);
+  });
+
+  const deleteBtn = document.createElement('button');
+  deleteBtn.className = 'file-action-btn delete';
+  deleteBtn.type = 'button';
+  deleteBtn.ariaLabel = 'Delete folder';
+  deleteBtn.innerHTML = `<span data-icon="https://shared-assets.lumaris.fr.eu.org/icons/delete.svg"></span>`;
+  deleteBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    openDeleteModal(folder, true);
+  });
+
+  actions.appendChild(editBtn);
+  actions.appendChild(deleteBtn);
+
+  block.appendChild(icon);
+  block.appendChild(info);
+  block.appendChild(actions);
+
+  // Click to navigate into folder
+  block.addEventListener('click', () => {
+    navigateTo(folder.path);
+  });
+
+  return block;
+}
+
+function createFileBlock(file) {
+  const block = document.createElement('div');
+  block.className = 'file-block';
+  if (file.uploading) {
+    block.classList.add('uploading');
+  }
+  block.dataset.path = file.path;
+
+  const icon = document.createElement('div');
+  icon.className = 'file-icon file-icon';
+  icon.innerHTML = getFileIcon(file.extension);
+
+  const info = document.createElement('div');
+  info.className = 'file-info';
+
+  const name = document.createElement('h3');
+  name.className = 'file-name';
+  name.textContent = file.name;
+
+  const meta = document.createElement('div');
+  meta.className = 'file-meta';
+  meta.innerHTML = `
+    <span class="file-extension">${file.extension || 'FILE'}</span>
+    <span class="file-size">${formatFileSize(file.size)}</span>
+    <span class="file-date">${file.modified || 'No date'}</span>
+  `;
+
+  info.appendChild(name);
+  info.appendChild(meta);
+
+  const actions = document.createElement('div');
+  actions.className = 'file-actions';
+
+  const editBtn = document.createElement('button');
+  editBtn.className = 'file-action-btn edit';
+  editBtn.type = 'button';
+  editBtn.ariaLabel = 'Rename file';
+  editBtn.innerHTML = `<span data-icon="https://shared-assets.lumaris.fr.eu.org/icons/edit.svg"></span>`;
+  editBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    openEditModal(file, false);
+  });
+
+  const deleteBtn = document.createElement('button');
+  deleteBtn.className = 'file-action-btn delete';
+  deleteBtn.type = 'button';
+  deleteBtn.ariaLabel = 'Delete file';
+  deleteBtn.innerHTML = `<span data-icon="https://shared-assets.lumaris.fr.eu.org/icons/delete.svg"></span>`;
+  deleteBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    openDeleteModal(file, false);
+  });
+
+  actions.appendChild(editBtn);
+  actions.appendChild(deleteBtn);
+
+  block.appendChild(icon);
+  block.appendChild(info);
+  block.appendChild(actions);
+
+  // Click to select file
+  block.addEventListener('click', () => {
+    selectFile(file, block);
+  });
+
+  return block;
+}
+
+// ===================== NAVIGATION =====================
+
+async function navigateTo(path) {
+  currentPath = path;
+  selectedFile = null;
+  updateUploadButton();
+  
+  try {
+    // First, try to show cached data immediately for instant display
+    const cached = getCachedData(path);
+    if (cached) {
+      console.log(`Showing cached data for path: ${path || 'root'}`);
+      folders = cached.folders || [];
+      files = cached.files || [];
+      renderBreadcrumb();
+      renderFiles();
+    }
+    
+    // Then fetch fresh data in background
+    const data = await downloadFiles(path, false); // Don't use cache for fresh fetch
+    folders = data.folders || [];
+    files = data.files || [];
+    
+    // Update display with fresh data
+    renderBreadcrumb();
+    renderFiles();
+    
+    // Invalidate cache for this path since we just refreshed
+    const cacheKey = getCacheKey(path);
+    localStorage.removeItem(cacheKey);
+    setCachedData(path, data);
+    
+  } catch (error) {
+    console.error('Error navigating to path:', error);
+    alert(`Failed to load folder: ${error.message}`);
+  }
+}
+
+function selectFile(file, block) {
+  // Toggle selection if clicking on the same file
+  if (selectedFile && selectedFile.path === file.path) {
+    // Deselect
+    selectedFile = null;
+    block.classList.remove('selected');
+    block.style.borderColor = '';
+    updateUploadButton();
+    return;
+  }
+
+  // Remove previous selection
+  document.querySelectorAll('.file-block.selected').forEach(b => {
+    b.classList.remove('selected');
+    b.style.borderColor = '';
+  });
+
+  // Select new file
+  selectedFile = file;
+  block.classList.add('selected');
+  block.style.borderColor = 'var(--accent)';
+  
+  updateUploadButton();
+}
+
+function updateUploadButton() {
+  const uploadBtn = document.getElementById('upload-btn');
+  const downloadBtn = document.getElementById('download-btn');
+  if (uploadBtn) {
+    uploadBtn.style.display = selectedFile ? 'none' : 'grid';
+  }
+  if (downloadBtn) {
+    downloadBtn.style.display = selectedFile ? 'grid' : 'none';
+  }
+}
+
+async function openFile(file) {
+  // For now, we'll just alert the user since we don't have a way to preview files
+  // In a real implementation, you might want to:
+  // 1. Download the file content
+  // 2. Create a Blob URL
+  // 3. Open it in a new tab or use a file preview library
+  alert(`Opening file: ${file.name}\n\nFile preview functionality would be implemented here.\n\nThe file would be opened using the device's default preview for ${file.extension} files.`);
+}
+
+// ===================== MODAL FUNCTIONS =====================
+
+const uploadModal = document.getElementById('upload-modal');
+const folderModal = document.getElementById('folder-modal');
+const deleteModal = document.getElementById('delete-modal');
+const editModal = document.getElementById('edit-modal');
+const uploadForm = document.getElementById('upload-form');
+const folderForm = document.getElementById('folder-form');
+const editForm = document.getElementById('edit-form');
+const fileInput = document.getElementById('file-input');
+const folderNameInput = document.getElementById('folder-name');
+const editNameInput = document.getElementById('edit-name');
+
+function openUploadModal() {
+  fileInput.value = '';
+  uploadModal.setAttribute('aria-hidden', 'false');
+  fileInput.focus();
+}
+
+function closeUploadModal() {
+  uploadModal.setAttribute('aria-hidden', 'true');
+  uploadForm.reset();
+}
+
+function openFolderModal() {
+  folderNameInput.value = '';
+  folderModal.setAttribute('aria-hidden', 'false');
+  folderNameInput.focus();
+}
+
+function closeFolderModal() {
+  folderModal.setAttribute('aria-hidden', 'true');
+  folderForm.reset();
+}
+
+let editingItem = null;
+
+function openEditModal(item, isFolder) {
+  editingItem = { ...item, isFolder };
+  editNameInput.value = item.name;
+  editModal.setAttribute('aria-hidden', 'false');
+  editNameInput.focus();
+}
+
+function closeEditModal() {
+  editModal.setAttribute('aria-hidden', 'true');
+  editForm.reset();
+  editingItem = null;
+}
+
+function openDeleteModal(item, isFolder) {
+  deletingItem = { ...item, isFolder };
+  deleteModal.setAttribute('aria-hidden', 'false');
+}
+
+function closeDeleteModal() {
+  deleteModal.setAttribute('aria-hidden', 'true');
+  deletingItem = null;
+}
+
+// ===================== EVENT LISTENERS =====================
+
+document.getElementById('upload-btn').addEventListener('click', openUploadModal);
+document.getElementById('folder-btn').addEventListener('click', openFolderModal);
+document.getElementById('download-btn').addEventListener('click', () => {
+  if (selectedFile) {
+    openFile(selectedFile);
+  }
+});
+
+document.getElementById('cancel-upload-btn').addEventListener('click', closeUploadModal);
+document.getElementById('cancel-delete-btn').addEventListener('click', closeDeleteModal);
+document.getElementById('cancel-edit-btn').addEventListener('click', closeEditModal);
+document.getElementById('cancel-folder-btn').addEventListener('click', closeFolderModal);
+
+editForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  
+  if (!editingItem) {
+    return;
+  }
+
+  const newName = editNameInput.value.trim();
+  if (!newName) {
+    alert('Please enter a new name');
+    return;
+  }
+
+  const submitBtn = editForm.querySelector('button[type="submit"]');
+  submitBtn.disabled = true;
+  submitBtn.style.opacity = '0.5';
+  submitBtn.style.cursor = 'not-allowed';
+
+  try {
+    await renameItem(editingItem.path, newName);
+    closeEditModal();
+    await navigateTo(currentPath);
+  } catch (error) {
+    console.error('Error renaming item:', error);
+    alert(`Failed to rename item: ${error.message}`);
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.style.opacity = '1';
+    submitBtn.style.cursor = 'pointer';
+  }
+});
+
+folderForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  
+  const name = folderNameInput.value.trim();
+  if (!name) {
+    alert('Please enter a folder name');
+    return;
+  }
+
+  const submitBtn = folderForm.querySelector('button[type="submit"]');
+  submitBtn.disabled = true;
+  submitBtn.style.opacity = '0.5';
+  submitBtn.style.cursor = 'not-allowed';
+
+  try {
+    const relativePath = currentPath ? `${currentPath}/${name}` : name;
+    await createFolder(relativePath);
+    closeFolderModal();
+    await navigateTo(currentPath);
+  } catch (error) {
+    console.error('Error creating folder:', error);
+    alert(`Failed to create folder: ${error.message}`);
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.style.opacity = '1';
+    submitBtn.style.cursor = 'pointer';
+  }
+});
+
+document.getElementById('confirm-delete-btn').addEventListener('click', async () => {
+  if (deletingItem) {
+    const btn = document.getElementById('confirm-delete-btn');
+    btn.disabled = true;
+    btn.style.opacity = '0.5';
+    btn.style.cursor = 'not-allowed';
+    
+    try {
+      await deleteFile(deletingItem.path);
+      await navigateTo(currentPath);
+      closeDeleteModal();
+    } catch (error) {
+      console.error('Error deleting item:', error);
+      alert(`Failed to delete item: ${error.message}`);
+    } finally {
+      btn.disabled = false;
+      btn.style.opacity = '1';
+      btn.style.cursor = 'pointer';
+    }
+  }
+});
+
+uploadForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  
+  const file = fileInput.files[0];
+  if (!file) {
+    alert('Please select a file');
+    return;
+  }
+
+  const submitBtn = uploadForm.querySelector('button[type="submit"]');
+  submitBtn.disabled = true;
+  submitBtn.style.opacity = '0.5';
+  submitBtn.style.cursor = 'not-allowed';
+
+  try {
+    const relativePath = currentPath ? `${currentPath}/${file.name}` : file.name;
+    
+    // Create optimistic file entry
+    const optimisticFile = {
+      name: file.name,
+      path: relativePath,
+      size: file.size,
+      modified: new Date().toISOString(),
+      extension: getFileExtension(file.name),
+      uploading: true
+    };
+    
+    // Add to files array immediately
+    files.push(optimisticFile);
+    renderFiles();
+    
+    // Close modal
+    closeUploadModal();
+    
+    // Start upload
+    await uploadFile(relativePath, file);
+    
+    // Upload succeeded, refresh data
+    await navigateTo(currentPath);
+    
+  } catch (error) {
+    console.error('Upload failed:', error);
+    
+    // Remove optimistic file from array
+    files = files.filter(f => !f.uploading);
+    renderFiles();
+    
+    // Show error message
+    const errorMsg = document.createElement('div');
+    errorMsg.className = 'upload-error-message';
+    errorMsg.textContent = 'Upload failed';
+    errorMsg.style.cssText = `
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: #ef4444;
+      color: white;
+      padding: 12px 24px;
+      border-radius: 8px;
+      z-index: 10000;
+      animation: slideIn 0.3s ease;
+    `;
+    document.body.appendChild(errorMsg);
+    
+    setTimeout(() => {
+      errorMsg.style.animation = 'slideOut 0.3s ease';
+      setTimeout(() => errorMsg.remove(), 300);
+    }, 2000);
+    
+    // Reopen modal to allow retry
+    openUploadModal();
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.style.opacity = '1';
+    submitBtn.style.cursor = 'pointer';
+    fileInput.value = '';
+  }
+});
+
+// Close modals on backdrop click
+uploadModal.querySelector('.modal-backdrop').addEventListener('click', closeUploadModal);
+deleteModal.querySelector('.modal-backdrop').addEventListener('click', closeDeleteModal);
+
+// Close modals on Escape key
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    closeUploadModal();
+    closeDeleteModal();
+  }
+});
+
+// ===================== INITIALIZATION =====================
+
+async function init() {
+  try {
+    // Load root directory with cache
+    const data = await downloadFiles("", true);
+    folders = data.folders || [];
+    files = data.files || [];
+    renderBreadcrumb();
+    renderFiles();
+    
+    // Preload all folders in parallel for faster navigation
+    if (folders.length > 0) {
+      console.log(`Preloading ${folders.length} folders in parallel...`);
+      const preloadPromises = folders.map(folder => 
+        downloadFiles(folder.path, true).catch(error => {
+          console.error(`Failed to preload folder ${folder.path}:`, error);
+          return null;
+        })
+      );
+      
+      await Promise.all(preloadPromises);
+      console.log('Folder preloading complete');
+    }
+  } catch (error) {
+    console.error('Error initializing files page:', error);
+    const filesList = document.getElementById('files-list');
+    if (filesList) {
+      filesList.innerHTML = `<p style="color: var(--text); padding: 20px;">Error loading files: ${error.message}. Please try again.</p>`;
+    }
+  }
+}
+
+// Initialize when DOM is ready
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', init);
+} else {
+  init();
+}

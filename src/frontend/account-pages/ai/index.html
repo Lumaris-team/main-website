@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="en" data-auth-pending>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#080912">
+    <title>AI - Daniel Ersen Dashboard</title>
+    <meta name="description" content="AI Assistant - Chat with multiple AI models, search the web, perform complex reasoning tasks and generate pictures. Advanced AI tools powered by Cloudflare Workers AI.">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://dashboard.danielersen.fr.eu.org/ai">
+    <link rel="icon" href="https://shared-assets.lumaris.fr.eu.org/logo/square_black.png">
+    <link rel="manifest" href="/seo/manifest.json">
+    <meta name="msapplication-config" content="/seo/browserconfig.xml">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://dashboard.danielersen.fr.eu.org/ai">
+    <meta property="og:title" content="AI - Daniel Ersen Dashboard">
+    <meta property="og:description" content="AI Assistant - Chat with multiple AI models, search the web, perform complex reasoning tasks and generate pictures.">
+    <meta property="og:image" content="https://shared-assets.lumaris.fr.eu.org/logo/logo.png">
+    
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://dashboard.danielersen.fr.eu.org/ai">
+    <meta property="twitter:title" content="AI - Daniel Ersen Dashboard">
+    <meta property="twitter:description" content="AI Assistant - Chat with multiple AI models, search the web, perform complex reasoning tasks and generate pictures.">
+    <meta property="twitter:image" content="https://shared-assets.lumaris.fr.eu.org/logo/logo.png">
+    
+    <!-- Schema.org structured data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebPage",
+      "name": "AI",
+      "url": "https://dashboard.danielersen.fr.eu.org/ai",
+      "description": "AI Assistant - Chat with multiple AI models, search the web, perform complex reasoning tasks and generate pictures.",
+      "isPartOf": {
+        "@type": "WebSite",
+        "name": "Daniel Ersen Dashboard",
+        "url": "https://dashboard.danielersen.fr.eu.org/"
+      },
+      "breadcrumb": {
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "Home",
+            "item": "https://dashboard.danielersen.fr.eu.org/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "AI",
+            "item": "https://dashboard.danielersen.fr.eu.org/ai"
+          }
+        ]
+      }
+    }
+    </script>
+    
+    <style>html[data-auth-pending] body { visibility: hidden; }</style>
+    <script type="module">
+      import { guardPage } from "/lib/auth.js";
+      guardPage().then((ok) => {
+        if (ok) document.documentElement.removeAttribute("data-auth-pending");
+      });
+    </script>
+    <script type="module" src="/lib/settings.js"></script>
+    <link rel="stylesheet" href="/styles/sidebar.css">
+    <link rel="stylesheet" href="/styles/block.css">
+    <link rel="stylesheet" href="/pages/ai/style.css">
+    <script type="module" src="https://shared-assets.lumaris.fr.eu.org/navbar.js?v=20261016-icons"></script>
+    <script type="module" src="/pages/ai/icons.js"></script>
+    <script type="module" src="/pages/ai/script.js"></script>
+  </head>
+  <body>
+    <site-navbar site="client-worker" current="AI"></site-navbar>
+
+    <div class="ai-shell">
+      <aside class="ai-sidebar" aria-label="AI sections">
+        <button class="ai-nav" type="button" id="new-conversation-btn" aria-label="New conversation">
+          <span class="ai-icon" data-icon="https://shared-assets.lumaris.fr.eu.org/icons/plus.svg"></span>
+        </button>
+        <button class="ai-nav" type="button" id="conversations-btn" aria-label="Conversations">
+          <span class="ai-icon" data-icon="https://shared-assets.lumaris.fr.eu.org/icons/chat.svg"></span>
+        </button>
+        <button class="ai-nav" type="button" id="limits-btn" aria-label="Limits">
+          <span class="ai-icon" data-icon="https://shared-assets.lumaris.fr.eu.org/icons/statistics.svg"></span>
+        </button>
+        <button class="ai-nav" type="button" id="toggle-selector-btn" aria-label="Toggle model selector">
+          <span class="ai-icon" data-icon="https://shared-assets.lumaris.fr.eu.org/icons/more.svg"></span>
+        </button>
+      </aside>
+
+      <main class="ai-main">
+        <div class="ai-selector-bar" id="selector-bar">
+          <!-- Selector Items (Label + Dropdown grouped) -->
+          <div class="selector-items">
+            <div class="selector-item">
+              <span class="selector-label">Feature</span>
+              <div class="custom-select-wrapper">
+                <div class="custom-select" id="category-select" data-category-select>
+                  <span class="custom-select-trigger">Basic</span>
+                  <div class="custom-options">
+                    <div class="custom-option" data-value="basic">Basic</div>
+                    <div class="custom-option" data-value="search_web">Search Web</div>
+                    <div class="custom-option" data-value="reasonning">Reasoning</div>
+                    <div class="custom-option" data-value="pictures">Pictures</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="selector-item">
+              <span class="selector-label">Company</span>
+              <div class="custom-select-wrapper">
+                <div class="custom-select" id="company-select" data-company-select>
+                  <span class="custom-select-trigger">Loading...</span>
+                  <div class="custom-options">
+                    <!-- Companies will be populated by JS -->
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="selector-item">
+              <span class="selector-label">Model</span>
+              <div class="custom-select-wrapper">
+                <div class="custom-select" id="model-select" data-model-select>
+                  <span class="custom-select-trigger">Select company first</span>
+                  <div class="custom-options">
+                    <!-- Models will be populated by JS -->
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="selector-item">
+              <span class="selector-label">Consumption</span>
+              <div class="consumption-display" id="consumption-display">
+                <!-- Consumption bar will be populated by JS -->
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="ai-chat-container" id="chat-container">
+          <!-- Chat messages will appear here -->
+        </div>
+        
+        <div class="ai-prompt-bar">
+          <textarea id="prompt-input" placeholder="Type your message..." rows="1"></textarea>
+          <button id="prompt-submit" type="button" aria-label="Send">
+            <span data-icon="https://shared-assets.lumaris.fr.eu.org/icons/send.svg"></span>
+          </button>
+        </div>
+      </main>
+    </div>
+  </body>
+</html>

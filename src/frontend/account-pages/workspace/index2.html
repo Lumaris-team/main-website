@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en" data-auth-pending>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#080912">
+    <title>Grades - Daniel Ersen Dashboard</title>
+    <meta name="description" content="Grades and averages from EcoleDirecte.">
+    <meta name="robots" content="noindex, nofollow">
+    <style>html[data-auth-pending] body { visibility: hidden; }</style>
+    <script type="module">
+      import { guardPage } from "/lib/auth.js";
+      guardPage().then((ok) => {
+        if (ok) document.documentElement.removeAttribute("data-auth-pending");
+      });
+    </script>
+    <script type="module" src="/lib/settings.js"></script>
+    <link rel="stylesheet" href="/styles/block.css">
+    <link rel="stylesheet" href="/pages/workspace/style.css">
+    <link rel="icon" href="https://shared-assets.lumaris.fr.eu.org/logo/square_black.png">
+    <link rel="manifest" href="/seo/manifest.json">
+    <meta name="msapplication-config" content="/seo/browserconfig.xml">
+    <style>
+      body {
+        padding-top: 0;
+      }
+      .solo-shell {
+        width: min(900px, calc(100vw - 32px));
+        margin: 0 auto;
+        padding: 28px 0 48px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="solo-shell">
+      <main class="ws-main">
+        <!-- ===================== GRADES ===================== -->
+        <section id="notes" class="ws-section" aria-label="Grades">
+          <header class="section-head">
+            <h1>Grades</h1>
+            <div class="segmented" role="tablist" aria-label="Choose the term" data-trimester>
+              <span class="segmented-thumb" data-thumb></span>
+              <button class="segmented-btn" type="button" role="tab" data-period="trimestre1" data-active="true">Term 1</button>
+              <button class="segmented-btn" type="button" role="tab" data-period="trimestre2">Term 2</button>
+              <button class="segmented-btn" type="button" role="tab" data-period="trimestre3">Term 3</button>
+            </div>
+          </header>
+          <div class="notes-body" data-notes-body>
+            <p class="state-msg">Loading grades…</p>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <div class="note-tooltip" data-note-tooltip hidden></div>
+
+    <script type="module" src="/pages/workspace/script2.js"></script>
+  </body>
+</html>

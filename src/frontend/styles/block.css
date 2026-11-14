@@ -1,0 +1,99 @@
+/* ===================== BLOCK STYLES ===================== */
+
+/* Grid container for blocks */
+.bento-grid {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 14px;
+}
+
+/* Base block style */
+.bento-block {
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(20px) saturate(1.2);
+  -webkit-backdrop-filter: blur(20px) saturate(1.2);
+  box-shadow:
+    0 18px 48px rgba(0, 0, 0, 0.1),
+    0 0 22px rgba(140, 236, 255, 0.04) inset;
+  overflow: hidden;
+  transition:
+    border-color 220ms ease,
+    box-shadow 220ms ease,
+    transform 220ms ease;
+}
+
+.bento-block:hover {
+  border-color: transparent;
+  box-shadow:
+    0 24px 60px rgba(0, 0, 0, 0.28),
+    0 0 34px rgba(140, 236, 255, 0.08),
+    0 0 0 1px rgba(140, 236, 255, 0.08) inset;
+  transform: translateY(-2px);
+}
+
+/* Eyebrow label/tag */
+.block-eyebrow {
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 0.68rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  width: fit-content;
+}
+
+/* Block description text */
+.block-desc {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.8rem;
+  line-height: 1.32;
+}
+
+/* Status title */
+.status-title {
+  font-size: clamp(1.6rem, 2.4vw, 2.2rem);
+  line-height: 1.08;
+}
+
+/* Sync status text */
+.status-sync {
+  margin: 0;
+  color: var(--muted);
+  font-size: 1rem;
+}
+
+.status-sync span {
+  color: var(--paper);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Card description */
+.card-desc {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.86rem;
+  line-height: 1.35;
+}
+
+/* Card value */
+.card-value {
+  font-size: clamp(2.4rem, 5vw, 3.4rem);
+  line-height: 1;
+  letter-spacing: -0.03em;
+  font-weight: 600;
+}
+
+.card-value[data-tone="accent"] {
+  color: var(--accent);
+}

@@ -1,0 +1,432 @@
+// ===================== WEBSITES PAGE JAVASCRIPT =====================
+
+import { ensureSessionToken } from "/lib/auth.js";
+import { loadIcons } from '/lib/icons.js';
+
+let websites = [];
+let editingWebsite = null;
+let deletingWebsite = null;
+
+// ===================== API FUNCTIONS =====================
+
+async function getAuthToken() {
+  const token = await ensureSessionToken();
+  if (!token) {
+    throw new Error('No authentication token found');
+  }
+  return token;
+}
+
+async function fetchWebsites() {
+  console.log('fetchWebsites called');
+  try {
+    const token = await getAuthToken();
+    console.log('Token obtained:', token ? 'yes' : 'no');
+    const response = await fetch('/api/websites/', {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    console.log('Response status:', response.status);
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Failed to fetch websites');
+    }
+
+    const data = await response.json();
+    console.log('Response data:', data);
+    return data.resp?.websites || [];
+  } catch (error) {
+    console.error('Error fetching websites:', error);
+    throw error;
+  }
+}
+
+async function addWebsite(name, url) {
+  try {
+    const token = await getAuthToken();
+    const response = await fetch('/api/websites/add', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ name, url })
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Failed to add website');
+    }
+
+    const data = await response.json();
+    return data.resp?.websites || [];
+  } catch (error) {
+    console.error('Error adding website:', error);
+    throw error;
+  }
+}
+
+async function updateWebsite(oldName, newName, newUrl) {
+  try {
+    const token = await getAuthToken();
+    const response = await fetch('/api/websites/update', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ oldName, newName, newUrl })
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Failed to update website');
+    }
+
+    const data = await response.json();
+    return data.resp?.websites || [];
+  } catch (error) {
+    console.error('Error updating website:', error);
+    throw error;
+  }
+}
+
+async function deleteWebsite(name) {
+  try {
+    const token = await getAuthToken();
+    const response = await fetch(`/api/websites/delete/${encodeURIComponent(name)}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Failed to delete website');
+    }
+
+    const data = await response.json();
+    return data.resp?.websites || [];
+  } catch (error) {
+    console.error('Error deleting website:', error);
+    throw error;
+  }
+}
+
+// ===================== LOGO FETCHING =====================
+
+async function getWebsiteLogo(url) {
+  try {
+    const domain = new URL(url).hostname;
+    
+    // Use Google favicon service directly (most reliable)
+    return `https://www.google.com/s2/favicons?domain=${domain}&sz=64`;
+  } catch (error) {
+    console.error('Error fetching logo:', error);
+    return null;
+  }
+}
+
+function getFallbackLogo(name) {
+  // Get first letter of name for fallback
+  return name ? name.charAt(0).toUpperCase() : '?';
+}
+
+// ===================== RENDER FUNCTIONS =====================
+
+function renderWebsites() {
+  console.log('renderWebsites called, websites:', websites);
+  const grid = document.getElementById('websites-grid');
+  
+  if (!grid) {
+    console.error('websites-grid element not found');
+    return;
+  }
+  
+  if (websites.length === 0) {
+    console.log('No websites to display, showing empty state');
+    grid.classList.add('empty');
+    grid.innerHTML = '<div class="empty-state">No websites yet. Click the + button to add your first website.</div>';
+    return;
+  }
+
+  console.log('Rendering', websites.length, 'websites');
+  grid.classList.remove('empty');
+  grid.innerHTML = '';
+
+  websites.forEach(website => {
+    console.log('Creating block for:', website);
+    const block = createWebsiteBlock(website);
+    grid.appendChild(block);
+  });
+
+  // Load icons for dynamically created elements
+  await loadIcons(grid);
+
+  console.log('All blocks added to grid');
+}
+
+function createWebsiteBlock(website) {
+  const block = document.createElement('div');
+  block.className = 'website-block';
+  block.dataset.name = website.name;
+
+  const content = document.createElement('div');
+  content.className = 'website-content';
+
+  // Logo container
+  const logoContainer = document.createElement('div');
+  logoContainer.className = 'website-logo';
+  
+  const logoImg = document.createElement('img');
+  logoImg.alt = website.name;
+  logoImg.onerror = function() {
+    this.style.display = 'none';
+    logoContainer.classList.add('fallback');
+    logoContainer.textContent = getFallbackLogo(website.name);
+  };
+  
+  // Try to load logo
+  getWebsiteLogo(website.url).then(logoUrl => {
+    if (logoUrl) {
+      logoImg.src = logoUrl;
+      logoImg.style.display = 'block';
+    } else {
+      logoImg.style.display = 'none';
+      logoContainer.classList.add('fallback');
+      logoContainer.textContent = getFallbackLogo(website.name);
+    }
+  }).catch(() => {
+    logoImg.style.display = 'none';
+    logoContainer.classList.add('fallback');
+    logoContainer.textContent = getFallbackLogo(website.name);
+  });
+
+  logoContainer.appendChild(logoImg);
+
+  // Website info
+  const info = document.createElement('div');
+  info.className = 'website-info';
+
+  const name = document.createElement('h3');
+  name.className = 'website-name';
+  name.textContent = website.name;
+
+  info.appendChild(name);
+
+  // Actions
+  const actions = document.createElement('div');
+  actions.className = 'website-actions';
+
+  const editBtn = document.createElement('button');
+  editBtn.className = 'website-action-btn edit';
+  editBtn.type = 'button';
+  editBtn.ariaLabel = 'Edit website';
+  editBtn.innerHTML = '<span data-icon="https://shared-assets.lumaris.fr.eu.org/icons/edit.svg"></span>';
+  editBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    openEditModal(website);
+  });
+
+  const deleteBtn = document.createElement('button');
+  deleteBtn.className = 'website-action-btn delete';
+  deleteBtn.type = 'button';
+  deleteBtn.ariaLabel = 'Delete website';
+  deleteBtn.innerHTML = '<span data-icon="https://shared-assets.lumaris.fr.eu.org/icons/delete.svg"></span>';
+  deleteBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    openDeleteModal(website);
+  });
+
+  actions.appendChild(editBtn);
+  actions.appendChild(deleteBtn);
+
+  content.appendChild(logoContainer);
+  content.appendChild(info);
+  content.appendChild(actions);
+
+  block.appendChild(content);
+
+  // Click to open URL
+  block.addEventListener('click', () => {
+    window.open(website.url, '_blank');
+  });
+
+  return block;
+}
+
+// ===================== MODAL FUNCTIONS =====================
+
+const websiteModal = document.getElementById('website-modal');
+const deleteModal = document.getElementById('delete-modal');
+const websiteForm = document.getElementById('website-form');
+const modalTitle = document.getElementById('modal-title');
+const nameInput = document.getElementById('website-name');
+const urlInput = document.getElementById('website-url');
+
+function openAddModal() {
+  editingWebsite = null;
+  modalTitle.textContent = 'Add Website';
+  nameInput.value = '';
+  urlInput.value = '';
+  websiteModal.setAttribute('aria-hidden', 'false');
+  nameInput.focus();
+}
+
+function openEditModal(website) {
+  console.log('Opening edit modal for website:', website);
+  editingWebsite = website;
+  modalTitle.textContent = 'Edit Website';
+  nameInput.value = website.name;
+  urlInput.value = website.url;
+  websiteModal.setAttribute('aria-hidden', 'false');
+  nameInput.focus();
+}
+
+function closeWebsiteModal() {
+  websiteModal.setAttribute('aria-hidden', 'true');
+  editingWebsite = null;
+  websiteForm.reset();
+}
+
+function openDeleteModal(website) {
+  console.log('Opening delete modal for website:', website);
+  deletingWebsite = website;
+  deleteModal.setAttribute('aria-hidden', 'false');
+}
+
+function closeDeleteModal() {
+  deleteModal.setAttribute('aria-hidden', 'true');
+  deletingWebsite = null;
+}
+
+// ===================== EVENT LISTENERS =====================
+
+document.getElementById('add-website-btn').addEventListener('click', openAddModal);
+
+document.getElementById('cancel-btn').addEventListener('click', closeWebsiteModal);
+
+document.getElementById('cancel-delete-btn').addEventListener('click', closeDeleteModal);
+
+document.getElementById('confirm-delete-btn').addEventListener('click', async () => {
+  console.log('Delete button clicked, deletingWebsite:', deletingWebsite);
+  if (deletingWebsite) {
+    const btn = document.getElementById('confirm-delete-btn');
+    btn.disabled = true;
+    btn.style.opacity = '0.5';
+    btn.style.cursor = 'not-allowed';
+    
+    try {
+      console.log('Deleting website with name:', deletingWebsite.name);
+      await deleteWebsite(deletingWebsite.name);
+      // Refresh websites from server to ensure consistency
+      websites = await fetchWebsites();
+      renderWebsites();
+      closeDeleteModal();
+    } catch (error) {
+      console.error('Error deleting website:', error);
+      alert(`Failed to delete website: ${error.message}`);
+    } finally {
+      btn.disabled = false;
+      btn.style.opacity = '1';
+      btn.style.cursor = 'pointer';
+    }
+  } else {
+    console.error('No deletingWebsite set');
+  }
+});
+
+websiteForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  
+  const name = nameInput.value.trim();
+  const url = urlInput.value.trim();
+
+  console.log('Form submitted:', { name, url, editingWebsite });
+
+  if (!name || !url) {
+    alert('Please fill in all fields');
+    return;
+  }
+
+  const submitBtn = websiteForm.querySelector('button[type="submit"]');
+  submitBtn.disabled = true;
+  submitBtn.style.opacity = '0.5';
+  submitBtn.style.cursor = 'not-allowed';
+
+  try {
+    if (editingWebsite) {
+      console.log('Updating existing website with old name:', editingWebsite.name, 'new name:', name);
+      // Update existing website
+      await updateWebsite(editingWebsite.name, name, url);
+      // Refresh websites from server to ensure consistency
+      websites = await fetchWebsites();
+    } else {
+      console.log('Adding new website');
+      // Add new website
+      await addWebsite(name, url);
+      // Refresh websites from server to ensure consistency
+      websites = await fetchWebsites();
+    }
+    
+    renderWebsites();
+    closeWebsiteModal();
+  } catch (error) {
+    console.error('Error saving website:', error);
+    alert(`Failed to save website: ${error.message}`);
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.style.opacity = '1';
+    submitBtn.style.cursor = 'pointer';
+  }
+});
+
+// Close modals on backdrop click
+websiteModal.querySelector('.modal-backdrop').addEventListener('click', closeWebsiteModal);
+deleteModal.querySelector('.modal-backdrop').addEventListener('click', closeDeleteModal);
+
+// Close modals on Escape key
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    closeWebsiteModal();
+    closeDeleteModal();
+  }
+});
+
+// ===================== INITIALIZATION =====================
+
+async function init() {
+  console.log('Websites page initializing...');
+  console.log('DOM ready, elements:', {
+    grid: document.getElementById('websites-grid'),
+    addBtn: document.getElementById('add-website-btn'),
+    modal: document.getElementById('website-modal')
+  });
+  
+  try {
+    websites = await fetchWebsites();
+    console.log('Websites fetched:', websites);
+    renderWebsites();
+    console.log('Websites rendered');
+  } catch (error) {
+    console.error('Error initializing websites page:', error);
+    // Show error message to user
+    const grid = document.getElementById('websites-grid');
+    if (grid) {
+      grid.innerHTML = `<p style="color: var(--text); padding: 20px;">Error loading websites: ${error.message}. Please try again.</p>`;
+    }
+  }
+}
+
+// Initialize when DOM is ready
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', init);
+} else {
+  init();
+}

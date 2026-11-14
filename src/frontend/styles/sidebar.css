@@ -1,0 +1,154 @@
+/* ===================== SIDEBAR STYLES ===================== */
+
+/* Sidebar container */
+.ai-sidebar,
+.ws-sidebar,
+.websites-sidebar,
+.tools-sidebar,
+.files-sidebar,
+.study-notes-sidebar,
+.settings-sidebar {
+  position: sticky;
+  top: calc(var(--navbar-height) + 14px);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 4px;
+}
+
+/* Navigation buttons */
+.ai-nav,
+.ws-nav,
+.websites-nav,
+.tools-nav,
+.files-nav,
+.study-notes-nav,
+.settings-nav {
+  width: 56px;
+  height: 56px;
+  display: grid;
+  place-items: center;
+  border: 1px solid transparent;
+  border-radius: 16px;
+  background: transparent;
+  color: transparent;
+  cursor: pointer;
+  transition:
+    color 180ms ease,
+    background 180ms ease,
+    border-color 180ms ease,
+    transform 180ms ease;
+}
+
+/* SVG styling */
+.ai-nav svg,
+.ws-nav svg,
+.websites-nav svg,
+.tools-nav svg,
+.files-nav svg,
+.study-notes-nav svg,
+.settings-nav svg {
+  width: 24px;
+  height: 24px;
+  stroke: rgba(255,255,255,0.92);
+  fill: none;
+  opacity: 0.5;
+  filter: none;
+}
+
+.ai-nav.active svg,
+.ai-nav[data-active="true"] svg,
+.ws-nav[data-active="true"] svg,
+.websites-nav[data-active="true"] svg,
+.tools-nav[data-active="true"] svg,
+.files-nav[data-active="true"] svg,
+.study-notes-nav[data-active="true"] svg,
+.settings-nav.active svg,
+.settings-nav[data-active="true"] svg {
+  stroke: rgba(0,0,0,0.8);
+  opacity: 1;
+  filter: none;
+}
+
+/* Icon container */
+.ai-icon,
+.websites-icon,
+.tools-icon,
+.files-icon,
+.study-notes-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+
+/* Hover state */
+.ai-nav:hover,
+.ws-nav:hover,
+.websites-nav:hover,
+.tools-nav:hover,
+.files-nav:hover,
+.study-notes-nav:hover {
+  color: var(--accent);
+  background: transparent;
+}
+
+/* Active/pressed state */
+.ai-nav:active,
+.ws-nav:active,
+.websites-nav:active,
+.tools-nav:active,
+.files-nav:active,
+.study-notes-nav:active {
+  transform: translateY(1px);
+}
+
+/* Active/selected state */
+.ai-nav.active,
+.ai-nav[data-active="true"],
+.ws-nav[data-active="true"],
+.websites-nav[data-active="true"],
+.tools-nav[data-active="true"],
+.files-nav[data-active="true"],
+.study-notes-nav[data-active="true"],
+.settings-nav.active,
+.settings-nav[data-active="true"] {
+  color: var(--accent);
+  background: rgba(255, 255, 255, 0.95);
+  border-color: transparent;
+}
+
+/* ===================== RESPONSIVE ===================== */
+@media (max-width: 768px) {
+  /* Sidebar container - horizontal layout */
+  .ai-sidebar,
+  .ws-sidebar,
+  .websites-sidebar,
+  .tools-sidebar,
+  .files-sidebar,
+  .study-notes-sidebar {
+    position: sticky;
+    top: calc(var(--navbar-height) + 8px);
+    z-index: 5;
+    flex-direction: row;
+    justify-content: space-around;
+    padding: 6px;
+    border: 1px solid transparent;
+    border-radius: 18px;
+    background: rgba(8, 9, 18, 0.42);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+  }
+
+  /* Navigation buttons - smaller size */
+  .ai-nav,
+  .ws-nav,
+  .websites-nav,
+  .tools-nav,
+  .files-nav,
+  .study-notes-nav {
+    width: 52px;
+    height: 48px;
+  }
+}
