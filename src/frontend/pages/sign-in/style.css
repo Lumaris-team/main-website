@@ -35,3 +35,9 @@ form { display: grid; gap: 20px; }
 .signin-alt { margin: 26px 0 0; text-align: center; color: var(--muted); font-size: 12.5px; }
 .signin-alt a { color: var(--cyan); text-decoration: none; }
 @media (max-width: 520px) { .signin-card { padding: 36px 24px; } }
+.turnstile-widget {
+  display: flex;
+  justify-content: center;
+  min-height: 65px;
+  margin: 0.75rem 0;
+}
