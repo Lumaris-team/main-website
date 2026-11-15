@@ -1,15 +1,4 @@
 const ACCOUNT_PATH = /^\/account\/([A-Za-z0-9_-]+)(\/.*)?$/;
-const TURNSTILE_SITEVERIFY_URL = "https://challenges.cloudflare.com/turnstile/v0/siteverify";
-
-function accountBackendUrl(username, path, search, env) {
-  const subdomain = env.WORKERS_ACCOUNT_SUBDOMAIN || "danielersen-cloudflare-account";
-  return `https://main-client-worker.${subdomain}.workers.dev${path}${search}`;
-}
-
-function loginWorkerUrl(path = "/api/login", env) {
-  const subdomain = env.WORKERS_ACCOUNT_SUBDOMAIN || "danielersen-cloudflare-account";
-  return `https://login-client-worker.${subdomain}.workers.dev${path}`;
-}
 
 function rewriteAccountHtml(html, username) {
   const prefix = `/account/${username}`;
@@ -76,109 +65,7 @@ export default {
       if (accountPath === "/pages/auth" || accountPath === "/pages/auth/") {
         return Response.redirect(new URL("/sign-in", request.url), 302);
       }
-      if (accountPath.startsWith("/api/")) {
-        const backendUrl = accountBackendUrl(username, accountPath, url.search, env);
-        return fetch(new Request(backendUrl, request));
-      }
       return serveAccountPage(request, env, username, accountPath);
-    }
-
-    if (url.pathname === "/api/config" && method === "GET") {
-      return new Response(JSON.stringify({
-        turnstileSiteKey: env.TURNSTILE_SITE_KEY || null,
-      }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    if (url.pathname === "/api/login" && method === "POST") {
-      try {
-        const payload = await request.json();
-        const identifier = String(payload?.identifier || "").trim();
-        const password = String(payload?.password || "");
-        if (!identifier || identifier.includes("@")) {
-          return new Response(JSON.stringify({ error: "LOGIN_METHOD_UNAVAILABLE" }), {
-            status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
-          });
-        }
-        const ip = request.headers.get("CF-Connecting-IP") || "unknown";
-        const response = await fetch(loginWorkerUrl("/api/login", env), {
-          method: "POST",
-          headers: { "Content-Type": "application/json", "X-Forwarded-For": ip },
-          body: JSON.stringify({ username: identifier, password, ip }),
-        });
-        if (!response.ok) return new Response("Not found", { status: 404 });
-        const result = await response.json();
-        return new Response(JSON.stringify(result), {
-          status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      } catch (error) {
-        console.error("LOGIN PROXY ERROR:", error?.stack || error);
-        return new Response("Not found", { status: 404 });
-      }
-    }
-
-    if (url.pathname === "/api/turnstile" && method === "POST") {
-      try {
-        const payload = await request.json();
-        const token = String(payload?.token || "");
-        if (!env.TURNSTILE_SECRET_KEY || !token) {
-          return new Response(JSON.stringify({ success: false, reason: "turnstile_not_configured" }), {
-            status: 503,
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-          });
-        }
-        const verification = new FormData();
-        verification.append("secret", env.TURNSTILE_SECRET_KEY);
-        verification.append("response", token);
-        const clientIp = request.headers.get("CF-Connecting-IP");
-        if (clientIp) verification.append("remoteip", clientIp);
-        const verificationResponse = await fetch(TURNSTILE_SITEVERIFY_URL, {
-          method: "POST",
-          body: verification,
-        });
-        if (!verificationResponse.ok) {
-          throw new Error(`Turnstile siteverify failed with status ${verificationResponse.status}`);
-        }
-        const result = await verificationResponse.json();
-        return new Response(JSON.stringify({
-          success: result.success === true,
-          reason: result.success === true ? undefined : "verification_failed",
-        }), {
-          status: result.success === true ? 200 : 403,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      } catch (error) {
-        console.error("TURNSTILE VERIFICATION ERROR:", error?.stack || error);
-        return new Response(JSON.stringify({ success: false, reason: "proxy_error" }), {
-          status: 502,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-    }
-    
-    // =========================
-    // 📶 MAIN API
-    // =========================
-if (url.pathname.startsWith("/api/")) {
-      try {
-        let resp = {object: "nothing"};
-        // Return res111ponse
-        return new Response(JSON.stringify({
-          resp
-        }), {
-          headers: corsHeaders
-        })
-      } catch (e) {
-        console.error("API ERROR:", e?.stack || e);
-        // await sendErrorEmail(env, e, `API ${url.pathname}`);
-        return new Response(JSON.stringify({
-          error: e?.message,
-        }), {
-          status: 500,
-          headers: corsHeaders
-        });
-      }
     }
     // =========================
     // 🌐 SITE (Cloudflare assets)

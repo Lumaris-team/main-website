@@ -13,14 +13,8 @@
 // in localStorage; on a later visit we restore it automatically so the user is
 // recognised without retyping anything, like a normal website.
 
-import {
-  getRememberPref,
-  getRestoredSession,
-  persistSession,
-  signOut as supabaseSignOut,
-} from "/lib/supabase.js";
-
 const ACCOUNT_BASE = window.__ACCOUNT_BASE_PATH__ || "";
+const ACCOUNT_WORKER_BASE = window.__ACCOUNT_WORKER_BASE__ || "";
 const accountPath = (path) => `${ACCOUNT_BASE}${path}`;
 const AUTH_PAGE = accountPath("/pages/auth");
 const HOME_PAGE = accountPath("/pages/home");
@@ -39,6 +33,7 @@ const STORAGE_KEYS = {
 };
 
 const HASH_KEYS = ["access_token", "refresh_token", "expires_at", "expires_in", "token_type"];
+const getRememberPref = () => window.localStorage.getItem("auth_remember") === "1";
 
 // Writes go to the storage matching the remember preference (localStorage when
 // remembered so they survive a browser restart, sessionStorage otherwise).
@@ -102,7 +97,7 @@ async function ensureLocalSession() {
   const oneTime = new URLSearchParams(window.location.search).get("token");
   if (oneTime && accountBase) {
     const username = accountBase.split("/").pop();
-    const response = await fetch(`${accountBase}/api/auth/one-time`, {
+    const response = await fetch(`${ACCOUNT_WORKER_BASE}/api/auth/one-time`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ username, token: oneTime }),
@@ -116,11 +111,10 @@ async function ensureLocalSession() {
     }
   }
   if (captureHashTokens()) {
-    await persistSession(readItem(STORAGE_KEYS.access), readItem(STORAGE_KEYS.refresh));
     return true;
   }
   if (getAccessToken()) return true;
-  return storeSession(await getRestoredSession());
+  return false;
 }
 
 // Re-append the auth params to a same-origin URL so the next page re-runs the
@@ -165,7 +159,7 @@ async function requestSessionToken() {
   if (!accessToken) return null;
   let res;
   try {
-    res = await fetch("/api/auth/session", {
+    res = await fetch(`${ACCOUNT_WORKER_BASE}/api/auth/session`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ access_token: accessToken }),
@@ -243,8 +237,7 @@ function consumePostAuthRedirect() {
 // On the login page: if this device is already recognised (remembered session),
 // skip the form and go straight in. Returns true if it triggered a navigation.
 export async function redirectIfAuthenticated() {
-  const session = await getRestoredSession();
-  if (!storeSession(session)) return false;
+  if (!getValidSessionToken() && !getAccessToken()) return false;
   // Go through the landing path so any saved post-auth redirect is honoured.
   navigateWithAuth(accountPath("/pages/"));
   return true;
@@ -254,11 +247,6 @@ export async function redirectIfAuthenticated() {
 // remembered), drop every local token and the redirect cookie, then return to
 // the login page.
 export async function logout() {
-  try {
-    await supabaseSignOut();
-  } catch (e) {
-    /* ignore, still clear locally */
-  }
   for (const key of Object.values(STORAGE_KEYS)) removeItemEverywhere(key);
   deleteCookie(REDIRECT_COOKIE);
   window.location.replace(AUTH_PAGE);
@@ -309,7 +297,10 @@ export async function authedFetch(input, init = {}) {
   const url = typeof input === 'string' ? input : input.url;
   const urlName = url.split('/').pop() || 'api-request';
 
-  let res = await fetch(input, withAuth(token));
+  const requestUrl = typeof input === "string" && input.startsWith("/")
+    ? `${ACCOUNT_WORKER_BASE}${input}`
+    : input;
+  let res = await fetch(requestUrl, withAuth(token));
   if (res.status === 401) {
     removeItemEverywhere(STORAGE_KEYS.session);
     removeItemEverywhere(STORAGE_KEYS.sessionExp);
@@ -318,7 +309,7 @@ export async function authedFetch(input, init = {}) {
       redirectToAuth();
       throw new Error("Not authenticated");
     }
-    res = await fetch(input, withAuth(token));
+    res = await fetch(requestUrl, withAuth(token));
   }
   return res;
 }
