@@ -99,6 +99,22 @@ function storeSession(session) {
 // URL hash (fresh login) -> already in storage -> a remembered Supabase session
 // restored automatically. Returns true if a token is now available.
 async function ensureLocalSession() {
+  const oneTime = new URLSearchParams(window.location.search).get("token");
+  if (oneTime && accountBase) {
+    const username = accountBase.split("/").pop();
+    const response = await fetch(`${accountBase}/api/auth/one-time`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, token: oneTime }),
+    }).catch(() => null);
+    const session = await response?.json().catch(() => null);
+    if (response?.ok && session?.token) {
+      store().setItem(STORAGE_KEYS.session, session.token);
+      store().setItem(STORAGE_KEYS.sessionExp, String(session.exp || 0));
+      history.replaceState(null, "", window.location.pathname);
+      return true;
+    }
+  }
   if (captureHashTokens()) {
     await persistSession(readItem(STORAGE_KEYS.access), readItem(STORAGE_KEYS.refresh));
     return true;

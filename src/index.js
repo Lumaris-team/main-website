@@ -2,7 +2,11 @@ const ACCOUNT_PATH = /^\/account\/([A-Za-z0-9_-]+)(\/.*)?$/;
 const TURNSTILE_SITEVERIFY_URL = "https://challenges.cloudflare.com/turnstile/v0/siteverify";
 
 function accountBackendUrl(username, path, search) {
-  return `https://client-worker.${username}-cloudflare-account.workers.dev${path}${search}`;
+  return `https://main-client-worker.${username}-cloudflare-account.workers.dev${path}${search}`;
+}
+
+function loginWorkerUrl(username, path = "/api/login") {
+  return `https://login-client-worker.${username}-cloudflare-account.workers.dev${path}`;
 }
 
 function rewriteAccountHtml(html, username) {
@@ -83,6 +87,33 @@ export default {
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
+    }
+
+    if (url.pathname === "/api/login" && method === "POST") {
+      try {
+        const payload = await request.json();
+        const identifier = String(payload?.identifier || "").trim();
+        const password = String(payload?.password || "");
+        if (!identifier || identifier.includes("@")) {
+          return new Response(JSON.stringify({ error: "LOGIN_METHOD_UNAVAILABLE" }), {
+            status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+        const ip = request.headers.get("CF-Connecting-IP") || "unknown";
+        const response = await fetch(loginWorkerUrl(identifier), {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "X-Forwarded-For": ip },
+          body: JSON.stringify({ username: identifier, password, ip }),
+        });
+        if (!response.ok) return new Response("Not found", { status: 404 });
+        const result = await response.json();
+        return new Response(JSON.stringify(result), {
+          status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      } catch (error) {
+        console.error("LOGIN PROXY ERROR:", error?.stack || error);
+        return new Response("Not found", { status: 404 });
+      }
     }
 
     if (url.pathname === "/api/turnstile" && method === "POST") {
