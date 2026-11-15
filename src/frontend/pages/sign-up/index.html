@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#080912">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Lumaris — Créer un compte</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="icon" href="https://shared-assets.lumaris.fr.eu.org/logo/logo.png">
+  <link rel="stylesheet" href="/pages/sign-up/style.css">
+</head>
+<body>
+  <div class="noise" aria-hidden="true"></div>
+  <header class="site-header"><site-navbar site="main-website"></site-navbar></header>
+  <main class="signup-shell">
+    <section class="signup-card" aria-label="Créer un compte">
+      <div class="signup-mark"><img src="https://shared-assets.lumaris.fr.eu.org/logo/logo.png" alt="Lumaris"></div>
+      <p class="eyebrow"><span class="pulse"></span>Rejoindre Lumaris</p>
+      <h1>Votre espace,<br><em>à vous.</em></h1>
+      <p class="signup-sub">Créez votre identifiant pour retrouver vos outils scolaires au même endroit.</p>
+      <form id="signup-form" autocomplete="on">
+        <label class="field">
+          <span>Pseudo</span>
+          <input type="text" name="username" autocomplete="username" autocapitalize="none" spellcheck="false" required minlength="3" maxlength="64" placeholder="p. ex. daniel">
+        </label>
+        <label class="field">
+          <span>Adresse e-mail</span>
+          <input type="email" name="email" autocomplete="email" required placeholder="vous@exemple.com">
+        </label>
+        <p id="signup-message" class="form-message" role="status" hidden></p>
+        <button type="submit" class="submit">Créer mon compte <span class="submit-icon">↗</span></button>
+      </form>
+      <p class="signup-alt">Vous avez déjà un compte ? <a href="/sign-in">Se connecter</a></p>
+    </section>
+  </main>
+  <script type="module" src="https://shared-assets.lumaris.fr.eu.org/navbar.js?v=20261115"></script>
+  <script type="module" src="/pages/sign-up/script.js"></script>
+</body>
+</html>
