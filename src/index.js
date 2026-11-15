@@ -229,6 +229,7 @@ if (url.pathname.startsWith("/api/")) {
       '/about-us': '/pages/about-us/index.html',
       '/security': '/pages/security/index.html',
       '/sign-in': '/pages/sign-in/index.html',
+      '/sign-up': '/pages/sign-up/index.html',
     };
     const cleanPath = url.pathname.length > 1 ? url.pathname.replace(/\/+$/, '') : url.pathname;
     if (siteRoutes[cleanPath]) {
