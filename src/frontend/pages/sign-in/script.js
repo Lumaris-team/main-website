@@ -79,9 +79,30 @@ if (form) {
       window.turnstile.reset(turnstileWidgetId);
       turnstileToken = null;
     }
-    if (errorBox) {
-      errorBox.textContent = "Vérification réussie. La connexion sera ajoutée ultérieurement.";
+    const identifier = form.elements.username.value.trim();
+    if (identifier.includes("@")) {
+      errorBox.textContent = "La connexion par adresse e-mail n'est pas disponible pour le moment.";
       errorBox.hidden = false;
+      return;
     }
+    const loginResponse = await fetch("/api/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ identifier, password: form.elements.password.value }),
+    });
+    const loginResult = await loginResponse.json().catch(() => ({}));
+    if (!loginResponse.ok || !loginResult.token) {
+      errorBox.textContent = "Identifiant ou mot de passe incorrect.";
+      errorBox.hidden = false;
+      return;
+    }
+    window.location.assign(`/account/${encodeURIComponent(identifier)}/?token=${encodeURIComponent(loginResult.token)}`);
   });
 }
+
+document.querySelectorAll(".social-login-button").forEach((button) => {
+  button.addEventListener("click", () => {
+    errorBox.textContent = `La connexion avec ${button.dataset.provider} n'est pas disponible pour le moment.`;
+    errorBox.hidden = false;
+  });
+});

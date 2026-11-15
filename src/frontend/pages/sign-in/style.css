@@ -41,3 +41,6 @@ form { display: grid; gap: 20px; }
   min-height: 65px;
   margin: 0.75rem 0;
 }
+.social-login { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 18px; }
+.social-login-button { padding: 11px 6px; border: 1px solid rgba(255,255,255,.14); border-radius: 10px; background: rgba(8,9,18,.6); color: var(--paper); cursor: pointer; font-size: 11px; }
+.social-login-button:hover { border-color: var(--cyan); }
