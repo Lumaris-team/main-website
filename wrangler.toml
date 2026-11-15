@@ -7,7 +7,6 @@ compatibility_flags = ["nodejs_compat"]
 
 [vars]
 TURNSTILE_SITE_KEY = "0x4AAAAAAGBRuixsOkHxqB2N"
-WORKERS_ACCOUNT_SUBDOMAIN = "danielersen-cloudflare-account"
 
 # Static site
 [assets]
