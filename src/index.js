@@ -1,12 +1,14 @@
 const ACCOUNT_PATH = /^\/account\/([A-Za-z0-9_-]+)(\/.*)?$/;
 const TURNSTILE_SITEVERIFY_URL = "https://challenges.cloudflare.com/turnstile/v0/siteverify";
 
-function accountBackendUrl(username, path, search) {
-  return `https://main-client-worker.${username}-cloudflare-account.workers.dev${path}${search}`;
+function accountBackendUrl(username, path, search, env) {
+  const subdomain = env.WORKERS_ACCOUNT_SUBDOMAIN || "danielersen-cloudflare-account";
+  return `https://main-client-worker.${subdomain}.workers.dev${path}${search}`;
 }
 
-function loginWorkerUrl(username, path = "/api/login") {
-  return `https://login-client-worker.${username}-cloudflare-account.workers.dev${path}`;
+function loginWorkerUrl(path = "/api/login", env) {
+  const subdomain = env.WORKERS_ACCOUNT_SUBDOMAIN || "danielersen-cloudflare-account";
+  return `https://login-client-worker.${subdomain}.workers.dev${path}`;
 }
 
 function rewriteAccountHtml(html, username) {
@@ -75,7 +77,7 @@ export default {
         return Response.redirect(new URL("/sign-in", request.url), 302);
       }
       if (accountPath.startsWith("/api/")) {
-        const backendUrl = accountBackendUrl(username, accountPath, url.search);
+        const backendUrl = accountBackendUrl(username, accountPath, url.search, env);
         return fetch(new Request(backendUrl, request));
       }
       return serveAccountPage(request, env, username, accountPath);
@@ -100,7 +102,7 @@ export default {
           });
         }
         const ip = request.headers.get("CF-Connecting-IP") || "unknown";
-        const response = await fetch(loginWorkerUrl(identifier), {
+        const response = await fetch(loginWorkerUrl("/api/login", env), {
           method: "POST",
           headers: { "Content-Type": "application/json", "X-Forwarded-For": ip },
           body: JSON.stringify({ username: identifier, password, ip }),
