@@ -30,8 +30,13 @@ if (form) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ username: identifier, password: form.elements.password.value }),
     });
+    if (!loginResponse.ok) {
+      errorBox.textContent = "Identifiant ou mot de passe incorrect.";
+      errorBox.hidden = false;
+      return;
+    }
     const loginResult = await loginResponse.json().catch(() => ({}));
-    if (!loginResponse.ok || !loginResult.token) {
+    if (!loginResult.token) {
       errorBox.textContent = "Identifiant ou mot de passe incorrect.";
       errorBox.hidden = false;
       return;
