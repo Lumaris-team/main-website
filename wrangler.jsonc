@@ -1,0 +1,33 @@
+{
+  // Principal informations
+  "name": "main-website",
+  "main": "src/index.js",
+  "compatibility_date": "2026-07-19",
+  "workers_dev": true,
+  "compatibility_flags": ["nodejs_compat"],
+
+  "vars": {
+    "TURNSTILE_SITE_KEY": "0x4AAAAAAGBRuixsOkHxqB2N"
+  },
+
+  // Static site
+  "assets": {
+    "directory": "./src/frontend",
+    "binding": "ASSETS"
+  },
+
+  // Observability
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 1,
+    "logs": {
+      "enabled": true,
+      "head_sampling_rate": 1,
+      "invocation_logs": true
+    },
+    "traces": {
+      "enabled": true,
+      "head_sampling_rate": 1
+    }
+  }
+}
