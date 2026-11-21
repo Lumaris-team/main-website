@@ -10,8 +10,17 @@ function rewriteAccountHtml(html, username) {
     .replaceAll("src='/pages/", `src='${prefix}/pages/`)
     .replaceAll('href="/assets/', `href="${prefix}/assets/`)
     .replaceAll('src="/assets/', `src="${prefix}/assets/`)
+    .replaceAll('href="/lib/', `href="${prefix}/lib/`)
+    .replaceAll('src="/lib/', `src="${prefix}/lib/`)
+    .replaceAll('href="/styles/', `href="${prefix}/styles/`)
+    .replaceAll('src="/styles/', `src="${prefix}/styles/`)
     .replaceAll('window.location.href = "/pages/', `window.location.href = "${prefix}/pages/`)
-    .replaceAll("window.location.href = '/pages/", `window.location.href = '${prefix}/pages/`);
+    .replaceAll("window.location.href = '/pages/", `window.location.href = '${prefix}/pages/`)
+    .replaceAll('import { guardPage } from "/lib/auth.js";', `import { guardPage } from "${prefix}/lib/auth.js";`)
+    .replaceAll('import { hideLoadingOverlay } from "/lib/loading.js";', `import { hideLoadingOverlay } from "${prefix}/lib/loading.js";`)
+    .replaceAll('import { navigateWithAuth } from "/lib/auth.js";', `import { navigateWithAuth } from "${prefix}/lib/auth.js";`)
+    .replaceAll('import { authedFetch } from "/lib/auth.js";', `import { authedFetch } from "${prefix}/lib/auth.js";`)
+    .replaceAll('import { getTurnstileToken, preloadTurnstile } from "/lib/turnstile.js";', `import { getTurnstileToken, preloadTurnstile } from "${prefix}/lib/turnstile.js";`);
 }
 
 async function serveAccountPage(request, env, username, accountPath) {
@@ -28,6 +37,9 @@ async function serveAccountPage(request, env, username, accountPath) {
     assetPath = `/account-pages/${assetPath.slice("/pages/".length)}`;
   } else if (assetPath.startsWith("/assets/")) {
     assetPath = `/account-assets/${assetPath.slice("/assets/".length)}`;
+  } else if (assetPath.startsWith("/lib/") || assetPath.startsWith("/styles/")) {
+    // Serve lib and styles directly from frontend
+    assetPath = assetPath;
   }
 
   const assetUrl = new URL(request.url);
@@ -65,6 +77,14 @@ export default {
       if (accountPath === "/pages/auth" || accountPath === "/pages/auth/") {
         return Response.redirect(new URL("/sign-in", request.url), 302);
       }
+      
+      // Handle lib and styles for account pages - serve directly from frontend
+      if (accountPath.startsWith("/lib/") || accountPath.startsWith("/styles/")) {
+        const assetUrl = new URL(request.url);
+        assetUrl.pathname = accountPath;
+        return env.ASSETS.fetch(new Request(assetUrl, request));
+      }
+      
       return serveAccountPage(request, env, username, accountPath);
     }
     // =========================

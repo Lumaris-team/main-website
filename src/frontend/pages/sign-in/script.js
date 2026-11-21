@@ -1,5 +1,4 @@
 import { getTurnstileToken, preloadTurnstile } from "/lib/turnstile.js";
-import { showLoadingOverlay } from "/lib/loading.js";
 
 const form = document.getElementById("signin-form");
 const errorBox = document.getElementById("signin-error");
@@ -62,9 +61,7 @@ if (form) {
       errorBox.hidden = false;
       return;
     }
-    // Show loading overlay before redirect
-    showLoadingOverlay();
-    // Store flag to keep loading visible after redirect
+    // Set flag to show loading on account page after redirect
     sessionStorage.setItem('show_loading', '1');
     window.location.assign(`/account/${encodeURIComponent(identifier)}/?token=${encodeURIComponent(loginResult.token)}`);
   });

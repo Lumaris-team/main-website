@@ -288,6 +288,7 @@ export async function guardPage() {
     }
     return true;
   } finally {
+    // Don't hide loading if it was triggered by login redirect
     if (!shouldShowLoading) {
       hideLoadingOverlay();
     }

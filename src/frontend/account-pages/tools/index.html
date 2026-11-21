@@ -25,7 +25,7 @@
       guardPage().then((ok) => {
         if (ok) {
           document.documentElement.removeAttribute("data-auth-pending");
-          setTimeout(() => hideLoadingOverlay(), 100);
+          setTimeout(() => hideLoadingOverlay(), 500);
         }
       });
     </script>
