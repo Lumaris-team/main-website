@@ -20,12 +20,11 @@
     <script type="module">
       import { guardPage } from "/lib/auth.js";
       import { hideLoadingOverlay } from "/lib/loading.js";
-      import { hideLoadingOverlay } from "/lib/loading.js";
       guardPage().then((ok) => {
         if (ok) {
           document.documentElement.removeAttribute("data-auth-pending");
-          // Hide loading after page is ready
-          setTimeout(() => hideLoadingOverlay(), 100);
+          // Hide loading after page is fully loaded
+          setTimeout(() => hideLoadingOverlay(), 500);
         }
       });
     </script>
