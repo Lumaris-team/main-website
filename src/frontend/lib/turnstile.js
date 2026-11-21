@@ -1,12 +1,14 @@
-// Loads Cloudflare Turnstile in visible mode and hands out a fresh token on demand.
-// If no site key is configured, every call resolves to null so login keeps working.
+// Loads Cloudflare Turnstile in visible mode. The widget runs on its own and
+// stores the latest token; submit handlers only READ it — we never trigger the
+// challenge on the user's behalf, so there's no deadlock between the checkbox
+// and the submit button.
 
 const SCRIPT_URL =
   "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
 
 let scriptPromise;
 let widgetPromise;
-let pending = null; // { resolve, reject } for the in-flight execute()
+let currentToken = null;
 
 function loadScript() {
   if (scriptPromise) return scriptPromise;
@@ -29,12 +31,10 @@ function loadScript() {
 async function getWidget() {
   if (widgetPromise) return widgetPromise;
   widgetPromise = (async () => {
-    // Get site key from environment or config
     const sitekey = window.__TURNSTILE_SITE_KEY__ || "0x4AAAAAAGBRuixsOkHxqB2N";
     if (!sitekey) return null; // Turnstile disabled.
     const turnstile = await loadScript();
-    
-    // Use existing container or create one
+
     let container = document.getElementById("turnstile-container");
     if (!container) {
       container = document.createElement("div");
@@ -42,44 +42,27 @@ async function getWidget() {
       container.className = "turnstile-container";
       document.body.appendChild(container);
     }
-    
+
     const id = turnstile.render(container, {
       sitekey,
-      size: "normal", // Visible widget
-      callback: (token) => {
-        pending?.resolve(token);
-        pending = null;
-      },
-      "error-callback": () => {
-        pending?.resolve(null);
-        pending = null;
-      },
-      "expired-callback": () => {
-        pending?.resolve(null);
-        pending = null;
-      },
+      size: "normal", // Visible widget — user clicks it themselves.
+      callback: (token) => { currentToken = token; },
+      "error-callback": () => { currentToken = null; },
+      "expired-callback": () => { currentToken = null; },
+      "timeout-callback": () => { currentToken = null; },
     });
     return { turnstile, id };
   })();
   return widgetPromise;
 }
 
-// Returns a fresh Turnstile token, or null when Turnstile is not configured / unavailable.
-export async function getTurnstileToken() {
-  try {
-    const widget = await getWidget();
-    if (!widget) return null;
-    widget.turnstile.reset(widget.id);
-    return await new Promise((resolve) => {
-      pending = { resolve };
-      widget.turnstile.execute(widget.id);
-    });
-  } catch (e) {
-    return null;
-  }
+// Returns the token produced by the widget, or null if the user hasn't
+// completed the check yet. Never executes the challenge programmatically.
+export function getTurnstileToken() {
+  return currentToken;
 }
 
-// Kick off script + widget load early so the first login isn't slowed down.
+// Kick off script + widget load early so the checkbox is ready on submit.
 export function preloadTurnstile() {
   getWidget().catch(() => {});
 }

@@ -32,10 +32,11 @@ if (form) {
       return;
     }
     
-    // Get Turnstile token (required)
-    const turnstileToken = await getTurnstileToken();
+    // Turnstile token must already be produced by the widget — we never
+    // trigger the challenge ourselves, just ask the user to tick the box.
+    const turnstileToken = getTurnstileToken();
     if (!turnstileToken) {
-      errorBox.textContent = "Veuillez compléter la vérification Cloudflare.";
+      errorBox.textContent = "Veuillez cocher la case de vérification Cloudflare.";
       errorBox.hidden = false;
       return;
     }
