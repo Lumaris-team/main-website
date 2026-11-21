@@ -1,8 +1,5 @@
-// Loads Cloudflare Turnstile in normal mode with visible widget and hands out a
-// fresh, single-use token on demand. If no site key is configured, every call
-// resolves to null so login keeps working.
-
-import { getTurnstileSiteKey } from "/lib/supabase.js";
+// Loads Cloudflare Turnstile in visible mode and hands out a fresh token on demand.
+// If no site key is configured, every call resolves to null so login keeps working.
 
 const SCRIPT_URL =
   "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
@@ -32,16 +29,23 @@ function loadScript() {
 async function getWidget() {
   if (widgetPromise) return widgetPromise;
   widgetPromise = (async () => {
-    const sitekey = await getTurnstileSiteKey();
+    // Get site key from environment or config
+    const sitekey = window.__TURNSTILE_SITE_KEY__ || "0x4AAAAAAGBRuixsOkHxqB2N";
     if (!sitekey) return null; // Turnstile disabled.
     const turnstile = await loadScript();
-    const container = document.createElement("div");
-    container.id = "turnstile-widget";
-    container.style.margin = "1rem 0";
-    document.body.appendChild(container);
+    
+    // Use existing container or create one
+    let container = document.getElementById("turnstile-container");
+    if (!container) {
+      container = document.createElement("div");
+      container.id = "turnstile-container";
+      container.className = "turnstile-container";
+      document.body.appendChild(container);
+    }
+    
     const id = turnstile.render(container, {
       sitekey,
-      size: "normal",
+      size: "normal", // Visible widget
       callback: (token) => {
         pending?.resolve(token);
         pending = null;
@@ -60,8 +64,7 @@ async function getWidget() {
   return widgetPromise;
 }
 
-// Returns a fresh Turnstile token, or null when Turnstile is not configured /
-// unavailable. Safe to call before every login attempt.
+// Returns a fresh Turnstile token, or null when Turnstile is not configured / unavailable.
 export async function getTurnstileToken() {
   try {
     const widget = await getWidget();

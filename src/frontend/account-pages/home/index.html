@@ -17,17 +17,7 @@
     
     <!-- BreadcrumbList structured data -->
     <style>html[data-auth-pending] body { visibility: hidden; }</style>
-    <script type="module">
-      import { guardPage } from "/lib/auth.js";
-      import { hideLoadingOverlay } from "/lib/loading.js";
-      guardPage().then((ok) => {
-        if (ok) {
-          document.documentElement.removeAttribute("data-auth-pending");
-          // Hide loading after page is fully loaded
-          setTimeout(() => hideLoadingOverlay(), 500);
-        }
-      });
-    </script>
+    <script type="module" src="/account-pages/init-auth.js"></script>
     <script type="module" src="/lib/settings.js"></script>
     <link rel="stylesheet" href="/styles/sidebar.css">
     <link rel="stylesheet" href="/styles/block.css">
