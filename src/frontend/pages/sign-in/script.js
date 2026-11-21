@@ -1,7 +1,14 @@
+import { getTurnstileToken, preloadTurnstile } from "/lib/turnstile.js";
+import { showLoadingOverlay } from "/lib/loading.js";
+
 const form = document.getElementById("signin-form");
 const errorBox = document.getElementById("signin-error");
 const toggle = document.getElementById("toggle-password");
 const password = document.getElementById("password");
+
+// Preload Turnstile early
+preloadTurnstile();
+
 if (toggle && password) {
   toggle.addEventListener("click", () => {
     const show = password.type === "password";
@@ -24,11 +31,25 @@ if (form) {
       errorBox.hidden = false;
       return;
     }
+    
+    // Get Turnstile token (fails gracefully if not configured)
+    const turnstileToken = await getTurnstileToken();
+    
     const loginUrl = `https://login-client-worker.${encodeURIComponent(identifier)}-cloudflare-account.workers.dev/api/login`;
+    const body = { 
+      username: identifier, 
+      password: form.elements.password.value 
+    };
+    
+    // Only add turnstile token if available
+    if (turnstileToken) {
+      body.turnstileToken = turnstileToken;
+    }
+    
     const loginResponse = await fetch(loginUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username: identifier, password: form.elements.password.value }),
+      body: JSON.stringify(body),
     });
     if (!loginResponse.ok) {
       errorBox.textContent = "Identifiant ou mot de passe incorrect.";
@@ -41,6 +62,10 @@ if (form) {
       errorBox.hidden = false;
       return;
     }
+    // Show loading overlay before redirect
+    showLoadingOverlay();
+    // Store flag to keep loading visible after redirect
+    sessionStorage.setItem('show_loading', '1');
     window.location.assign(`/account/${encodeURIComponent(identifier)}/?token=${encodeURIComponent(loginResult.token)}`);
   });
 }

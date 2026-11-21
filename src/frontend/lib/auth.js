@@ -1,3 +1,5 @@
+import { showLoadingOverlay, hideLoadingOverlay } from "/lib/loading.js";
+
 // Client-side auth guard.
 //
 // The Supabase access token arrives in the URL hash (#access_token=...) after
@@ -257,59 +259,82 @@ export async function logout() {
 // Run before showing protected content. Resolves to true if authenticated;
 // otherwise redirects to the login page and resolves to false.
 export async function guardPage() {
-  if (!(await ensureLocalSession())) {
-    redirectToAuth();
-    return false;
+  const shouldShowLoading = sessionStorage.getItem('show_loading') === '1';
+  if (shouldShowLoading) {
+    sessionStorage.removeItem('show_loading');
+    showLoadingOverlay();
   }
-  const token = await ensureSessionToken();
-  if (!token) {
-    redirectToAuth();
-    return false;
+  
+  try {
+    if (!(await ensureLocalSession())) {
+      redirectToAuth();
+      return false;
+    }
+    const token = await ensureSessionToken();
+    if (!token) {
+      redirectToAuth();
+      return false;
+    }
+    // Authenticated: if the user was sent here from login, bounce them back to the
+    // page they originally wanted. Keep the page hidden while navigating.
+    if (consumePostAuthRedirect()) {
+      return false;
+    }
+    // No saved destination but we landed on "/pages/" (or came straight to the
+    // login page): send the user to home.
+    if (isLandingPath()) {
+      navigateWithAuth(HOME_PAGE);
+      return false;
+    }
+    return true;
+  } finally {
+    if (!shouldShowLoading) {
+      hideLoadingOverlay();
+    }
   }
-  // Authenticated: if the user was sent here from login, bounce them back to the
-  // page they originally wanted. Keep the page hidden while navigating.
-  if (consumePostAuthRedirect()) {
-    return false;
-  }
-  // No saved destination but we landed on "/pages/" (or came straight to the
-  // login page): send the user to home.
-  if (isLandingPath()) {
-    navigateWithAuth(HOME_PAGE);
-    return false;
-  }
-  return true;
 }
 
 // Authenticated fetch: attaches the session token and transparently re-acquires
 // it once if the server reports it invalid.
 export async function authedFetch(input, init = {}) {
-  let token = await ensureSessionToken();
-  if (!token) {
-    redirectToAuth();
-    throw new Error("Not authenticated");
+  const shouldShowLoading = sessionStorage.getItem('show_loading') === '1';
+  if (!shouldShowLoading) {
+    showLoadingOverlay();
   }
-  const withAuth = (t) => ({
-    ...init,
-    headers: { ...(init.headers || {}), Authorization: `Bearer ${t}` },
-  });
-
-  // Extract a readable name from the URL for debugging
-  const url = typeof input === 'string' ? input : input.url;
-  const urlName = url.split('/').pop() || 'api-request';
-
-  const requestUrl = typeof input === "string" && input.startsWith("/")
-    ? `${ACCOUNT_WORKER_BASE}${input}`
-    : input;
-  let res = await fetch(requestUrl, withAuth(token));
-  if (res.status === 401) {
-    removeItemEverywhere(STORAGE_KEYS.session);
-    removeItemEverywhere(STORAGE_KEYS.sessionExp);
-    token = await requestSessionToken();
+  
+  try {
+    let token = await ensureSessionToken();
     if (!token) {
       redirectToAuth();
       throw new Error("Not authenticated");
     }
-    res = await fetch(requestUrl, withAuth(token));
+    const withAuth = (t) => ({
+      ...init,
+      headers: { ...(init.headers || {}), Authorization: `Bearer ${t}` },
+    });
+
+    // Extract a readable name from the URL for debugging
+    const url = typeof input === 'string' ? input : input.url;
+    const urlName = url.split('/').pop() || 'api-request';
+
+    const requestUrl = typeof input === "string" && input.startsWith("/")
+      ? `${ACCOUNT_WORKER_BASE}${input}`
+      : input;
+    let res = await fetch(requestUrl, withAuth(token));
+    if (res.status === 401) {
+      removeItemEverywhere(STORAGE_KEYS.session);
+      removeItemEverywhere(STORAGE_KEYS.sessionExp);
+      token = await requestSessionToken();
+      if (!token) {
+        redirectToAuth();
+        throw new Error("Not authenticated");
+      }
+      res = await fetch(requestUrl, withAuth(token));
+    }
+    return res;
+  } finally {
+    if (!shouldShowLoading) {
+      hideLoadingOverlay();
+    }
   }
-  return res;
 }

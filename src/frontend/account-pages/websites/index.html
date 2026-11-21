@@ -4,64 +4,24 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="#080912">
-    <title>Websites - Daniel Ersen Dashboard</title>
+    <title>Websites - Lumaris-Team Dashboard</title>
     <meta name="description" content="Manage your favorite websites - Quick access to your most visited sites with custom organization.">
-    <meta name="robots" content="index, follow">
-    <link rel="canonical" href="https://dashboard.danielersen.fr.eu.org/websites">
-    <link rel="icon" href="https://shared-assets.lumaris.fr.eu.org/logo/square_black.png">
-    <link rel="manifest" href="/seo/manifest.json">
-    <meta name="msapplication-config" content="/seo/browserconfig.xml">
+    <meta name="robots" content="noindex, nofollow">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="icon" href="https://shared-assets.lumaris.fr.eu.org/logo/logo.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="https://shared-assets.lumaris.fr.eu.org/logo/logo.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="https://shared-assets.lumaris.fr.eu.org/logo/logo.png">
+    <link rel="apple-touch-icon" href="https://shared-assets.lumaris.fr.eu.org/logo/logo.png">
+    <link rel="manifest" href="/site.webmanifest">
     
-    <!-- Open Graph / Facebook -->
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="https://dashboard.danielersen.fr.eu.org/websites">
-    <meta property="og:title" content="Websites - Daniel Ersen Dashboard">
-    <meta property="og:description" content="Manage your favorite websites - Quick access to your most visited sites with custom organization.">
-    <meta property="og:image" content="https://shared-assets.lumaris.fr.eu.org/logo/logo.png">
     
-    <!-- Twitter -->
-    <meta property="twitter:card" content="summary_large_image">
-    <meta property="twitter:url" content="https://dashboard.danielersen.fr.eu.org/websites">
-    <meta property="twitter:title" content="Websites - Daniel Ersen Dashboard">
-    <meta property="twitter:description" content="Manage your favorite websites - Quick access to your most visited sites with custom organization.">
-    <meta property="twitter:image" content="https://shared-assets.lumaris.fr.eu.org/logo/logo.png">
-    
-    <!-- Schema.org structured data -->
-    <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "WebPage",
-      "name": "Websites",
-      "url": "https://dashboard.danielersen.fr.eu.org/websites",
-      "description": "Manage your favorite websites - Quick access to your most visited sites with custom organization.",
-      "isPartOf": {
-        "@type": "WebSite",
-        "name": "Daniel Ersen Dashboard",
-        "url": "https://dashboard.danielersen.fr.eu.org/"
-      },
-      "breadcrumb": {
-        "@type": "BreadcrumbList",
-        "itemListElement": [
-          {
-            "@type": "ListItem",
-            "position": 1,
-            "name": "Home",
-            "item": "https://dashboard.danielersen.fr.eu.org/"
-          },
-          {
-            "@type": "ListItem",
-            "position": 2,
-            "name": "Websites",
-            "item": "https://dashboard.danielersen.fr.eu.org/websites"
-          }
-        ]
-      }
-    }
-    </script>
     
     <style>html[data-auth-pending] body { visibility: hidden; }</style>
     <script type="module">
       import { guardPage } from "/lib/auth.js";
+      import { hideLoadingOverlay } from "/lib/loading.js";
       // Remove auth pending immediately for faster loading
       document.documentElement.removeAttribute("data-auth-pending");
       guardPage().then((ok) => {
