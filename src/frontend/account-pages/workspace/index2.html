@@ -4,22 +4,31 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="#080912">
-    <title>Grades - Daniel Ersen Dashboard</title>
+    <title>Grades - Lumaris-Team Dashboard</title>
     <meta name="description" content="Grades and averages from EcoleDirecte.">
     <meta name="robots" content="noindex, nofollow">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="icon" href="https://shared-assets.lumaris.fr.eu.org/logo/logo.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="https://shared-assets.lumaris.fr.eu.org/logo/logo.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="https://shared-assets.lumaris.fr.eu.org/logo/logo.png">
+    <link rel="apple-touch-icon" href="https://shared-assets.lumaris.fr.eu.org/logo/logo.png">
+    <link rel="manifest" href="/site.webmanifest">
     <style>html[data-auth-pending] body { visibility: hidden; }</style>
     <script type="module">
       import { guardPage } from "/lib/auth.js";
+      import { hideLoadingOverlay } from "/lib/loading.js";
       guardPage().then((ok) => {
-        if (ok) document.documentElement.removeAttribute("data-auth-pending");
+        if (ok) {
+          document.documentElement.removeAttribute("data-auth-pending");
+          setTimeout(() => hideLoadingOverlay(), 100);
+        }
       });
     </script>
     <script type="module" src="/lib/settings.js"></script>
     <link rel="stylesheet" href="/styles/block.css">
     <link rel="stylesheet" href="/pages/workspace/style.css">
-    <link rel="icon" href="https://shared-assets.lumaris.fr.eu.org/logo/square_black.png">
-    <link rel="manifest" href="/seo/manifest.json">
-    <meta name="msapplication-config" content="/seo/browserconfig.xml">
     <style>
       body {
         padding-top: 0;

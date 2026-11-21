@@ -4,69 +4,29 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="#080912">
-    <meta property="og:site_name" content="Daniel Ersen Dashboard">
-    <title>Daniel Ersen Dashboard - Workspace & AI</title>
-    <meta name="description" content="Personal Dashboard by Daniel Ersen - Integrated workspace with grades, homeworks, timetable from EcoleDirecte, AI assistant, file storage and personalized tools.">
-    <meta name="robots" content="index, follow">
-    <link rel="canonical" href="https://dashboard.danielersen.fr.eu.org/">
-    <link rel="icon" type="image/png" sizes="48x48" href="https://shared-assets.lumaris.fr.eu.org/logo/rectangle_black.png">
-    <link rel="apple-touch-icon" href="https://shared-assets.lumaris.fr.eu.org/logo/rectangle_black.png">
-    <link rel="manifest" href="/seo/manifest.json">
-    <meta name="msapplication-config" content="/seo/browserconfig.xml">
+    <title>Lumaris-Team Dashboard - Workspace & AI</title>
+    <meta name="description" content="Personal Dashboard by Lumaris-Team - Integrated workspace with grades, homeworks, timetable from EcoleDirecte, AI assistant, file storage and personalized tools.">
+    <meta name="robots" content="noindex, nofollow">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="icon" href="https://shared-assets.lumaris.fr.eu.org/logo/logo.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="https://shared-assets.lumaris.fr.eu.org/logo/logo.png">
     
-    <!-- Open Graph / Facebook -->
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="https://dashboard.danielersen.fr.eu.org/">
-    <meta property="og:image" content="https://shared-assets.lumaris.fr.eu.org/logo/rectangle_black.png">
-    <meta property="og:description" content="Personal Dashboard by Daniel Ersen - Integrated workspace with grades, homeworks, timetable from EcoleDirecte, AI assistant, file storage and personalized tools.">
     
-    <!-- Twitter -->
-    <meta property="twitter:card" content="summary_large_image">
-    <meta property="twitter:url" content="https://dashboard.danielersen.fr.eu.org/">
-    <meta property="twitter:title" content="Daniel Ersen Dashboard - Workspace & AI">
-    <meta property="twitter:description" content="Personal Dashboard by Daniel Ersen - Integrated workspace with grades, homeworks, timetable from EcoleDirecte, AI assistant, file storage and personalized tools.">
-    <meta property="twitter:image" content="https://shared-assets.lumaris.fr.eu.org/logo/rectangle_black.png">
-    
-    <!-- Schema.org structured data -->
-    <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "WebSite",
-      "name": "Daniel Ersen Dashboard",
-      "url": "https://dashboard.danielersen.fr.eu.org/",
-      "description": "Personal Dashboard by Daniel Ersen - Integrated workspace with grades, homeworks, timetable from EcoleDirecte, AI assistant, file storage and personalized tools.",
-      "potentialAction": {
-        "@type": "SearchAction",
-        "target": "https://dashboard.danielersen.fr.eu.org/search?q={search_term_string}",
-        "query-input": "required name=search_term_string"
-      },
-      "publisher": {
-        "@type": "Person",
-        "name": "Daniel Ersen"
-      }
-    }
-    </script>
     
     <!-- BreadcrumbList structured data -->
-    <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "BreadcrumbList",
-      "itemListElement": [
-        {
-          "@type": "ListItem",
-          "position": 1,
-          "name": "Home",
-          "item": "https://dashboard.danielersen.fr.eu.org/"
-        }
-      ]
-    }
-    </script>
     <style>html[data-auth-pending] body { visibility: hidden; }</style>
     <script type="module">
       import { guardPage } from "/lib/auth.js";
+      import { hideLoadingOverlay } from "/lib/loading.js";
+      import { hideLoadingOverlay } from "/lib/loading.js";
       guardPage().then((ok) => {
-        if (ok) document.documentElement.removeAttribute("data-auth-pending");
+        if (ok) {
+          document.documentElement.removeAttribute("data-auth-pending");
+          // Hide loading after page is ready
+          setTimeout(() => hideLoadingOverlay(), 100);
+        }
       });
     </script>
     <script type="module" src="/lib/settings.js"></script>
@@ -151,7 +111,7 @@
         </a>
       </section>
 
-      <p class="home-footer">Designed by AI and managed by Daniel Ersen</p>
+      <p class="home-footer">Designed by AI and managed by Lumaris-Team</p>
     </main>
     <script type="module" src="/pages/home/script.js"></script>
   </body>
