@@ -71,7 +71,7 @@ if (form) {
     sessionStorage.setItem('oneTimeToken', loginResult.oneTimeToken);
     sessionStorage.setItem('username', identifier);
     
-    window.location.assign(`/account/${encodeURIComponent(identifier)}/?jwt=${encodeURIComponent(loginResult.jwt)}&token=${encodeURIComponent(loginResult.oneTimeToken)}`);
+    window.location.assign(`/account/${encodeURIComponent(identifier)}/?jwt=${encodeURIComponent(loginResult.jwt)}&token=${encodeURIComponent(loginResult.oneTimeToken)}&username=${encodeURIComponent(identifier)}`);
   });
 }
 

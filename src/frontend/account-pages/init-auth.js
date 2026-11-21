@@ -5,11 +5,12 @@
 import { guardPage, startJWTRenewal } from "/lib/auth.js";
 import { hideLoadingOverlay } from "/lib/loading.js";
 
-// Handle JWT exchange from URL params
+// Handle JWT exchange from URL params (fallback: sessionStorage set by sign-in)
 const urlParams = new URLSearchParams(window.location.search);
-const jwt = urlParams.get('jwt');
-const oneTimeToken = urlParams.get('token');
-const username = urlParams.get('username');
+const jwt = urlParams.get('jwt') || sessionStorage.getItem('jwt');
+const oneTimeToken = urlParams.get('token') || sessionStorage.getItem('oneTimeToken');
+const username = urlParams.get('username') || sessionStorage.getItem('username') ||
+  window.location.pathname.match(/^\/account\/([A-Za-z0-9_-]+)/)?.[1];
 
 async function init() {
   // Store JWT from URL params if present
