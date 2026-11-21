@@ -1,341 +1,291 @@
 import { showLoadingOverlay, hideLoadingOverlay } from "/lib/loading.js";
 
-// Client-side auth guard.
-//
-// The Supabase access token arrives in the URL hash (#access_token=...) after
-// login. The hash is never sent to the server, so gating happens here: we read
-// the token, ask the API to verify it and issue a short-lived server session
-// token. If it is invalid or missing we remember where the user was heading in a
-// cookie and send them to the login page; once authenticated we redirect back to
-// that page and clear the cookie. The server token is then used for every API
-// call, and re-requested automatically when it expires. Navigation re-appends
-// the params to the URL so the next page is accepted too.
-//
-// A remembered device ("se souvenir de moi") has its Supabase session persisted
-// in localStorage; on a later visit we restore it automatically so the user is
-// recognised without retyping anything, like a normal website.
+// Simple auth system using login-client-worker JWT
 
-const ACCOUNT_BASE = window.__ACCOUNT_BASE_PATH__ || "";
 const ACCOUNT_WORKER_BASE = window.__ACCOUNT_WORKER_BASE__ || "";
-const accountPath = (path) => `${ACCOUNT_BASE}${path}`;
-const AUTH_PAGE = accountPath("/pages/auth");
-const HOME_PAGE = accountPath("/pages/home");
-// Supabase drops the user on "/pages/" after login; those are not real pages,
-// just landing spots from which we send the user to their destination.
-const LANDING_PATHS = [accountPath("/pages"), accountPath("/pages/")];
-const REDIRECT_COOKIE = "post_auth_redirect";
-const REDIRECT_COOKIE_TTL = 600; // seconds
 
+// Storage keys
 const STORAGE_KEYS = {
-  access: "sb_access_token",
-  refresh: "sb_refresh_token",
-  expiresAt: "sb_expires_at",
-  session: "session_token",
-  sessionExp: "session_token_exp",
+  username: "account_username",
+  token: "auth_token",
+  tokenExp: "auth_token_exp",
 };
 
-const HASH_KEYS = ["access_token", "refresh_token", "expires_at", "expires_in", "token_type"];
-const getRememberPref = () => window.localStorage.getItem("auth_remember") === "1";
-
-// Writes go to the storage matching the remember preference (localStorage when
-// remembered so they survive a browser restart, sessionStorage otherwise).
-function store() {
-  return getRememberPref() ? window.localStorage : window.sessionStorage;
+// Get current username
+export function getUsername() {
+  return localStorage.getItem(STORAGE_KEYS.username);
 }
 
-// Reads look in both storages so a token is found whatever the mode was.
-function readItem(key) {
-  return window.sessionStorage.getItem(key) ?? window.localStorage.getItem(key);
+// Get current JWT token
+export function getToken() {
+  return localStorage.getItem(STORAGE_KEYS.token);
 }
 
-function removeItemEverywhere(key) {
-  window.sessionStorage.removeItem(key);
-  window.localStorage.removeItem(key);
+// Check if authenticated
+export function isAuthenticated() {
+  return !!getUsername() && !!getToken();
 }
 
-// --- token transport (URL hash) ---------------------------------------------
-
-function parseHashTokens() {
-  const hash = window.location.hash.startsWith("#")
-    ? window.location.hash.slice(1)
-    : window.location.hash;
-  if (!hash) return {};
-  const params = new URLSearchParams(hash);
-  const out = {};
-  for (const key of HASH_KEYS) {
-    const value = params.get(key);
-    if (value) out[key] = value;
-  }
-  return out;
+// Set auth data
+export function setAuth(username, token, expiresIn) {
+  localStorage.setItem(STORAGE_KEYS.username, username);
+  localStorage.setItem(STORAGE_KEYS.token, token);
+  const exp = Math.floor(Date.now() / 1000) + (expiresIn || 1800);
+  localStorage.setItem(STORAGE_KEYS.tokenExp, String(exp));
 }
 
-function captureHashTokens() {
-  const tokens = parseHashTokens();
-  if (!tokens.access_token) return false;
-  store().setItem(STORAGE_KEYS.access, tokens.access_token);
-  if (tokens.refresh_token) store().setItem(STORAGE_KEYS.refresh, tokens.refresh_token);
-  if (tokens.expires_at) store().setItem(STORAGE_KEYS.expiresAt, tokens.expires_at);
-  // Remove the tokens from the visible URL.
-  history.replaceState(null, "", window.location.pathname + window.location.search);
-  return true;
+// Clear auth data
+export function clearAuth() {
+  localStorage.removeItem(STORAGE_KEYS.username);
+  localStorage.removeItem(STORAGE_KEYS.token);
+  localStorage.removeItem(STORAGE_KEYS.tokenExp);
 }
 
-function getAccessToken() {
-  return readItem(STORAGE_KEYS.access);
+// Show reconnection modal
+function showReconnectionModal() {
+  showLoadingOverlay();
+  
+  const modal = document.createElement("div");
+  modal.id = "reconnection-modal";
+  modal.innerHTML = `
+    <div class="modal-content">
+      <h2>Session expirée</h2>
+      <p>Votre session a expiré. Veuillez vous reconnecter.</p>
+      <form id="reconnect-form">
+        <input type="text" id="reconnect-username" placeholder="Nom d'utilisateur" required />
+        <input type="password" id="reconnect-password" placeholder="Mot de passe" required />
+        <button type="submit">Se reconnecter</button>
+      </form>
+    </div>
+  `;
+  
+  const style = document.createElement("style");
+  style.textContent = `
+    #reconnection-modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.8);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10000;
+    }
+    .modal-content {
+      background: #1a1a1a;
+      padding: 2rem;
+      border-radius: 8px;
+      max-width: 400px;
+      width: 90%;
+    }
+    .modal-content h2 {
+      margin-bottom: 1rem;
+      color: #fff;
+    }
+    .modal-content p {
+      margin-bottom: 1rem;
+      color: #ccc;
+    }
+    .modal-content form {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+    .modal-content input {
+      padding: 0.75rem;
+      border: 1px solid #333;
+      border-radius: 4px;
+      background: #2a2a2a;
+      color: #fff;
+    }
+    .modal-content button {
+      padding: 0.75rem;
+      background: #4f46e5;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .modal-content button:hover {
+      background: #4338ca;
+    }
+  `;
+  
+  document.head.appendChild(style);
+  document.body.appendChild(modal);
+  
+  document.getElementById("reconnect-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const username = document.getElementById("reconnect-username").value;
+    const password = document.getElementById("reconnect-password").value;
+    
+    try {
+      const response = await fetch(`${ACCOUNT_WORKER_BASE}/api/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password }),
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setAuth(data.username, data.token, data.expiresIn);
+        modal.remove();
+        style.remove();
+        hideLoadingOverlay();
+        window.location.reload();
+      }
+    } catch (error) {
+      console.error("Reconnection failed:", error);
+    }
+  });
 }
 
-function storeSession(session) {
-  if (!session?.access_token) return false;
-  store().setItem(STORAGE_KEYS.access, session.access_token);
-  if (session.refresh_token) store().setItem(STORAGE_KEYS.refresh, session.refresh_token);
-  if (session.expires_at) store().setItem(STORAGE_KEYS.expiresAt, String(session.expires_at));
-  return true;
-}
-
-// Make sure a Supabase access token is available locally. Order: tokens in the
-// URL hash (fresh login) -> already in storage -> a remembered Supabase session
-// restored automatically. Returns true if a token is now available.
-async function ensureLocalSession() {
-  const oneTime = new URLSearchParams(window.location.search).get("token");
-  if (oneTime && accountBase) {
-    const username = accountBase.split("/").pop();
+// Exchange one-time token for JWT
+export async function exchangeTokenForJWT(username, oneTimeToken) {
+  try {
     const response = await fetch(`${ACCOUNT_WORKER_BASE}/api/auth/one-time`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username, token: oneTime }),
-    }).catch(() => null);
-    const session = await response?.json().catch(() => null);
-    if (response?.ok && session?.token) {
-      store().setItem(STORAGE_KEYS.session, session.token);
-      store().setItem(STORAGE_KEYS.sessionExp, String(session.exp || 0));
-      history.replaceState(null, "", window.location.pathname);
-      return true;
-    }
-  }
-  if (captureHashTokens()) {
-    return true;
-  }
-  if (getAccessToken()) return true;
-  return false;
-}
-
-// Re-append the auth params to a same-origin URL so the next page re-runs the
-// guard and gets its own server token.
-export function appendAuthParams(href) {
-  const accessToken = getAccessToken();
-  if (!accessToken) return href;
-  let target;
-  try {
-    target = new URL(href, window.location.origin);
-  } catch (e) {
-    return href;
-  }
-  if (target.origin !== window.location.origin) return href;
-  const params = new URLSearchParams();
-  params.set("access_token", accessToken);
-  const refresh = readItem(STORAGE_KEYS.refresh);
-  const expiresAt = readItem(STORAGE_KEYS.expiresAt);
-  if (refresh) params.set("refresh_token", refresh);
-  if (expiresAt) params.set("expires_at", expiresAt);
-  target.hash = params.toString();
-  return target.toString();
-}
-
-export function navigateWithAuth(href) {
-  window.location.href = appendAuthParams(href);
-}
-
-// --- server session token ----------------------------------------------------
-
-function getValidSessionToken() {
-  const token = readItem(STORAGE_KEYS.session);
-  const exp = Number(readItem(STORAGE_KEYS.sessionExp) || 0);
-  if (!token) return null;
-  const now = Math.floor(Date.now() / 1000);
-  if (exp && exp <= now + 5) return null; // expired (with small skew)
-  return token;
-}
-
-async function requestSessionToken() {
-  const accessToken = getAccessToken();
-  if (!accessToken) return null;
-  let res;
-  try {
-    res = await fetch(`${ACCOUNT_WORKER_BASE}/api/auth/session`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ access_token: accessToken }),
+      body: JSON.stringify({ username, token: oneTimeToken }),
     });
-  } catch (e) {
-    return null;
-  }
-  if (!res.ok) return null;
-  const data = await res.json().catch(() => ({}));
-  if (!data || !data.valid || !data.token) return null;
-  store().setItem(STORAGE_KEYS.session, data.token);
-  store().setItem(STORAGE_KEYS.sessionExp, String(data.exp || 0));
-  return data.token;
-}
-
-// Returns a usable session token, refreshing it if needed; null if impossible.
-export async function ensureSessionToken() {
-  return getValidSessionToken() || (await requestSessionToken());
-}
-
-// --- post-auth redirect cookie ----------------------------------------------
-
-function normalizePath(path) {
-  return path.replace(/\/?$/, "/");
-}
-
-function setCookie(name, value, maxAgeSeconds) {
-  const secure = window.location.protocol === "https:" ? "; Secure" : "";
-  document.cookie = `${name}=${encodeURIComponent(value)}; Path=/; Max-Age=${maxAgeSeconds}; SameSite=Lax${secure}`;
-}
-
-function getCookie(name) {
-  const match = document.cookie.match(new RegExp(`(?:^|;\\s*)${name}=([^;]*)`));
-  return match ? decodeURIComponent(match[1]) : null;
-}
-
-function deleteCookie(name) {
-  document.cookie = `${name}=; Path=/; Max-Age=0; SameSite=Lax`;
-}
-
-function isAuthPage() {
-  return normalizePath(window.location.pathname) === normalizePath(AUTH_PAGE);
-}
-
-function isLandingPath() {
-  return LANDING_PATHS.includes(window.location.pathname);
-}
-
-// Remember the page the user was trying to reach, then send them to login.
-function redirectToAuth() {
-  if (isAuthPage()) return;
-  const target = window.location.pathname + window.location.search;
-  if (target && !normalizePath(target).startsWith(normalizePath(AUTH_PAGE))) {
-    setCookie(REDIRECT_COOKIE, target, REDIRECT_COOKIE_TTL);
-  }
-  window.location.replace(AUTH_PAGE);
-}
-
-// After a successful guard, send the user back to the page they originally
-// wanted (set before login) and clear the cookie. Returns true if it triggered
-// a navigation, so the caller can keep the current page hidden meanwhile.
-function consumePostAuthRedirect() {
-  const target = getCookie(REDIRECT_COOKIE);
-  if (!target) return false;
-  deleteCookie(REDIRECT_COOKIE);
-  if (!target.startsWith(accountPath("/pages/"))) return false;
-  if (normalizePath(target).startsWith(normalizePath(AUTH_PAGE))) return false;
-  if (normalizePath(target) === normalizePath(window.location.pathname + window.location.search)) {
+    
+    if (response.ok) {
+      const data = await response.json();
+      if (data.token) {
+        setAuth(username, data.token, data.exp || 1800);
+        return true;
+      }
+    }
+    return false;
+  } catch (error) {
+    console.error("Token exchange failed:", error);
     return false;
   }
-  navigateWithAuth(target);
-  return true;
 }
 
-// On the login page: if this device is already recognised (remembered session),
-// skip the form and go straight in. Returns true if it triggered a navigation.
-export async function redirectIfAuthenticated() {
-  if (!getValidSessionToken() && !getAccessToken()) return false;
-  // Go through the landing path so any saved post-auth redirect is honoured.
-  navigateWithAuth(accountPath("/pages/"));
-  return true;
-}
-
-// Sign out: clear the Supabase session (forgetting this device if it was
-// remembered), drop every local token and the redirect cookie, then return to
-// the login page.
-export async function logout() {
-  for (const key of Object.values(STORAGE_KEYS)) removeItemEverywhere(key);
-  deleteCookie(REDIRECT_COOKIE);
-  window.location.replace(AUTH_PAGE);
-}
-
-// --- page guard --------------------------------------------------------------
-
-// Run before showing protected content. Resolves to true if authenticated;
-// otherwise redirects to the login page and resolves to false.
-export async function guardPage() {
-  const shouldShowLoading = sessionStorage.getItem('show_loading') === '1';
-  if (shouldShowLoading) {
-    sessionStorage.removeItem('show_loading');
-    showLoadingOverlay();
-  }
+// Check if JWT is still valid
+export async function isJWTValid() {
+  const token = getToken();
+  const username = getUsername();
+  
+  if (!token || !username) return false;
   
   try {
-    if (!(await ensureLocalSession())) {
-      redirectToAuth();
-      return false;
-    }
-    const token = await ensureSessionToken();
-    if (!token) {
-      redirectToAuth();
-      return false;
-    }
-    // Authenticated: if the user was sent here from login, bounce them back to the
-    // page they originally wanted. Keep the page hidden while navigating.
-    if (consumePostAuthRedirect()) {
-      return false;
-    }
-    // No saved destination but we landed on "/pages/" (or came straight to the
-    // login page): send the user to home.
-    if (isLandingPath()) {
-      navigateWithAuth(HOME_PAGE);
-      return false;
-    }
-    return true;
-  } finally {
-    // Don't hide loading if it was triggered by login redirect
-    if (!shouldShowLoading) {
-      hideLoadingOverlay();
-    }
-  }
-}
-
-// Authenticated fetch: attaches the session token and transparently re-acquires
-// it once if the server reports it invalid.
-export async function authedFetch(input, init = {}) {
-  const shouldShowLoading = sessionStorage.getItem('show_loading') === '1';
-  if (!shouldShowLoading) {
-    showLoadingOverlay();
-  }
-  
-  try {
-    let token = await ensureSessionToken();
-    if (!token) {
-      redirectToAuth();
-      throw new Error("Not authenticated");
-    }
-    const withAuth = (t) => ({
-      ...init,
-      headers: { ...(init.headers || {}), Authorization: `Bearer ${t}` },
+    const response = await fetch(`${ACCOUNT_WORKER_BASE}/api/auth/check`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token, username }),
     });
-
-    // Extract a readable name from the URL for debugging
-    const url = typeof input === 'string' ? input : input.url;
-    const urlName = url.split('/').pop() || 'api-request';
-
-    const requestUrl = typeof input === "string" && input.startsWith("/")
-      ? `${ACCOUNT_WORKER_BASE}${input}`
-      : input;
-    let res = await fetch(requestUrl, withAuth(token));
-    if (res.status === 401) {
-      removeItemEverywhere(STORAGE_KEYS.session);
-      removeItemEverywhere(STORAGE_KEYS.sessionExp);
-      token = await requestSessionToken();
-      if (!token) {
-        redirectToAuth();
-        throw new Error("Not authenticated");
-      }
-      res = await fetch(requestUrl, withAuth(token));
+    
+    if (response.ok) {
+      const data = await response.json();
+      return data.valid === true;
     }
-    return res;
-  } finally {
-    if (!shouldShowLoading) {
-      hideLoadingOverlay();
-    }
+    return false;
+  } catch (error) {
+    console.error("JWT validation failed:", error);
+    return false;
   }
+}
+
+// Setup automatic token refresh every 10 minutes
+export function setupTokenRefresh() {
+  // Clear existing interval
+  if (window._tokenRefreshInterval) {
+    clearInterval(window._tokenRefreshInterval);
+  }
+  
+  window._tokenRefreshInterval = setInterval(async () => {
+    const username = getUsername();
+    const token = getToken();
+    
+    if (!username || !token) return;
+    
+    const isValid = await isJWTValid();
+    if (!isValid) {
+      clearInterval(window._tokenRefreshInterval);
+      showReconnectionModal();
+    }
+  }, 10 * 60 * 1000); // 10 minutes
+}
+
+// Guard page - require authentication
+export async function guardPage() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const oneTimeToken = urlParams.get("token");
+  const urlUsername = urlParams.get("username");
+  
+  // If we have a one-time token in URL, exchange it for JWT
+  if (oneTimeToken && urlUsername) {
+    showLoadingOverlay();
+    const success = await exchangeTokenForJWT(urlUsername, oneTimeToken);
+    
+    if (success) {
+      // Remove token from URL
+      const cleanUrl = window.location.pathname;
+      window.history.replaceState({}, document.title, cleanUrl);
+      setupTokenRefresh();
+      hideLoadingOverlay();
+      return true;
+    }
+    
+    clearAuth();
+    window.location.href = "/sign-in/";
+    return false;
+  }
+  
+  // Check if authenticated
+  if (!isAuthenticated()) {
+    window.location.href = "/sign-in/";
+    return false;
+  }
+  
+  // Check if JWT is still valid
+  const isValid = await isJWTValid();
+  if (!isValid) {
+    showReconnectionModal();
+    return false;
+  }
+  
+  setupTokenRefresh();
+  return true;
+}
+
+// Authenticated fetch with JWT
+export async function authedFetch(input, init = {}) {
+  const token = getToken();
+  const username = getUsername();
+  
+  if (!token || !username) {
+    window.location.href = "/sign-in/";
+    throw new Error("Not authenticated");
+  }
+  
+  const requestUrl = typeof input === "string" && input.startsWith("/")
+    ? `${ACCOUNT_WORKER_BASE}${input}`
+    : input;
+  
+  const headers = {
+    ...(init.headers || {}),
+    "Authorization": `Bearer ${token}`,
+    "X-Username": username,
+  };
+  
+  let res = await fetch(requestUrl, { ...init, headers });
+  
+  // If 401, try to refresh token
+  if (res.status === 401) {
+    const isValid = await isJWTValid();
+    if (!isValid) {
+      showReconnectionModal();
+      throw new Error("Session expired");
+    }
+    
+    // Retry with same token (should work if JWT is valid)
+    res = await fetch(requestUrl, { ...init, headers });
+  }
+  
+  return res;
 }

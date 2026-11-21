@@ -1,4 +1,4 @@
-// Loads Cloudflare Turnstile invisibly ("background" mode) and hands out a
+// Loads Cloudflare Turnstile in normal mode with visible widget and hands out a
 // fresh, single-use token on demand. If no site key is configured, every call
 // resolves to null so login keeps working.
 
@@ -36,11 +36,12 @@ async function getWidget() {
     if (!sitekey) return null; // Turnstile disabled.
     const turnstile = await loadScript();
     const container = document.createElement("div");
-    container.style.display = "none";
+    container.id = "turnstile-widget";
+    container.style.margin = "1rem 0";
     document.body.appendChild(container);
     const id = turnstile.render(container, {
       sitekey,
-      size: "invisible",
+      size: "normal",
       callback: (token) => {
         pending?.resolve(token);
         pending = null;
