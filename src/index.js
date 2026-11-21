@@ -31,8 +31,10 @@ async function serveAccountPage(request, env, username, accountPath) {
     assetPath = `/pages${assetPath}`;
   }
   if (assetPath.startsWith("/pages/")) {
-    if (!assetPath.match(/\.[a-z0-9]+$/i)) {
-      assetPath = `${assetPath.replace(/\/+$/, "")}/index.html`;
+    if (/\.html$/i.test(assetPath) || !/\.[a-z0-9]+$/i.test(assetPath)) {
+      // Page route: request the directory (trailing slash) so ASSETS serves
+      // index.html directly with a 200 instead of redirecting to it.
+      assetPath = assetPath.replace(/\.html$/i, "").replace(/\/+$/, "") + "/";
     }
     assetPath = `/account-pages/${assetPath.slice("/pages/".length)}`;
   } else if (assetPath.startsWith("/assets/")) {
