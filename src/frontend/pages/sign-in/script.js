@@ -4,9 +4,40 @@ const form = document.getElementById("signin-form");
 const errorBox = document.getElementById("signin-error");
 const toggle = document.getElementById("toggle-password");
 const password = document.getElementById("password");
+const turnstileButton = document.getElementById("turnstile-button");
+const signinSubmit = document.getElementById("signin-submit");
+
+let turnstileVerified = false;
+let turnstileToken = null;
 
 // Preload Turnstile early
 preloadTurnstile();
+
+// Turnstile button click handler
+if (turnstileButton) {
+  turnstileButton.addEventListener("click", async () => {
+    turnstileButton.disabled = true;
+    turnstileButton.textContent = "Vérification...";
+    
+    try {
+      const token = await getTurnstileToken();
+      if (token) {
+        turnstileToken = token;
+        turnstileVerified = true;
+        turnstileButton.textContent = "✓ Vérifié";
+        turnstileButton.style.background = "#10b981";
+        if (signinSubmit) signinSubmit.disabled = false;
+      } else {
+        turnstileButton.textContent = "Erreur Turnstile";
+        turnstileButton.style.background = "#ef4444";
+      }
+    } catch (error) {
+      console.error("Turnstile error:", error);
+      turnstileButton.textContent = "Erreur";
+      turnstileButton.style.background = "#ef4444";
+    }
+  });
+}
 
 if (toggle && password) {
   toggle.addEventListener("click", () => {
@@ -24,6 +55,14 @@ if (form) {
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
     event.stopPropagation();
+    
+    // Check if Turnstile is verified
+    if (!turnstileVerified || !turnstileToken) {
+      errorBox.textContent = "Veuillez d'abord vérifier avec Turnstile.";
+      errorBox.hidden = false;
+      return;
+    }
+    
     const identifier = form.elements.username.value.trim();
     if (identifier.includes("@")) {
       errorBox.textContent = "La connexion par adresse e-mail n'est pas disponible pour le moment.";
@@ -31,39 +70,50 @@ if (form) {
       return;
     }
     
-    // Get Turnstile token (fails gracefully if not configured)
-    const turnstileToken = await getTurnstileToken();
-    
     const loginUrl = `https://login-client-worker.${encodeURIComponent(identifier)}-cloudflare-account.workers.dev/api/login`;
     const body = { 
       username: identifier, 
-      password: form.elements.password.value 
+      password: form.elements.password.value,
+      turnstileToken: turnstileToken
     };
     
-    // Only add turnstile token if available
-    if (turnstileToken) {
-      body.turnstileToken = turnstileToken;
-    }
-    
-    const loginResponse = await fetch(loginUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    });
-    if (!loginResponse.ok) {
-      errorBox.textContent = "Identifiant ou mot de passe incorrect.";
+    try {
+      const loginResponse = await fetch(loginUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      
+      if (!loginResponse.ok) {
+        errorBox.textContent = "Identifiant ou mot de passe incorrect.";
+        errorBox.hidden = false;
+        // Reset Turnstile for retry
+        turnstileVerified = false;
+        turnstileToken = null;
+        if (signinSubmit) signinSubmit.disabled = true;
+        if (turnstileButton) {
+          turnstileButton.textContent = "Vérifier avec Turnstile";
+          turnstileButton.style.background = "";
+          turnstileButton.disabled = false;
+        }
+        return;
+      }
+      
+      const loginResult = await loginResponse.json().catch(() => ({}));
+      if (!loginResult.token) {
+        errorBox.textContent = "Identifiant ou mot de passe incorrect.";
+        errorBox.hidden = false;
+        return;
+      }
+      
+      // Redirect to account page with token and username
+      sessionStorage.setItem('show_loading', '1');
+      window.location.assign(`/account/${encodeURIComponent(identifier)}/?token=${encodeURIComponent(loginResult.token)}&username=${encodeURIComponent(identifier)}`);
+    } catch (error) {
+      console.error("Login error:", error);
+      errorBox.textContent = "Erreur de connexion. Veuillez réessayer.";
       errorBox.hidden = false;
-      return;
     }
-    const loginResult = await loginResponse.json().catch(() => ({}));
-    if (!loginResult.token) {
-      errorBox.textContent = "Identifiant ou mot de passe incorrect.";
-      errorBox.hidden = false;
-      return;
-    }
-    // Set flag to show loading on account page after redirect
-    sessionStorage.setItem('show_loading', '1');
-    window.location.assign(`/account/${encodeURIComponent(identifier)}/?token=${encodeURIComponent(loginResult.token)}`);
   });
 }
 
