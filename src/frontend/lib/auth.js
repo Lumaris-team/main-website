@@ -190,9 +190,7 @@ const AUTH_OVERLAY_STYLE = `
     display: flex;
     align-items: center;
     justify-content: center;
-    background: rgba(8, 9, 18, 0.66);
-    backdrop-filter: blur(18px);
-    -webkit-backdrop-filter: blur(18px);
+    background: rgba(8, 9, 18, 0.8);
     padding: 20px;
     animation: auth-overlay-in 220ms ease-out;
   }
@@ -282,6 +280,7 @@ export function showAuthOverlay() {
   frame.id = "auth-overlay-frame";
   frame.src = "/sign-in-card";
   frame.title = "Connexion";
+  frame.addEventListener("load", fitAuthFrame);
   authOverlay.appendChild(frame);
   document.body.appendChild(authOverlay);
   authOverlayPoll = setInterval(watchAuthFrame, 400);
