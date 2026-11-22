@@ -216,7 +216,21 @@ function hideAuthOverlay() {
   authOverlay = null;
 }
 
+function fitAuthFrame() {
+  const frame = authOverlay?.querySelector("#auth-overlay-frame");
+  if (!frame) return;
+  try {
+    const card = frame.contentDocument?.querySelector(".signin-card");
+    if (!card) return;
+    const w = Math.min(card.offsetWidth + 36, window.innerWidth * 0.94);
+    const h = Math.min(card.offsetHeight + 36, window.innerHeight * 0.9);
+    frame.style.width = `${Math.round(w)}px`;
+    frame.style.height = `${Math.round(h)}px`;
+  } catch { /* frame not ready */ }
+}
+
 function watchAuthFrame() {
+  fitAuthFrame();
   const frame = authOverlay?.querySelector("#auth-overlay-frame");
   if (!frame) return;
   let loc;
