@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="#080912">
     <title>Workspace - Lumaris-Team Dashboard</title>
-    <meta name="description" content="Workspace - Track your school grades, calculate averages, view timetable and manage homeworks from EcoleDirecte. Includes Pomodoro timer and notes.">
+    <meta name="description" content="Workspace - Manage your tasks, recurring tasks and events.">
     <meta name="robots" content="noindex, nofollow">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -15,14 +15,10 @@
     <link rel="apple-touch-icon" sizes="180x180" href="https://shared-assets.lumaris.fr.eu.org/logo/logo.png">
     <link rel="apple-touch-icon" href="https://shared-assets.lumaris.fr.eu.org/logo/logo.png">
     <link rel="manifest" href="/site.webmanifest">
-    
-    
-    
+
     <style>html[data-auth-pending] body { visibility: hidden; }</style>
     <script type="module" src="/account-pages/init-auth.js"></script>
     <script type="module" src="/lib/settings.js"></script>
-    <link rel="stylesheet" href="/styles/sidebar.css">
-    <link rel="stylesheet" href="/styles/block.css">
     <link rel="stylesheet" href="/pages/workspace/style.css">
     <script type="module" src="https://shared-assets.lumaris.fr.eu.org/navbar.js?v=20261122-all-nav"></script>
     <script type="module" src="/pages/workspace/icons.js"></script>
@@ -30,164 +26,71 @@
   <body>
     <site-navbar site="client-worker" current="workspace"></site-navbar>
 
-    <div class="ws-shell">
-      <aside class="ws-sidebar" aria-label="Workspace sections">
-        <button class="ws-nav" type="button" data-target="accueil" aria-label="Home" data-active="true">
-          <span class="ws-icon" data-icon="https://shared-assets.lumaris.fr.eu.org/icons/home.svg"></span>
-        </button>
-        <button class="ws-nav" type="button" data-target="notes" aria-label="Notes">
-          <span class="ws-icon" data-icon="https://shared-assets.lumaris.fr.eu.org/icons/notes.svg"></span>
-        </button>
-        <button class="ws-nav" type="button" data-target="timetable" aria-label="Timetable">
-          <span class="ws-icon" data-icon="https://shared-assets.lumaris.fr.eu.org/icons/calendar.svg"></span>
-        </button>
-        <button class="ws-nav" type="button" data-target="homeworks" aria-label="Homework">
-          <span class="ws-icon" data-icon="https://shared-assets.lumaris.fr.eu.org/icons/homework.svg"></span>
-        </button>
-        <button class="ws-nav" type="button" data-target="pomodoro" aria-label="Pomodoro">
-          <span class="ws-icon" data-icon="https://shared-assets.lumaris.fr.eu.org/icons/clock.svg"></span>
-        </button>
-      </aside>
+    <div class="ws-app">
+      <!-- ===== Header ===== -->
+      <header class="ws-header">
+        <div class="ws-header-left">
+          <p class="ws-eyebrow" id="todayLabel">Workspace</p>
+          <h1 class="ws-title">Tasks</h1>
+        </div>
+        <div class="ws-stats" id="statsBar"></div>
+      </header>
 
-      <main class="ws-main">
-        <!-- ===================== ACCUEIL ===================== -->
-        <section id="accueil" class="ws-section" aria-label="Home">
-          <div class="bento-grid">
-            <article class="bento-block block-status">
-              <p class="block-eyebrow">Workspace</p>
-              <strong class="status-title">Workspace</strong>
-              <p class="status-sync">
-                Last sync&nbsp;:
-                <span id="syncLabel">--:--</span>
-              </p>
-            </article>
+      <!-- ===== Toolbar ===== -->
+      <div class="ws-toolbar">
+        <div class="ws-quickadd">
+          <input type="text" id="quickAddInput" placeholder="Add a task…  (Enter)" autocomplete="off" spellcheck="false">
+          <button class="ws-btn ws-btn-primary" type="button" id="quickAddBtn">Add</button>
+        </div>
+        <div class="ws-filters">
+          <div class="ws-segmented" role="tablist" id="viewTabs">
+            <button class="ws-seg" type="button" data-view="tasks" data-active="true">Tasks</button>
+            <button class="ws-seg" type="button" data-view="repeat">Recurring</button>
+            <button class="ws-seg" type="button" data-view="events">Events</button>
+            <button class="ws-seg" type="button" data-view="trash">Trash</button>
+          </div>
+          <div class="ws-search">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+            <input type="text" id="searchInput" placeholder="Search…" autocomplete="off" spellcheck="false">
+          </div>
+        </div>
+      </div>
 
-            <article class="bento-block block-grades" data-card="new-grades">
-              <p class="block-eyebrow">New grades</p>
-              <strong class="card-value" data-value>--</strong>
-              <p class="card-desc" data-desc>Checking for new grades… Slowing to not be blocked.</p>
-            </article>
-
-            <article class="bento-block block-homeworks" data-card="homeworks">
-              <p class="block-eyebrow">Upcoming homework</p>
-              <strong class="card-value" data-value>--</strong>
-              <p class="card-desc" data-desc>Upcoming homework still to do. Slowing to not be blocked.</p>
-            </article>
-
-            <article class="bento-block block-tomorrow" data-card="tomorrow">
-              <p class="block-eyebrow">Tomorrow</p>
-              <strong class="card-subtitle" data-subtitle>Timetable</strong>
-              <div class="tomorrow-list" data-list>
-                <p class="card-desc">Loading the timetable… Slowing to not be blocked.</p>
-              </div>
-            </article>
+      <!-- ===== Body ===== -->
+      <div class="ws-body">
+        <section class="ws-list-pane" id="listPane">
+          <div class="ws-groups" id="taskGroups"></div>
+          <div class="ws-empty" id="emptyState" hidden>
+            <div class="ws-empty-icon">✦</div>
+            <p class="ws-empty-title" id="emptyTitle">Nothing here</p>
+            <p class="ws-empty-sub" id="emptySub">Create your first task above.</p>
           </div>
         </section>
 
-        <!-- ===================== NOTES ===================== -->
-        <section id="notes" class="ws-section" aria-label="Grades" hidden>
-          <header class="section-head">
-            <h1>Grades</h1>
-            <div class="segmented" role="tablist" aria-label="Choose the term" data-trimester>
-              <span class="segmented-thumb" data-thumb></span>
-              <button class="segmented-btn" type="button" role="tab" data-period="trimestre1" data-active="true">Term 1</button>
-              <button class="segmented-btn" type="button" role="tab" data-period="trimestre2">Term 2</button>
-              <button class="segmented-btn" type="button" role="tab" data-period="trimestre3">Term 3</button>
+        <!-- ===== Detail drawer ===== -->
+        <aside class="ws-detail" id="detailPanel" hidden>
+          <div class="ws-detail-head">
+            <div class="ws-detail-title-wrap">
+              <input class="ws-detail-title" id="dTitle" type="text" placeholder="Untitled" spellcheck="false">
+              <span class="ws-detail-badges" id="dBadges"></span>
             </div>
-          </header>
-          <div class="notes-body" data-notes-body>
-            <p class="state-msg">Loading grades… Slowing to not be blocked.</p>
-          </div>
-        </section>
-
-        <!-- ===================== EMPLOI DU TEMPS ===================== -->
-        <section id="timetable" class="ws-section" aria-label="Timetable" hidden>
-          <header class="section-head">
-            <h1>Timetable</h1>
-            <div class="segmented" role="tablist" aria-label="Choose the week" data-week>
-              <span class="segmented-thumb" data-thumb></span>
-              <button class="segmented-btn" type="button" role="tab" data-semaine="semaineA" data-active="true">Week A</button>
-              <button class="segmented-btn" type="button" role="tab" data-semaine="semaineB">Week B</button>
+            <div class="ws-detail-actions">
+              <button class="ws-icon-btn" type="button" id="dToggleDone" title="Toggle done">✓</button>
+              <button class="ws-icon-btn" type="button" id="dClose" title="Close">✕</button>
             </div>
-          </header>
-          <div class="timetable-body" data-timetable-body>
-            <p class="state-msg">Loading the timetable… Slowing to not be blocked.</p>
           </div>
-        </section>
 
-        <!-- ===================== DEVOIRS ===================== -->
-        <section id="homeworks" class="ws-section" aria-label="Homework" hidden>
-          <header class="section-head">
-            <h1>Homework</h1>
-          </header>
-          <div class="homeworks-body" data-homeworks-body>
-            <p class="state-msg">Loading homework… Slowing to not be blocked.</p>
+          <div class="ws-detail-scroll" id="dFields"></div>
+
+          <div class="ws-detail-foot">
+            <button class="ws-btn ws-btn-ghost" type="button" id="dDelete">Move to trash</button>
+            <button class="ws-btn ws-btn-primary" type="button" id="dSave">Save changes</button>
           </div>
-        </section>
-
-        <!-- ===================== POMODORO ===================== -->
-        <section id="pomodoro" class="ws-section" aria-label="Pomodoro" hidden>
-          <header class="section-head">
-            <h1>Pomodoro</h1>
-          </header>
-          <div class="pomo-grid">
-            <article class="pomo-card pomo-timer-card">
-              <div class="pomo-timer-display">
-                <svg class="pomo-ring" viewBox="0 0 200 200">
-                  <circle class="pomo-ring-bg" cx="100" cy="100" r="90" />
-                  <circle class="pomo-ring-fg" cx="100" cy="100" r="90" data-pomo-ring />
-                </svg>
-                <span class="pomo-time" data-pomo-time>25:00</span>
-              </div>
-              <div class="pomo-controls">
-                <button class="pomo-btn pomo-btn-main" type="button" data-pomo-start>Start</button>
-                <button class="pomo-btn" type="button" data-pomo-reset>Reset</button>
-              </div>
-              <div class="pomo-duration">
-                <label>
-                  Duration
-                  <input type="number" min="1" max="120" value="25" data-pomo-duration />
-                  <span>min</span>
-                </label>
-              </div>
-              <div class="pomo-counter">
-                <span data-pomo-count>0</span> timers completed today
-              </div>
-            </article>
-
-            <article class="pomo-card pomo-subjects-card">
-              <div class="pomo-subjects-header">
-                <button class="pomo-arrow" type="button" data-pomo-prev aria-label="Previous day">
-                  <span data-icon="https://shared-assets.lumaris.fr.eu.org/icons/arrow-left.svg"></span>
-                </button>
-                <span class="pomo-day-label" data-pomo-day-label>Lundi</span>
-                <button class="pomo-arrow" type="button" data-pomo-next aria-label="Next day">
-                  <span data-icon="https://shared-assets.lumaris.fr.eu.org/icons/arrow-right.svg"></span>
-                </button>
-                <div class="pomo-subjects-actions">
-                  <button class="pomo-btn pomo-btn-save" type="button" data-pomo-save>Save</button>
-                  <button class="pomo-dots" type="button" data-pomo-menu-toggle aria-label="Options">
-                    <span data-icon="https://shared-assets.lumaris.fr.eu.org/icons/more.svg"></span>
-                  </button>
-                </div>
-              </div>
-              <div class="pomo-subjects-list" data-pomo-subjects>
-                <p class="state-msg">Loading subjects…</p>
-              </div>
-              <div class="pomo-menu" data-pomo-menu hidden>
-                <div class="pomo-menu-add">
-                  <input type="text" placeholder="Subject name…" data-pomo-add-input />
-                  <button class="pomo-btn" type="button" data-pomo-add-btn>Add</button>
-                </div>
-                <div class="pomo-menu-list" data-pomo-menu-list></div>
-              </div>
-            </article>
-          </div>
-        </section>
-      </main>
+        </aside>
+      </div>
     </div>
 
-    <div class="note-tooltip" data-note-tooltip hidden></div>
+    <div class="ws-toast" id="toast" hidden></div>
 
     <script type="module" src="/pages/workspace/script.js"></script>
   </body>

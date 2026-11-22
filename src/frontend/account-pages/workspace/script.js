@@ -1,1279 +1,521 @@
 import { authedFetch } from "/lib/auth.js";
 
-const ED_BASE = "/api/ed";
+// ---------- API ----------
+async function api(action, payload = {}) {
+  const res = await authedFetch(`/api/tasks/${action}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data?.error || `HTTP ${res.status}`);
+  const resp = data?.resp ?? data;
+  if (resp?.error) throw new Error(resp.error);
+  return resp;
+}
 
-// Day keys match the EcoleDirecte timetable response (semaine[jour]); names are for display.
-const DAY_KEYS = ["lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi"];
-const DAY_NAMES = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-const MONTHS = [
-  "January", "February", "March", "April", "May", "June",
-  "July", "August", "September", "October", "November", "December",
-];
-
-const POMO_DAYS = ["lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi", "dimanche"];
-const POMO_DAY_LABELS = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
-const POMO_CIRCUMFERENCE = 2 * Math.PI * 90;
-
-const state = {
-  grades: null,
-  timetable: null,
-  homeworks: null,
-  newGrades: null,
-  trimester: "trimestre1",
-  semaine: "semaineA",
-  pomoDayIndex: ((new Date().getDay() + 6) % 7),
-  pomoSubjects: [],
-  pomoSubjectsOriginal: null,
-  pomoDirty: false,
-  pomoChecked: {}, // Cases cochées pour le jour actuel uniquement
-  pomoAllDays: {}, // Cache pour tous les jours (matières)
-  pomoDayTimerCount: {}, // Cache pour les compteurs de pomodoros par jour
-  pomoTimerCount: 0,
-  pomoTimerRunning: false,
-  pomoTimerInterval: null,
-  pomoTimerTotal: 25 * 60,
-  pomoTimerRemaining: 25 * 60,
+// ---------- State ----------
+const ALL_TABLES = ["tasks", "repeat_tasks", "events", "repeat_events", "trash_tasks", "trash_events"];
+const VIEWS = {
+  tasks: { tables: ["tasks"], empty: ["No tasks", "Create your first task above."] },
+  repeat: { tables: ["repeat_tasks"], empty: ["No recurring tasks", "Recurring tasks will appear here."] },
+  events: { tables: ["events", "repeat_events"], empty: ["No events", "Events will appear here."] },
+  trash: { tables: ["trash_tasks", "trash_events"], empty: ["Trash is empty", "Deleted items land here."] },
 };
 
-/* ===================== API ===================== */
-async function edGet(sub) {
-  const res = await authedFetch(`${ED_BASE}/${sub}`, {
-    method: "GET",
-    headers: {
-      filter: "true",
-      Accept: "application/json",
-    },
-  });
-  const text = await res.text();
-  let json;
+const state = {
+  tables: {},
+  view: "tasks",
+  q: "",
+  selected: null, // { table, row }
+};
+
+const $ = (sel) => document.querySelector(sel);
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+// ---------- Field definitions for the detail editor ----------
+// Rendered only when the column exists on the row (events lack subject fields, etc.)
+const SECTIONS = [
+  {
+    title: "Content",
+    fields: [
+      { key: "text_body", label: "Body", type: "textarea", rows: 5, placeholder: "Details, instructions…" },
+      { key: "steps", label: "Steps", type: "textarea", rows: 3, placeholder: "One step per line, or JSON" },
+    ],
+  },
+  {
+    title: "Organization",
+    fields: [
+      { key: "subject_id", label: "Subject", type: "text", placeholder: "e.g. Maths" },
+      { key: "chapter_id", label: "Chapter", type: "number" },
+      { key: "chapter_part_id", label: "Chapter part", type: "number" },
+      { key: "type_id", label: "Type", type: "number" },
+      { key: "methods_id", label: "Method", type: "number" },
+      { key: "priority_id", label: "Priority", type: "select", options: ["", "1", "2", "3", "4"], labels: ["—", "Low", "Normal", "High", "Urgent"] },
+      { key: "attention_level_id", label: "Attention", type: "select", options: ["", "1", "2", "3"], labels: ["—", "Low", "Medium", "High"] },
+      { key: "flags_id", label: "Flag", type: "number" },
+      { key: "labels_id", label: "Label", type: "number" },
+      { key: "path", label: "Path", type: "text", placeholder: "/folder/…" },
+    ],
+  },
+  {
+    title: "Schedule",
+    fields: [
+      { key: "remind", label: "Reminder", type: "checkbox" },
+      { key: "remind_date", label: "Reminder date", type: "datetime" },
+      { key: "periods", label: "Periods", type: "textarea", rows: 2, placeholder: "JSON array or free text" },
+      { key: "frequency", label: "Frequency", type: "text", placeholder: "e.g. daily, weekly" },
+      { key: "excludes_periods", label: "Excluded periods", type: "textarea", rows: 2 },
+    ],
+  },
+  {
+    title: "Resources",
+    fields: [
+      { key: "is_homework", label: "Homework", type: "checkbox" },
+      { key: "homeworks_id", label: "Homework ref", type: "text" },
+      { key: "urls", label: "URLs", type: "lines", placeholder: "One URL per line" },
+      { key: "attachements_id", label: "Attachments", type: "textarea", rows: 2, placeholder: "JSON or free text" },
+      { key: "push_tasks", label: "Push notifications", type: "checkbox" },
+    ],
+  },
+  {
+    title: "Notes",
+    fields: [
+      { key: "comments", label: "Comments", type: "textarea", rows: 3 },
+      { key: "ai_comments", label: "AI comments", type: "textarea", rows: 3 },
+    ],
+  },
+  {
+    title: "Advanced",
+    fields: [
+      { key: "additional_data", label: "Additional data (JSON)", type: "textarea", rows: 3, mono: true },
+    ],
+  },
+];
+
+const PRIORITY_COLORS = { 1: "#6ee7a0", 2: "#8cecff", 3: "#fbbf24", 4: "#fb7185" };
+
+// ---------- Helpers ----------
+function parseMaybeJSON(v) {
+  if (typeof v !== "string") return v;
+  const t = v.trim();
+  if (!t || (t[0] !== "[" && t[0] !== "{")) return v;
+  try { return JSON.parse(t); } catch { return v; }
+}
+
+function toLines(v) {
+  const p = parseMaybeJSON(v);
+  if (Array.isArray(p)) return p.join("\n");
+  return v ?? "";
+}
+
+function fromLines(v) {
+  const lines = String(v ?? "").split("\n").map((s) => s.trim()).filter(Boolean);
+  return lines.length ? JSON.stringify(lines) : "";
+}
+
+function toLocalInput(iso) {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (isNaN(d)) return "";
+  const p = (n) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+
+function fromLocalInput(v) {
+  if (!v) return "";
+  const d = new Date(v);
+  return isNaN(d) ? "" : d.toISOString();
+}
+
+function dueBucket(iso) {
+  if (!iso) return "nodate";
+  const d = new Date(iso);
+  if (isNaN(d)) return "nodate";
+  const now = new Date();
+  const startToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const startTomorrow = new Date(startToday); startTomorrow.setDate(startTomorrow.getDate() + 1);
+  const startWeek = new Date(startToday); startWeek.setDate(startWeek.getDate() + 7);
+  if (d < startToday) return "overdue";
+  if (d < startTomorrow) return "today";
+  if (d < startWeek) return "week";
+  return "later";
+}
+
+const GROUP_DEFS = [
+  ["overdue", "Overdue", "overdue"],
+  ["today", "Today", "today"],
+  ["week", "This week", "week"],
+  ["later", "Later", "later"],
+  ["nodate", "No date", "nodate"],
+  ["done", "Completed", "done"],
+];
+
+function groupLabel(bucket) {
+  return GROUP_DEFS.find(([k]) => k === bucket)?.[1] || bucket;
+}
+
+function fmtDate(iso) {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (isNaN(d)) return "";
+  const now = new Date();
+  const sameDay = d.toDateString() === now.toDateString();
+  const tomorrow = new Date(now); tomorrow.setDate(tomorrow.getDate() + 1);
+  const time = d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  if (sameDay) return `Today · ${time}`;
+  if (d.toDateString() === tomorrow.toDateString()) return `Tomorrow · ${time}`;
+  return d.toLocaleDateString([], { day: "numeric", month: "short" }) + ` · ${time}`;
+}
+
+function matchesQ(row, q) {
+  if (!q) return true;
+  const hay = [row.title, row.text_body, row.subject_id, row.path, row.comments]
+    .map((v) => String(v ?? "").toLowerCase()).join(" ");
+  return hay.includes(q);
+}
+
+// ---------- Data ----------
+async function load() {
   try {
-    json = JSON.parse(text);
-  } catch {
-    throw new Error("Invalid API response");
-  }
-  if (json && json.error) {
-    throw new Error(json.error);
-  }
-  const data = json && Object.prototype.hasOwnProperty.call(json, "resp")
-    ? json.resp
-    : json;
-  if (data && data.ok === false && data.error) {
-    throw new Error(data.error);
-  }
-  return data;
-}
-
-async function edPost(sub, body) {
-  const res = await authedFetch(`${ED_BASE}/${sub}`, {
-    method: "POST",
-    headers: {
-      filter: "true",
-      "Content-Type": "application/json",
-      Accept: "application/json",
-    },
-    body: JSON.stringify(body),
-  });
-  const text = await res.text();
-  try {
-    const json = JSON.parse(text);
-    return Object.prototype.hasOwnProperty.call(json, "resp") ? json.resp : json;
-  } catch {
-    return null;
+    const resp = await api("list", { tables: ALL_TABLES });
+    state.tables = resp?.tables || {};
+    renderStats();
+    renderList();
+    if (state.selected) refreshSelected();
+  } catch (e) {
+    toast(e.message || "Failed to load tasks");
   }
 }
 
-/* ===================== HELPERS ===================== */
-function toNumber(value) {
-  if (value === null || value === undefined) return NaN;
-  return parseFloat(String(value).replace(",", "."));
-}
-
-function isObject(value) {
-  return value !== null && typeof value === "object" && !Array.isArray(value);
-}
-
-function parseYMD(value) {
-  if (!value) return null;
-  const ymd = String(value).slice(0, 10);
-  const [y, m, d] = ymd.split("-").map(Number);
-  if (!y || !m || !d) return null;
-  return new Date(y, m - 1, d);
-}
-
-function formatDayFull(date) {
-  if (!date) return "";
-  const dayName = DAY_NAMES[(date.getDay() + 6) % 7] ?? "";
-  return `${dayName}, ${MONTHS[date.getMonth()]} ${date.getDate()}`;
-}
-
-function timePart(value) {
-  if (!value) return "";
-  const str = String(value);
-  const t = str.includes("T") ? str.split("T")[1] : str.split(" ")[1];
-  return t ? t.slice(0, 5) : "";
-}
-
-function ymd(date) {
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, "0");
-  const d = String(date.getDate()).padStart(2, "0");
-  return `${y}-${m}-${d}`;
-}
-
-/* Compute a per-subject and overall average from the grades of one period. */
-function computeAverages(matieres) {
-  const result = { matieres: {}, generale: null };
-  if (!isObject(matieres)) return result;
-  let totalGeneral = 0;
-  let countGeneral = 0;
-  for (const [matiere, notes] of Object.entries(matieres)) {
-    if (!Array.isArray(notes)) continue;
-    let total = 0;
-    let coefTotal = 0;
-    for (const note of notes) {
-      const valeur = toNumber(note.note);
-      const noteSur = toNumber(note.noteSur);
-      const coef = toNumber(note.coefficient);
-      const insignificant = String(note.significatif) === "true";
-      if (isNaN(valeur) || isNaN(noteSur) || noteSur === 0 || insignificant) {
-        continue;
-      }
-      const usedCoef = isNaN(coef) ? 1 : coef;
-      total += (valeur / noteSur) * 20 * usedCoef;
-      coefTotal += usedCoef;
-    }
-    const avg = coefTotal > 0 ? total / coefTotal : null;
-    result.matieres[matiere] = avg;
-    if (avg !== null) {
-      totalGeneral += avg;
-      countGeneral += 1;
+function rowsForView() {
+  const view = VIEWS[state.view];
+  const rows = [];
+  for (const t of view.tables) {
+    for (const row of state.tables[t] || []) {
+      if (!matchesQ(row, state.q.toLowerCase())) continue;
+      rows.push({ table: t, row });
     }
   }
-  result.generale = countGeneral > 0 ? totalGeneral / countGeneral : null;
-  return result;
+  return rows;
 }
 
-/* ===================== SECTION NAV ===================== */
-const sidebarButtons = document.querySelectorAll(".ws-nav");
-const sections = document.querySelectorAll(".ws-section");
-
-function showSection(target) {
-  sections.forEach((section) => {
-    section.hidden = section.id !== target;
-  });
-  sidebarButtons.forEach((btn) => {
-    btn.dataset.active = String(btn.dataset.target === target);
-  });
+// ---------- Rendering: stats ----------
+function renderStats() {
+  const tasks = state.tables.tasks || [];
+  const pending = tasks.filter((t) => !t.is_done);
+  const today = pending.filter((t) => dueBucket(t.remind_date) === "today").length;
+  const overdue = pending.filter((t) => dueBucket(t.remind_date) === "overdue").length;
+  const trash = (state.tables.trash_tasks || []).length + (state.tables.trash_events || []).length;
+  const repeat = (state.tables.repeat_tasks || []).length + (state.tables.repeat_events || []).length;
+  $("#statsBar").innerHTML = [
+    [pending.length, "open"],
+    [today, "today"],
+    [overdue, "overdue"],
+    [repeat, "recurring"],
+    [trash, "trash"],
+  ].map(([n, l]) => `<span class="ws-stat"><b>${n}</b>${l}</span>`).join("");
 }
 
-sidebarButtons.forEach((btn) => {
-  btn.addEventListener("click", () => showSection(btn.dataset.target));
-});
+// ---------- Rendering: list ----------
+function renderList() {
+  const groupsEl = $("#taskGroups");
+  const emptyEl = $("#emptyState");
+  const rows = rowsForView();
 
-/* ===================== SEGMENTED SWITCH ===================== */
-function setupSegmented(container, onChange) {
-  if (!container) return;
-  const thumb = container.querySelector("[data-thumb]");
-  const buttons = container.querySelectorAll(".segmented-btn");
-
-  function moveThumb(activeBtn) {
-    if (!thumb || !activeBtn) return;
-    thumb.style.width = `${activeBtn.offsetWidth}px`;
-    thumb.style.transform = `translateX(${activeBtn.offsetLeft - 4}px)`;
-  }
-
-  buttons.forEach((btn) => {
-    btn.addEventListener("click", () => {
-      buttons.forEach((b) => (b.dataset.active = "false"));
-      btn.dataset.active = "true";
-      moveThumb(btn);
-      onChange(btn);
-    });
-  });
-
-  const initial = container.querySelector('.segmented-btn[data-active="true"]') || buttons[0];
-  requestAnimationFrame(() => moveThumb(initial));
-  window.addEventListener("resize", () => {
-    const active = container.querySelector('.segmented-btn[data-active="true"]');
-    moveThumb(active);
-  });
-}
-
-/* ===================== ACCUEIL ===================== */
-function updateSyncTime() {
-  const label = document.getElementById("syncLabel");
-  if (!label) return;
-  label.textContent = new Date().toLocaleTimeString("en-GB", {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
-
-function countNewGrades(data) {
-  if (!data) return 0;
-  if (Array.isArray(data)) return data.length;
-  if (!isObject(data)) return 0;
-  let count = 0;
-  for (const matieres of Object.values(data)) {
-    if (Array.isArray(matieres)) {
-      count += matieres.length;
-    } else if (isObject(matieres)) {
-      for (const notes of Object.values(matieres)) {
-        if (Array.isArray(notes)) count += notes.length;
-      }
-    }
-  }
-  return count;
-}
-
-function renderNewGradesCard() {
-  const card = document.querySelector('[data-card="new-grades"]');
-  if (!card) return;
-  const valueEl = card.querySelector("[data-value]");
-  const descEl = card.querySelector("[data-desc]");
-  if (state.newGrades && state.newGrades.error) {
-    valueEl.textContent = "—";
-    descEl.textContent = "New grades unavailable.";
+  if (!rows.length) {
+    groupsEl.innerHTML = "";
+    emptyEl.hidden = false;
+    const [t, s] = VIEWS[state.view].empty;
+    $("#emptyTitle").textContent = state.q ? "No results" : t;
+    $("#emptySub").textContent = state.q ? `Nothing matches “${state.q}”.` : s;
     return;
   }
-  const count = countNewGrades(state.newGrades);
-  valueEl.textContent = String(count);
-  valueEl.dataset.tone = count > 0 ? "accent" : "";
-  descEl.textContent = count > 0
-    ? (count > 1 ? `${count} new grades since your last visit.` : "1 new grade since your last visit.")
-    : "No new grades.";
-}
+  emptyEl.hidden = true;
 
-function collectUpcomingHomeworks() {
-  const data = state.homeworks;
-  const byDate = data && isObject(data.data) ? data.data : (isObject(data) ? data : {});
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const items = [];
-  for (const [date, devoirs] of Object.entries(byDate)) {
-    const d = parseYMD(date);
-    if (!d || d < today || !Array.isArray(devoirs)) continue;
-    for (const devoir of devoirs) {
-      if (!isObject(devoir)) continue;
-      if (devoir.aFaire === false) continue;
-      items.push({ date, devoir });
-    }
+  // Group rows
+  const groups = new Map();
+  for (const item of rows) {
+    let bucket;
+    if (state.view === "trash") bucket = "trash";
+    else if (state.view === "repeat") bucket = item.row.frequency || "custom";
+    else if (item.row.is_done) bucket = "done";
+    else bucket = dueBucket(item.row.remind_date);
+    if (!groups.has(bucket)) groups.set(bucket, []);
+    groups.get(bucket).push(item);
   }
-  items.sort((a, b) => a.date.localeCompare(b.date));
-  return items;
-}
 
-function renderHomeworksCard() {
-  const card = document.querySelector('[data-card="homeworks"]');
-  if (!card) return;
-  const valueEl = card.querySelector("[data-value]");
-  const descEl = card.querySelector("[data-desc]");
-  const upcoming = collectUpcomingHomeworks().filter(({ devoir }) => !devoir.effectue);
-  valueEl.textContent = String(upcoming.length);
-  valueEl.dataset.tone = upcoming.length > 0 ? "accent" : "";
-  descEl.textContent = upcoming.length > 0
-    ? "Upcoming homework still to do."
-    : "No upcoming homework to do.";
-}
+  // Order groups
+  const order = state.view === "repeat"
+    ? [...groups.keys()].sort()
+    : state.view === "trash"
+      ? ["trash"]
+      : GROUP_DEFS.map(([k]) => k);
 
-function flattenTimetable() {
-  const data = state.timetable;
-  const map = {};
-  if (!isObject(data)) return map;
-  for (const semaine of Object.values(data)) {
-    if (!isObject(semaine)) continue;
-    for (const courses of Object.values(semaine)) {
-      if (!Array.isArray(courses)) continue;
-      for (const course of courses) {
-        if (!isObject(course)) continue;
-        const date = String(course.start_date || course.startDate || "").slice(0, 10);
-        if (!date) continue;
-        (map[date] ||= []).push(course);
-      }
-    }
-  }
-  for (const list of Object.values(map)) {
-    list.sort((a, b) => String(a.start_date).localeCompare(String(b.start_date)));
-  }
-  return map;
-}
-
-function renderTomorrowCard() {
-  const card = document.querySelector('[data-card="tomorrow"]');
-  if (!card) return;
-  const subtitle = card.querySelector("[data-subtitle]");
-  const list = card.querySelector("[data-list]");
-  const tomorrow = new Date();
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  const key = ymd(tomorrow);
-  subtitle.textContent = formatDayFull(tomorrow).replace(/^\w/, (c) => c.toUpperCase());
-  const map = flattenTimetable();
-  const courses = (map[key] || []).filter((c) => !c.isAnnule);
-  if (courses.length === 0) {
-    list.innerHTML = `<p class="card-desc">No classes scheduled tomorrow.</p>`;
-    return;
-  }
-  list.innerHTML = courses
-    .map((c) => {
-      const time = `${timePart(c.start_date)}–${timePart(c.end_date)}`;
-      const name = c.matiere || c.text || "Class";
-      const room = c.salle ? `Room ${c.salle}` : "";
+  groupsEl.innerHTML = order
+    .filter((k) => groups.has(k))
+    .map((k) => {
+      const items = groups.get(k);
+      const label = state.view === "repeat" ? `Repeats · ${k}` : state.view === "trash" ? "Recently deleted" : groupLabel(k);
       return `
-        <div class="tomorrow-row">
-          <span class="t-time">${time}</span>
-          <span class="t-name">${escapeHtml(name)}</span>
-          <span class="t-room">${escapeHtml(room)}</span>
+        <div class="ws-group">
+          <div class="ws-group-head"><span>${esc(label)}</span><span class="ws-group-count">${items.length}</span></div>
+          <div class="ws-group-items">
+            ${items.map((it) => taskRowHTML(it)).join("")}
+          </div>
         </div>`;
     })
     .join("");
-}
 
-/* ===================== NOTES ===================== */
-function renderNotes() {
-  const body = document.querySelector("[data-notes-body]");
-  if (!body) return;
-  if (state.grades && state.grades.error) {
-    body.innerHTML = `<p class="state-msg">Couldn't load grades: ${escapeHtml(state.grades.error)}</p>`;
-    return;
-  }
-  const matieres = isObject(state.grades) ? state.grades[state.trimester] : null;
-  if (!isObject(matieres) || Object.keys(matieres).length === 0) {
-    body.innerHTML = `<p class="state-msg">No grades for this term.</p>`;
-    return;
-  }
-  const averages = computeAverages(matieres);
-  const overall = averages.generale;
-
-  const cards = Object.entries(matieres)
-    .map(([matiere, notes]) => {
-      const avg = averages.matieres[matiere];
-      const chips = (Array.isArray(notes) ? notes : [])
-        .map((note) => renderNoteChip(matiere, note))
-        .join("");
-      return `
-        <article class="subject-card">
-          <div class="subject-head">
-            <span class="subject-name" title="${escapeHtml(matiere)}">${escapeHtml(matiere)}</span>
-            <span class="subject-avg">${avg !== null && avg !== undefined ? avg.toFixed(2) : "—"}<em>/20</em></span>
-          </div>
-          <div class="note-chips">${chips}</div>
-        </article>`;
-    })
-    .join("");
-
-  body.innerHTML = `
-    <div class="subject-overall">
-      <strong>${overall !== null ? overall.toFixed(2) : "—"}</strong>
-      <span>Overall average&nbsp;/20</span>
-    </div>
-    <div class="notes-grid">${cards}</div>`;
-
-  attachNoteTooltips(body);
-}
-
-function renderNoteChip(matiere, note) {
-  const valeur = note.note ?? "—";
-  const sur = note.noteSur ? `/${note.noteSur}` : "";
-  const insignificant = String(note.significatif) === "true";
-  const payload = encodeURIComponent(JSON.stringify({ matiere, note }));
-  return `<span class="note-chip" data-note="${payload}" data-insignificant="${insignificant}">${escapeHtml(String(valeur))}<em>${escapeHtml(sur)}</em></span>`;
-}
-
-/* ===================== NOTE TOOLTIP ===================== */
-const tooltip = document.querySelector("[data-note-tooltip]");
-
-function buildTooltipHtml(matiere, note) {
-  const significant = String(note.significatif) === "true" ? "No" : "Yes";
-  const rows = [
-    ["Date", formatNoteDate(note.date)],
-    ["Subject", note.titre || "—"],
-    ["Grade", `${note.note ?? "—"}${note.noteSur ? ` / ${note.noteSur}` : ""}`],
-    ["Class average", fmtVal(note.moyenne)],
-    ["Class min", fmtVal(note.min)],
-    ["Class max", fmtVal(note.max)],
-    ["Coefficient", fmtVal(note.coefficient)],
-    ["Significant", significant],
-  ];
-  const dl = rows
-    .map(([k, v]) => `<dt>${escapeHtml(k)}</dt><dd>${escapeHtml(String(v))}</dd>`)
-    .join("");
-  return `<p class="tt-title">${escapeHtml(matiere)}</p><dl>${dl}</dl>`;
-}
-
-function fmtVal(value) {
-  if (value === null || value === undefined || value === "") return "—";
-  return String(value);
-}
-
-function formatNoteDate(value) {
-  const d = parseYMD(value);
-  if (!d) return value || "—";
-  return formatDayFull(d);
-}
-
-function attachNoteTooltips(scope) {
-  scope.querySelectorAll(".note-chip[data-note]").forEach((chip) => {
-    chip.addEventListener("mouseenter", () => {
-      let parsed;
-      try {
-        parsed = JSON.parse(decodeURIComponent(chip.dataset.note));
-      } catch {
-        return;
-      }
-      tooltip.innerHTML = buildTooltipHtml(parsed.matiere, parsed.note);
-      tooltip.hidden = false;
-      requestAnimationFrame(() => {
-        tooltip.dataset.show = "true";
-        positionTooltip(chip);
-      });
+  groupsEl.querySelectorAll(".ws-task").forEach((el) => {
+    el.addEventListener("click", (e) => {
+      if (e.target.closest(".ws-task-check")) return;
+      const { table, id } = el.dataset;
+      const row = (state.tables[table] || []).find((r) => String(r.task_id) === id);
+      if (row) openDetail(table, row);
     });
-    chip.addEventListener("mousemove", () => positionTooltip(chip));
-    chip.addEventListener("mouseleave", hideTooltip);
+    const check = el.querySelector(".ws-task-check");
+    check?.addEventListener("click", async () => {
+      const { table, id } = el.dataset;
+      check.classList.add("spin");
+      try {
+        await api("toggle", { table, task_id: Number(id) });
+        await load();
+      } catch (e) {
+        toast(e.message);
+        check.classList.remove("spin");
+      }
+    });
+    const del = el.querySelector(".ws-task-del");
+    del?.addEventListener("click", async (e) => {
+      e.stopPropagation();
+      const { table, id } = el.dataset;
+      try {
+        if (table.startsWith("trash_")) await api("purge", { table, task_id: Number(id) });
+        else await api("delete", { table, task_id: Number(id) });
+        toast(table.startsWith("trash_") ? "Deleted forever" : "Moved to trash");
+        if (state.selected?.row?.task_id === Number(id) && state.selected.table === table) closeDetail();
+        await load();
+      } catch (err) { toast(err.message); }
+    });
   });
 }
 
-function positionTooltip(anchor) {
-  if (!tooltip || tooltip.hidden) return;
-  const rect = anchor.getBoundingClientRect();
-  const ttRect = tooltip.getBoundingClientRect();
-  let left = rect.left + rect.width / 2 - ttRect.width / 2;
-  left = Math.max(10, Math.min(left, window.innerWidth - ttRect.width - 10));
-  let top = rect.top - ttRect.height - 10;
-  if (top < 10) top = rect.bottom + 10;
-  tooltip.style.left = `${left}px`;
-  tooltip.style.top = `${top}px`;
-}
+function taskRowHTML({ table, row }) {
+  const done = !!row.is_done;
+  const isTrash = table.startsWith("trash_");
+  const isRepeat = table.includes("repeat");
+  const due = row.remind_date ? fmtDate(row.remind_date) : "";
+  const bucket = dueBucket(row.remind_date);
+  const pri = Number(row.priority_id) || 0;
+  const priColor = PRIORITY_COLORS[pri];
+  const urlCount = (() => { const p = parseMaybeJSON(row.urls); return Array.isArray(p) ? p.length : (row.urls ? 1 : 0); })();
 
-function hideTooltip() {
-  if (!tooltip) return;
-  tooltip.dataset.show = "false";
-  tooltip.hidden = true;
-}
+  const chips = [
+    row.subject_id ? `<span class="ws-chip ws-chip-subject">${esc(row.subject_id)}</span>` : "",
+    due && !isTrash ? `<span class="ws-chip ws-chip-due ${bucket}">${esc(due)}</span>` : "",
+    row.is_homework ? `<span class="ws-chip ws-chip-homework">HW</span>` : "",
+  ].join("");
 
-/* ===================== TIMETABLE ===================== */
-function renderTimetable() {
-  const body = document.querySelector("[data-timetable-body]");
-  if (!body) return;
-  if (state.timetable && state.timetable.error) {
-    body.innerHTML = `<p class="state-msg">Couldn't load the timetable: ${escapeHtml(state.timetable.error)}</p>`;
-    return;
-  }
-  const semaine = isObject(state.timetable) ? state.timetable[state.semaine] : null;
-  if (!isObject(semaine)) {
-    body.innerHTML = `<p class="state-msg">No timetable available.</p>`;
-    return;
-  }
-  const cols = DAY_KEYS.map((jour, i) => {
-    const courses = Array.isArray(semaine[jour]) ? [...semaine[jour]] : [];
-    courses.sort((a, b) => String(a.start_date).localeCompare(String(b.start_date)));
-    const items = courses.length
-      ? courses.map(renderCourse).join("")
-      : `<p class="day-empty">—</p>`;
-    return `
-      <div class="day-col">
-        <div class="day-name">${DAY_NAMES[i]}</div>
-        ${items}
-      </div>`;
-  }).join("");
-  body.innerHTML = `<div class="timetable-grid">${cols}</div>`;
-}
-
-function renderCourse(course) {
-  const time = `${timePart(course.start_date)} – ${timePart(course.end_date)}`;
-  const name = course.matiere || course.text || "Class";
-  const prof = course.prof ? escapeHtml(course.prof) : "";
-  const salle = course.salle ? `Room ${escapeHtml(course.salle)}` : "";
-  const meta = [salle, prof].filter(Boolean)
-    .map((m) => `<span>${m}</span>`)
-    .join("");
   return `
-    <div class="course" data-cancelled="${Boolean(course.isAnnule)}">
-      <span class="c-time">${time}</span>
-      <span class="c-name">${escapeHtml(name)}</span>
-      <span class="c-meta">${meta}</span>
+    <div class="ws-task ${done ? "is-done" : ""} ${isTrash ? "is-trash" : ""}" data-table="${table}" data-id="${row.task_id}">
+      <button class="ws-task-check ${done ? "is-done" : ""}" type="button" title="${done ? "Mark as todo" : "Mark as done"}">
+        ${done ? "✓" : ""}
+      </button>
+      <div class="ws-task-main">
+        <div class="ws-task-title">${esc(row.title || "Untitled")}</div>
+        ${row.text_body ? `<div class="ws-task-sub">${esc(String(row.text_body).slice(0, 90))}${String(row.text_body).length > 90 ? "…" : ""}</div>` : ""}
+        <div class="ws-task-meta">
+          ${priColor ? `<span class="ws-pri-dot" style="background:${priColor}" title="Priority ${pri}"></span>` : ""}
+          ${chips}
+          ${isRepeat ? `<span class="ws-chip ws-chip-repeat" title="Recurring${row.frequency ? ` · ${esc(row.frequency)}` : ""}">↻</span>` : ""}
+          ${urlCount ? `<span class="ws-chip ws-chip-link">🔗 ${urlCount}</span>` : ""}
+        </div>
+      </div>
+      <button class="ws-icon-btn ws-task-del" type="button" title="${isTrash ? "Delete forever" : "Delete"}">
+        ${isTrash ? "🗑" : "⌫"}
+      </button>
     </div>`;
 }
 
-/* ===================== HOMEWORKS ===================== */
-function renderHomeworks() {
-  const body = document.querySelector("[data-homeworks-body]");
-  if (!body) return;
-  if (state.homeworks && state.homeworks.error) {
-    body.innerHTML = `<p class="state-msg">Couldn't load homework: ${escapeHtml(state.homeworks.error)}</p>`;
-    return;
-  }
-  const data = state.homeworks;
-  const byDate = data && isObject(data.data) ? data.data : (isObject(data) ? data : null);
-  if (!isObject(byDate)) {
-    body.innerHTML = `<p class="state-msg">No homework available.</p>`;
-    return;
-  }
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const dates = Object.keys(byDate)
-    .filter((date) => {
-      const d = parseYMD(date);
-      return d && d >= today && Array.isArray(byDate[date]) && byDate[date].length > 0;
-    })
-    .sort((a, b) => a.localeCompare(b));
-
-  if (dates.length === 0) {
-    body.innerHTML = `<p class="state-msg">No upcoming homework.</p>`;
-    return;
-  }
-
-  body.innerHTML = dates
-    .map((date) => {
-      const d = parseYMD(date);
-      const items = byDate[date]
-        .filter(isObject)
-        .map((devoir) => renderHomeworkItem(date, devoir))
-        .join("");
-      return `
-        <section class="hw-day">
-          <h2 class="hw-day-title">${escapeHtml(formatDayFull(d))}</h2>
-          <div class="hw-list">${items}</div>
-        </section>`;
-    })
-    .join("");
-
-  attachHomeworkHandlers(body);
+// ---------- Detail panel ----------
+function openDetail(table, row) {
+  state.selected = { table, row: { ...row } };
+  $("#detailPanel").hidden = false;
+  $("#detailPanel").classList.add("is-open");
+  renderDetail();
 }
 
-function renderHomeworkItem(date, devoir) {
-  const subject = devoir.matiere || devoir.codeMatiere || "Homework";
-  const control = Boolean(devoir.interrogation);
-  const done = Boolean(devoir.effectue);
-  const content = devoir.contenu ? escapeHtml(devoir.contenu) : "No details provided.";
-  const prof = devoir.nomProf ? `Teacher: ${escapeHtml(devoir.nomProf)}` : "";
-  const id = devoir.idDevoir != null ? String(devoir.idDevoir) : "";
-  const controlTag = control ? `<span class="hw-tag" data-kind="control">Test</span>` : "";
+function closeDetail() {
+  state.selected = null;
+  $("#detailPanel").classList.remove("is-open");
+  setTimeout(() => { $("#detailPanel").hidden = true; }, 200);
+}
+
+function refreshSelected() {
+  if (!state.selected) return;
+  const fresh = (state.tables[state.selected.table] || []).find((r) => r.task_id === state.selected.row.task_id);
+  if (fresh) { state.selected.row = { ...fresh }; renderDetail(); }
+  else closeDetail();
+}
+
+function renderDetail() {
+  const { table, row } = state.selected;
+  const isTrash = table.startsWith("trash_");
+
+  $("#dTitle").value = row.title || "";
+  $("#dToggleDone").textContent = row.is_done ? "↺" : "✓";
+  $("#dToggleDone").classList.toggle("is-done", !!row.is_done);
+  $("#dDelete").textContent = isTrash ? "Delete forever" : "Move to trash";
+  $("#dDelete").classList.toggle("is-danger", isTrash);
+
+  const badges = [
+    table.replace("_", "-"),
+    row.is_done ? "done" : "open",
+    row.frequency ? `↻ ${row.frequency}` : "",
+  ].filter(Boolean);
+  $("#dBadges").innerHTML = badges.map((b) => `<span class="ws-badge">${esc(b)}</span>`).join("");
+
+  // Build fields
+  const wrap = $("#dFields");
+  wrap.innerHTML = SECTIONS.map((sec) => {
+    const items = sec.fields.filter((f) => f.key in row).map((f) => fieldHTML(f, row[f.key])).join("");
+    return items ? `<div class="ws-dsec"><h3>${sec.title}</h3><div class="ws-dgrid">${items}</div></div>` : "";
+  }).join("");
+}
+
+function fieldHTML(f, value) {
+  const id = `f_${f.key}`;
+  let input;
+  if (f.type === "textarea") {
+    input = `<textarea id="${id}" rows="${f.rows || 3}" placeholder="${esc(f.placeholder || "")}" ${f.mono ? 'class="mono"' : ""}>${esc(value ?? "")}</textarea>`;
+  } else if (f.type === "checkbox") {
+    input = `<label class="ws-check"><input type="checkbox" id="${id}" ${value ? "checked" : ""}><span class="ws-check-ui"></span></label>`;
+  } else if (f.type === "select") {
+    input = `<select id="${id}">${f.options.map((o, i) => `<option value="${o}" ${String(value ?? "") === String(o) ? "selected" : ""}>${esc(f.labels[i] ?? o)}</option>`).join("")}</select>`;
+  } else if (f.type === "datetime") {
+    input = `<input type="datetime-local" id="${id}" value="${toLocalInput(value)}">`;
+  } else if (f.type === "lines") {
+    input = `<textarea id="${id}" rows="3" placeholder="${esc(f.placeholder || "")}">${esc(toLines(value))}</textarea>`;
+  } else {
+    input = `<input type="${f.type === "number" ? "number" : "text"}" id="${id}" value="${esc(value ?? "")}" placeholder="${esc(f.placeholder || "")}" ${f.type === "number" ? 'step="any"' : ""}>`;
+  }
   return `
-    <article class="hw-item" data-done="${done}">
-      <div class="hw-main">
-        <div class="hw-top">
-          <span class="hw-subject">${escapeHtml(subject)}</span>
-          ${controlTag}
-        </div>
-        <p class="hw-content">${content}</p>
-        ${prof ? `<p class="hw-prof">${prof}</p>` : ""}
-      </div>
-      <button class="hw-check" type="button" data-id="${escapeHtml(id)}" data-done="${done}">
-        ${done ? "Done ✓" : "Mark as done"}
-      </button>
-    </article>`;
+    <label class="ws-field ${f.type === "checkbox" ? "ws-field-check" : ""}">
+      <span class="ws-field-label">${esc(f.label)}</span>
+      ${input}
+    </label>`;
 }
 
-function attachHomeworkHandlers(scope) {
-  scope.querySelectorAll(".hw-check").forEach((btn) => {
-    btn.addEventListener("click", async () => {
-      const id = btn.dataset.id;
-      if (!/^\d{5}$/.test(id)) return;
-      const willBeDone = btn.dataset.done !== "true";
-      btn.dataset.busy = "true";
-      const result = await edPost("homeworks", { id, done: String(willBeDone) });
-      btn.dataset.busy = "false";
-      const ok = result && (result.ok === true || result.ok === undefined);
-      if (ok) {
-        btn.dataset.done = String(willBeDone);
-        btn.textContent = willBeDone ? "Done ✓" : "Mark as done";
-        const item = btn.closest(".hw-item");
-        if (item) item.dataset.done = String(willBeDone);
-        updateLocalHomeworkDone(id, willBeDone);
-        renderHomeworksCard();
-      }
-    });
-  });
-}
-
-function updateLocalHomeworkDone(id, done) {
-  const data = state.homeworks;
-  const byDate = data && isObject(data.data) ? data.data : (isObject(data) ? data : null);
-  if (!isObject(byDate)) return;
-  for (const devoirs of Object.values(byDate)) {
-    if (!Array.isArray(devoirs)) continue;
-    for (const devoir of devoirs) {
-      if (isObject(devoir) && String(devoir.idDevoir) === String(id)) {
-        devoir.effectue = done;
-      }
+function collectFields() {
+  const { row } = state.selected;
+  const fields = {};
+  for (const sec of SECTIONS) {
+    for (const f of sec.fields) {
+      if (!(f.key in row)) continue;
+      const el = $(`#f_${f.key}`);
+      if (!el) continue;
+      if (f.type === "checkbox") fields[f.key] = el.checked ? 1 : 0;
+      else if (f.type === "number") fields[f.key] = el.value === "" ? null : Number(el.value);
+      else if (f.type === "datetime") fields[f.key] = fromLocalInput(el.value);
+      else if (f.type === "lines") fields[f.key] = fromLines(el.value);
+      else fields[f.key] = el.value;
     }
   }
+  fields.title = $("#dTitle").value;
+  return fields;
 }
 
-/* ===================== UTIL ===================== */
-function escapeHtml(value) {
-  return String(value)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
-}
-
-/* ===================== POMODORO ===================== */
-const POMO_BASE = "/api/pomodoro";
-
-function withTimeout(promise, ms, message) {
-  let timer;
-  const timeout = new Promise((_, reject) => {
-    timer = setTimeout(() => {
-      clearTimeout(timer);
-      reject(new Error(message));
-    }, ms);
+// ---------- Events ----------
+function bindUI() {
+  $("#viewTabs").addEventListener("click", (e) => {
+    const btn = e.target.closest(".ws-seg");
+    if (!btn) return;
+    document.querySelectorAll(".ws-seg").forEach((b) => b.dataset.active = b === btn ? "true" : "false");
+    state.view = btn.dataset.view;
+    closeDetail();
+    renderList();
   });
-  
-  return Promise.race([promise, timeout]).finally(() => {
-    clearTimeout(timer);
+
+  let searchTimer;
+  $("#searchInput").addEventListener("input", (e) => {
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(() => { state.q = e.target.value.trim(); renderList(); }, 150);
   });
-}
 
-async function pomoPost(sub, body) {
-  const res = await withTimeout(
-    authedFetch(`${POMO_BASE}/${sub}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Accept: "application/json" },
-      body: JSON.stringify(body),
-    }),
-    25000,
-    `Pomodoro request timed out for ${sub}`
-  );
-  const text = await res.text();
-  try {
-    const json = JSON.parse(text);
-    return Object.prototype.hasOwnProperty.call(json, "resp") ? json.resp : json;
-  } catch {
-    return null;
-  }
-}
-
-function pomoTodayIndex() {
-  return (new Date().getDay() + 6) % 7;
-}
-
-function pomoIsToday() {
-  return state.pomoDayIndex === pomoTodayIndex();
-}
-
-/* --- Timer --- */
-function pomoUpdateTimerDisplay() {
-  const timeEl = document.querySelector("[data-pomo-time]");
-  const ring = document.querySelector("[data-pomo-ring]");
-  const startBtn = document.querySelector("[data-pomo-start]");
-  if (timeEl) {
-    const m = Math.floor(state.pomoTimerRemaining / 60);
-    const s = state.pomoTimerRemaining % 60;
-    timeEl.textContent = `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
-  }
-  if (ring) {
-    const progress = state.pomoTimerTotal > 0 ? state.pomoTimerRemaining / state.pomoTimerTotal : 1;
-    ring.style.strokeDashoffset = String(POMO_CIRCUMFERENCE * (1 - progress));
-  }
-  if (startBtn) {
-    startBtn.textContent = state.pomoTimerRunning ? "Pause" : "Start";
-  }
-}
-
-function pomoStartTimer() {
-  if (state.pomoTimerRunning) {
-    clearInterval(state.pomoTimerInterval);
-    state.pomoTimerRunning = false;
-    pomoUpdateTimerDisplay();
-    return;
-  }
-  if (state.pomoTimerRemaining <= 0) return;
-  state.pomoTimerRunning = true;
-  pomoUpdateTimerDisplay();
-  state.pomoTimerInterval = setInterval(async () => {
-    state.pomoTimerRemaining--;
-    pomoUpdateTimerDisplay();
-    if (state.pomoTimerRemaining <= 0) {
-      clearInterval(state.pomoTimerInterval);
-      state.pomoTimerRunning = false;
-      pomoUpdateTimerDisplay();
-      pomoPlaySound();
-      
-      // Incrémenter le compteur pour le jour actuel uniquement
-      const currentDay = POMO_DAYS[state.pomoDayIndex];
-      const result = await pomoPost("increment-day-timer", { day: currentDay });
-      if (result && result.count != null) {
-        state.pomoDayTimerCount[currentDay] = result.count;
-        state.pomoTimerCount = result.count; // Pour compatibilité avec l'affichage
-      }
-      pomoUpdateCounterDisplay();
-    }
-  }, 1000);
-}
-
-function pomoResetTimer() {
-  clearInterval(state.pomoTimerInterval);
-  state.pomoTimerRunning = false;
-  const input = document.querySelector("[data-pomo-duration]");
-  const minutes = input ? Math.max(1, Math.min(120, parseInt(input.value, 10) || 25)) : 25;
-  state.pomoTimerTotal = minutes * 60;
-  state.pomoTimerRemaining = minutes * 60;
-  pomoUpdateTimerDisplay();
-}
-
-function pomoOnDurationChange() {
-  if (!state.pomoTimerRunning) {
-    pomoResetTimer();
-  }
-}
-
-function pomoPlaySound() {
-  try {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.type = "sine";
-    osc.frequency.value = 880;
-    gain.gain.value = 0.3;
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.start();
-    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 1.5);
-    osc.stop(ctx.currentTime + 1.5);
-  } catch {
-    /* audio not available */
-  }
-}
-
-function pomoUpdateCounterDisplay() {
-  const el = document.querySelector("[data-pomo-count]");
-  const currentDay = POMO_DAYS[state.pomoDayIndex];
-  const dayCount = state.pomoDayTimerCount?.[currentDay] || 0;
-  if (el) el.textContent = String(dayCount);
-}
-
-/* --- Day navigation --- */
-function pomoChangeDay(offset) {
-  const previousDayIndex = state.pomoDayIndex;
-  state.pomoDayIndex = ((state.pomoDayIndex + offset) % 7 + 7) % 7;
-  state.pomoDirty = false;
-  
-  // Mettre à jour pomoChecked pour le nouveau jour
-  const currentDay = POMO_DAYS[state.pomoDayIndex];
-  state.pomoChecked = state.pomoDayChecked[currentDay] || {};
-  
-  // Mettre à jour le compteur de timer pour le nouveau jour
-  state.pomoTimerCount = state.pomoDayTimerCount[currentDay] || 0;
-  
-  // Charger le nouveau jour depuis le cache (instantané)
-  pomoLoadSubjects(true);
-  
-  // Recharger discrètement en arrière-plan le jour précédent et le nouveau jour
-  const previousDay = POMO_DAYS[previousDayIndex];
-  
-  // Recharger le jour précédent en arrière-plan
-  pomoSilentRefreshDay(previousDay);
-  
-  // Recharger le nouveau jour en arrière-plan (s'il n'est pas le même que le précédent)
-  if (previousDay !== currentDay) {
-    pomoSilentRefreshDay(currentDay);
-  }
-  
-  // Mettre à jour l'affichage du compteur
-  pomoUpdateCounterDisplay();
-}
-
-function pomoUpdateDayLabel() {
-  const label = document.querySelector("[data-pomo-day-label]");
-  if (label) {
-    const dayLabel = POMO_DAY_LABELS[state.pomoDayIndex];
-    label.textContent = pomoIsToday() ? `${dayLabel} (today)` : dayLabel;
-  }
-}
-
-/* --- Subjects --- */
-async function pomoLoginMega(maxAttempts = 3) {
-  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+  const quickAdd = async () => {
+    const input = $("#quickAddInput");
+    const title = input.value.trim();
+    if (!title) return;
+    input.value = "";
+    input.disabled = true;
     try {
-      await pomoPost("login", {});
-      console.log("MEGA login successful");
-      return true;
-    } catch (error) {
-      console.error(`MEGA login attempt ${attempt} failed:`, error);
-      if (attempt < maxAttempts) {
-        // Attendre avant de réessayer (exponential backoff)
-        await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
-      }
-    }
-  }
-  console.error("MEGA login failed after all attempts");
-  return false;
-}
+      await api("create", { table: "tasks", fields: { title } });
+      toast("Task created");
+      await load();
+    } catch (e) { toast(e.message); input.value = title; }
+    input.disabled = false;
+    input.focus();
+  };
+  $("#quickAddBtn").addEventListener("click", quickAdd);
+  $("#quickAddInput").addEventListener("keydown", (e) => { if (e.key === "Enter") quickAdd(); });
 
-async function pomoLoadAllDays() {
-  // D'abord login à MEGA avec tentatives répétées
-  const loginSuccess = await pomoLoginMega(5);
-  
-  if (!loginSuccess) {
-    console.warn("MEGA login failed, loading from cache only");
-  }
-  
-  try {
-    console.log("Loading all days from API...");
-    const result = await pomoPost("read-all-days", {});
-    console.log("API response for all days:", result);
-    if (result?.allDays && typeof result.allDays === "object") {
-      state.pomoAllDays = result.allDays;
-      console.log("state.pomoAllDays set to:", state.pomoAllDays);
-    } else {
-      console.error("Invalid allDays in response:", result);
-    }
-  } catch (error) {
-    console.error("Failed to load all days:", error);
-    // En cas d'erreur, initialiser avec des tableaux vides
-    state.pomoAllDays = {};
-    for (const day of POMO_DAYS) {
-      state.pomoAllDays[day] = [];
-    }
-  }
-  
-  // Charger le jour actuel depuis le cache
-  const currentDay = POMO_DAYS[state.pomoDayIndex];
-  console.log("Current day:", currentDay);
-  console.log("Subjects for current day:", state.pomoAllDays[currentDay]);
-  if (state.pomoAllDays[currentDay]) {
-    state.pomoSubjects = state.pomoAllDays[currentDay].map(s => ({ ...s }));
-    state.pomoSubjectsOriginal = JSON.stringify(state.pomoAllDays[currentDay]);
-    state.pomoDirty = false;
-    pomoRenderSubjects();
-  }
-  
-  // Charger les cases cochées et compteurs pour tous les jours en 1 requête unique
-  try {
-    console.log("Loading all pomodoro data (checked/timer)...");
-    const result = await pomoPost("read-all-pomodoro-data", {}).catch(() => null);
-    console.log("API response for pomodoro data:", result);
-    
-    if (result?.allChecked && typeof result.allChecked === "object") {
-      state.pomoDayChecked = result.allChecked;
-      console.log("state.pomoDayChecked set to:", state.pomoDayChecked);
-    } else {
-      state.pomoDayChecked = {};
-      for (const day of POMO_DAYS) {
-        state.pomoDayChecked[day] = {};
-      }
-    }
-    
-    if (result?.allTimerCount && typeof result.allTimerCount === "object") {
-      state.pomoDayTimerCount = result.allTimerCount;
-      console.log("state.pomoDayTimerCount set to:", state.pomoDayTimerCount);
-    } else {
-      state.pomoDayTimerCount = {};
-      for (const day of POMO_DAYS) {
-        state.pomoDayTimerCount[day] = 0;
-      }
-    }
-    
-    // Initialiser pomoChecked avec les cases du jour actuel uniquement
-    const currentDay = POMO_DAYS[state.pomoDayIndex];
-    state.pomoChecked = state.pomoDayChecked[currentDay] || {};
-    console.log("state.pomoChecked for current day:", state.pomoChecked);
-  } catch (error) {
-    console.error("Failed to load all pomodoro data:", error);
-    state.pomoDayChecked = {};
-    state.pomoDayTimerCount = {};
-    state.pomoChecked = {};
-    for (const day of POMO_DAYS) {
-      state.pomoDayChecked[day] = {};
-      state.pomoDayTimerCount[day] = 0;
-    }
-  }
-}
+  $("#dClose").addEventListener("click", closeDetail);
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeDetail(); });
 
-async function pomoLoadSubjects(silent = false) {
-  pomoUpdateDayLabel();
-  const currentDay = POMO_DAYS[state.pomoDayIndex];
-  
-  // Essayer d'abord depuis le cache
-  if (state.pomoAllDays[currentDay]) {
-    state.pomoSubjects = state.pomoAllDays[currentDay].map(s => ({ ...s }));
-    state.pomoSubjectsOriginal = JSON.stringify(state.pomoAllDays[currentDay]);
-    state.pomoDirty = false;
-    pomoRenderSubjects();
-    
-    // Rechargement silencieux en arrière-plan
-    if (!silent) {
-      pomoSilentRefreshDay(currentDay);
-    }
-    return;
-  }
-  
-  const listEl = document.querySelector("[data-pomo-subjects]");
-  if (!silent && listEl) listEl.innerHTML = `<p class="state-msg">Loading subjects\u2026</p>`;
-  
-  try {
-    const result = await pomoPost("read-subjects", { day: currentDay });
-    const subjects = Array.isArray(result?.subjects) ? result.subjects : [];
-    state.pomoSubjects = subjects.map(s => ({ ...s }));
-    state.pomoSubjectsOriginal = JSON.stringify(subjects);
-    state.pomoDirty = false;
-    
-    // Mettre à jour le cache
-    state.pomoAllDays[currentDay] = subjects;
-  } catch {
-    state.pomoSubjects = [];
-    state.pomoSubjectsOriginal = "[]";
-    state.pomoAllDays[currentDay] = [];
-  }
-  pomoRenderSubjects();
-}
-
-async function pomoSilentRefreshDay(day) {
-  try {
-    const result = await pomoPost("read-subjects", { day });
-    const subjects = Array.isArray(result?.subjects) ? result.subjects : [];
-    
-    // Mettre à jour le cache si le jour est affiché
-    if (day === POMO_DAYS[state.pomoDayIndex]) {
-      const originalChanged = JSON.stringify(subjects) !== state.pomoSubjectsOriginal;
-      if (originalChanged) {
-        state.pomoSubjects = subjects.map(s => ({ ...s }));
-        state.pomoSubjectsOriginal = JSON.stringify(subjects);
-        state.pomoDirty = false;
-        pomoRenderSubjects();
-      }
-    }
-    
-    // Toujours mettre à jour le cache
-    state.pomoAllDays[day] = subjects;
-  } catch (error) {
-    console.error(`Silent refresh failed for ${day}:`, error);
-  }
-}
-
-function pomoFlattenSubjects() {
-  const flat = [];
-  state.pomoSubjects.forEach((s) => {
-    const name = s.matière || s.matiere || "";
-    const count = Number(s.nb_fois) || 1;
-    for (let j = 0; j < count; j++) {
-      flat.push({ name, instance: j });
-    }
-  });
-  return flat;
-}
-
-function pomoRenderSubjects() {
-  pomoUpdateDayLabel();
-  const listEl = document.querySelector("[data-pomo-subjects]");
-  if (!listEl) return;
-  const isToday = pomoIsToday();
-  const flat = pomoFlattenSubjects();
-  if (flat.length === 0) {
-    listEl.innerHTML = `<p class="state-msg">No subjects for this day.</p>`;
-    return;
-  }
-  
-  // Utiliser les cases cochées du jour actuel uniquement
-  const currentDay = POMO_DAYS[state.pomoDayIndex];
-  const dayChecked = state.pomoDayChecked?.[currentDay] || {};
-  
-  listEl.innerHTML = flat
-    .map((item, i) => {
-      const checkedCount = Number(dayChecked[item.name]) || 0;
-      const subject = state.pomoSubjects.find(
-        (s) => (s.matière || s.matiere || "") === item.name
-      );
-      const quantity = subject ? Number(subject.nb_fois) || 1 : 1;
-      const isChecked = isToday && item.instance < checkedCount;
-      
-      if (isToday) {
-        return `
-          <label class="pomo-subject">
-            <input type="checkbox" ${isChecked ? "checked" : ""}
-              data-pomo-check="${i}" data-pomo-subj-name="${escapeHtml(item.name)}" />
-            <span class="pomo-subject-name">${escapeHtml(item.name)}${quantity > 1 ? ` <span class="pomo-subject-count">×${quantity}</span>` : ""}</span>
-          </label>`;
-      } else {
-        return `
-          <label class="pomo-subject">
-            <span class="pomo-subject-name">${escapeHtml(item.name)}${quantity > 1 ? ` <span class="pomo-subject-count">×${quantity}</span>` : ""}</span>
-          </label>`;
-      }
-    })
-    .join("");
-}
-
-/* --- Three-dots menu --- */
-function pomoToggleMenu() {
-  const menu = document.querySelector("[data-pomo-menu]");
-  if (!menu) return;
-  if (menu.hasAttribute("hidden")) {
-    menu.removeAttribute("hidden");
-    pomoRenderMenu();
-  } else {
-    menu.setAttribute("hidden", "");
-  }
-}
-
-function pomoRenderMenu() {
-  const listEl = document.querySelector("[data-pomo-menu-list]");
-  if (!listEl) return;
-  if (state.pomoSubjects.length === 0) {
-    listEl.innerHTML = `<p class="pomo-menu-empty">No subjects yet.</p>`;
-  } else {
-    listEl.innerHTML = state.pomoSubjects
-      .map((s, i) => {
-        const name = escapeHtml(s.matière || s.matiere || "");
-        const count = Number(s.nb_fois) || 1;
-        return `
-          <div class="pomo-menu-item">
-            <div class="pomo-menu-item-main">
-              <span class="pomo-menu-item-name">${name}</span>
-              <label class="pomo-menu-item-count">
-                <span>Times</span>
-                <input type="number" min="1" max="99" value="${count}" data-pomo-count-input="${i}" />
-              </label>
-            </div>
-            <button class="pomo-menu-remove" type="button" data-pomo-remove="${i}" aria-label="Remove ${name}">&times;</button>
-          </div>`;
-      })
-      .join("");
-  }
-  listEl.querySelectorAll("[data-pomo-count-input]").forEach((input) => {
-    input.addEventListener("change", () => {
-      const idx = parseInt(input.dataset.pomoCountInput, 10);
-      const entry = state.pomoSubjects[idx];
-      if (!entry) return;
-      let value = parseInt(input.value, 10);
-      if (!Number.isFinite(value) || value < 1) value = 1;
-      value = Math.min(99, value);
-      entry.nb_fois = value;
-      input.value = String(value);
-      state.pomoDirty = true;
-      pomoRenderSubjects();
-      pomoRenderMenu();
-    });
-  });
-  listEl.querySelectorAll("[data-pomo-remove]").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const idx = parseInt(btn.dataset.pomoRemove, 10);
-      const entry = state.pomoSubjects[idx];
-      if (!entry) return;
-      const count = Number(entry.nb_fois) || 1;
-      if (count <= 1) {
-        state.pomoSubjects.splice(idx, 1);
-      } else {
-        entry.nb_fois = count - 1;
-      }
-      state.pomoDirty = true;
-      pomoRenderSubjects();
-      pomoRenderMenu();
-    });
-  });
-}
-
-function pomoAddSubject() {
-  const input = document.querySelector("[data-pomo-add-input]");
-  if (!input) return;
-  const name = input.value.trim();
-  if (!name) return;
-  const existing = state.pomoSubjects.find(
-    (s) => (s.matière || s.matiere || "").toLowerCase() === name.toLowerCase()
-  );
-  if (existing) {
-    existing.nb_fois = (Number(existing.nb_fois) || 1) + 1;
-  } else {
-    state.pomoSubjects.push({ "matière": name, nb_fois: 1 });
-  }
-  input.value = "";
-  state.pomoDirty = true;
-  pomoRenderSubjects();
-  pomoRenderMenu();
-}
-
-async function pomoSave() {
-  const saveBtn = document.querySelector("[data-pomo-save]");
-  if (!saveBtn || saveBtn.disabled) return;
-
-  saveBtn.textContent = "Saving…";
-  saveBtn.disabled = true;
-  state.pomoSaveCooldown = Date.now() + 5000;
-
-  try {
-    const result = await pomoPost("save-subjects", {
-      day: POMO_DAYS[state.pomoDayIndex],
-      subjects: state.pomoSubjects,
-    });
-    if (result && result.error) {
-      throw new Error(result.error);
-    }
-    state.pomoSubjectsOriginal = JSON.stringify(state.pomoSubjects);
-    state.pomoDirty = false;
-    
-    // Mettre à jour le cache local
-    state.pomoAllDays[POMO_DAYS[state.pomoDayIndex]] = state.pomoSubjects;
-    
-    if (saveBtn) saveBtn.textContent = "Saved!";
-    setTimeout(() => { 
-      if (saveBtn) {
-        saveBtn.textContent = "Save";
-        saveBtn.disabled = false;
-      }
-    }, 1500);
-  } catch (err) {
-    if (saveBtn) saveBtn.textContent = "Error!";
-    setTimeout(() => { 
-      if (saveBtn) {
-        saveBtn.textContent = "Save";
-        saveBtn.disabled = false;
-      }
-    }, 2000);
-    console.error("Pomodoro save failed:", err);
-  }
-}
-
-function pomoCloseMenuOnOutsideClick(e) {
-  const menu = document.querySelector("[data-pomo-menu]");
-  const toggle = document.querySelector("[data-pomo-menu-toggle]");
-  if (!menu || menu.hasAttribute("hidden")) return;
-  if (toggle && toggle.contains(e.target)) return;
-  if (menu.contains(e.target)) return;
-  menu.setAttribute("hidden", "");
-}
-
-function initPomodoro() {
-  const startBtn = document.querySelector("[data-pomo-start]");
-  const resetBtn = document.querySelector("[data-pomo-reset]");
-  const durationInput = document.querySelector("[data-pomo-duration]");
-  const prevBtn = document.querySelector("[data-pomo-prev]");
-  const nextBtn = document.querySelector("[data-pomo-next]");
-  const menuToggle = document.querySelector("[data-pomo-menu-toggle]");
-  const menu = document.querySelector("[data-pomo-menu]");
-  const addBtn = document.querySelector("[data-pomo-add-btn]");
-  const addInput = document.querySelector("[data-pomo-add-input]");
-  const saveBtn = document.querySelector("[data-pomo-save]");
-  const ring = document.querySelector("[data-pomo-ring]");
-  const subjectsList = document.querySelector("[data-pomo-subjects]");
-
-  if (menu) menu.setAttribute("hidden", "");
-  if (ring) {
-    ring.style.strokeDasharray = String(POMO_CIRCUMFERENCE);
-    ring.style.strokeDashoffset = "0";
-  }
-
-  if (startBtn) startBtn.addEventListener("click", pomoStartTimer);
-  if (resetBtn) resetBtn.addEventListener("click", pomoResetTimer);
-  if (durationInput) durationInput.addEventListener("change", pomoOnDurationChange);
-  if (prevBtn) prevBtn.addEventListener("click", () => pomoChangeDay(-1));
-  if (nextBtn) nextBtn.addEventListener("click", () => pomoChangeDay(1));
-  if (menuToggle) {
-    menuToggle.addEventListener("click", (event) => {
-      event.preventDefault();
-      event.stopPropagation();
-      pomoToggleMenu();
-    });
-  }
-  if (addBtn) addBtn.addEventListener("click", pomoAddSubject);
-  if (addInput) addInput.addEventListener("keydown", (e) => { if (e.key === "Enter") pomoAddSubject(); });
-  if (saveBtn) saveBtn.addEventListener("click", pomoSave);
-
-  if (subjectsList) {
-    subjectsList.addEventListener("change", async (e) => {
-      const cb = e.target;
-      if (!cb.matches("[data-pomo-check]")) return;
-      if (!pomoIsToday()) { cb.checked = false; return; }
-      const name = cb.dataset.pomoSubjName;
-      if (!name) return;
-      
-      const currentDay = POMO_DAYS[state.pomoDayIndex];
-      if (!state.pomoDayChecked[currentDay]) {
-        state.pomoDayChecked[currentDay] = {};
-      }
-      
-      if (cb.checked) {
-        state.pomoDayChecked[currentDay][name] = (Number(state.pomoDayChecked[currentDay][name]) || 0) + 1;
-      } else {
-        const cur = (Number(state.pomoDayChecked[currentDay][name]) || 0) - 1;
-        if (cur <= 0) { delete state.pomoDayChecked[currentDay][name]; } else { state.pomoDayChecked[currentDay][name] = cur; }
-      }
-      
-      // Mettre à jour pomoChecked pour compatibilité
-      state.pomoChecked = state.pomoDayChecked[currentDay];
-      
-      // Sauvegarder dans le cache pour le jour actuel
-      await pomoPost("save-day-checked", { day: currentDay, checked: state.pomoDayChecked[currentDay] });
-    });
-  }
-
-  document.addEventListener("click", pomoCloseMenuOnOutsideClick);
-  document.addEventListener("pointerdown", pomoCloseMenuOnOutsideClick);
-  pomoUpdateTimerDisplay();
-  pomoUpdateCounterDisplay();
-}
-
-async function loadPomodoro() {
-  // Charger tous les jours d'abord (avec le jour actuel inclus)
-  await pomoLoadAllDays();
-  
-  // Les compteurs de pomodoros par jour sont déjà chargés dans pomoLoadAllDays
-  pomoUpdateCounterDisplay();
-  pomoRenderSubjects();
-  
-  // Le jour actuel est déjà chargé depuis pomoLoadAllDays
-  // Recharger discrètement en arrière-plan pour s'assurer que les données sont à jour
-  const currentDay = POMO_DAYS[state.pomoDayIndex];
-  pomoSilentRefreshDay(currentDay);
-}
-
-/* ===================== BOOT ===================== */
-async function loadAll() {
-  updateSyncTime();
-
-  function sleep(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
-  }
-  const pomoPromise = loadPomodoro();
-  const tasks = [
-    ["grades", () => edGet("grades")],
-    ["timetable", () => edGet("timetable")],
-    ["homeworks", () => edGet("homeworks")],
-    ["newGrades", () => edGet("new-grades")],
-  ];
-  for (const [key, fn] of tasks) {
+  $("#dSave").addEventListener("click", async () => {
+    if (!state.selected) return;
+    const { table, row } = state.selected;
+    const btn = $("#dSave");
+    btn.disabled = true; btn.textContent = "Saving…";
     try {
-      state[key] = await fn();
-    } catch (err) {
-      state[key] = { error: err?.message || "Unknown error" };
-    }
-    await sleep(5);
-  }
-  
-  renderNewGradesCard();
-  renderHomeworksCard();
-  renderTomorrowCard();
-  renderNotes();
-  renderTimetable();
-  renderHomeworks();
-  await pomoPromise;
+      await api("update", { table, task_id: row.task_id, fields: collectFields() });
+      toast("Saved");
+      await load();
+    } catch (e) { toast(e.message); }
+    btn.disabled = false; btn.textContent = "Save changes";
+  });
+
+  $("#dToggleDone").addEventListener("click", async () => {
+    if (!state.selected) return;
+    const { table, row } = state.selected;
+    try {
+      await api("toggle", { table, task_id: row.task_id });
+      await load();
+    } catch (e) { toast(e.message); }
+  });
+
+  $("#dDelete").addEventListener("click", async () => {
+    if (!state.selected) return;
+    const { table, row } = state.selected;
+    const isTrash = table.startsWith("trash_");
+    try {
+      if (isTrash) await api("purge", { table, task_id: row.task_id });
+      else await api("delete", { table, task_id: row.task_id });
+      toast(isTrash ? "Deleted forever" : "Moved to trash");
+      closeDetail();
+      await load();
+    } catch (e) { toast(e.message); }
+  });
 }
 
-function boot() {
-  showSection("accueil");
-  setupSegmented(document.querySelector("[data-trimester]"), (btn) => {
-    state.trimester = btn.dataset.period;
-    renderNotes();
-  });
-  setupSegmented(document.querySelector("[data-week]"), (btn) => {
-    state.semaine = btn.dataset.semaine;
-    renderTimetable();
-  });
-  initPomodoro();
-  loadAll();
+let toastTimer;
+function toast(msg) {
+  const el = $("#toast");
+  el.textContent = msg;
+  el.hidden = false;
+  el.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { el.classList.remove("show"); setTimeout(() => { el.hidden = true; }, 250); }, 2400);
 }
 
-document.addEventListener("DOMContentLoaded", boot);
-window.addEventListener("site-navbar:refresh", async (event) => {
-  // Refresh toutes les données pomodoro
-  await pomoLoadAllDays();
-  pomoUpdateCounterDisplay();
-  pomoRenderSubjects();
-  
-  // Refresh toutes les données ÉcoleDirecte
-  const done = loadAll();
-  event.detail?.waitUntil?.(done);
-});
-window.addEventListener("scroll", hideTooltip, true);
+// ---------- Init ----------
+function init() {
+  const now = new Date();
+  $("#todayLabel").textContent = now.toLocaleDateString([], { weekday: "long", day: "numeric", month: "long" });
+  bindUI();
+  load();
+}
+
+if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
+else init();
