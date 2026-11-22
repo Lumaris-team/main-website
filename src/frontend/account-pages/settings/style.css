@@ -600,7 +600,6 @@ label.field-group.range-group .field-input.range { flex: 1 1 auto; }
 
 .ring-bg,
 .ring-files,
-.ring-notes,
 .ring-ai {
   fill: none;
   stroke-width: 10;
@@ -614,11 +613,6 @@ label.field-group.range-group .field-input.range { flex: 1 1 auto; }
 .ring-files,
 .ring-ai {
   stroke: #5e9cff;
-  transition: stroke-dasharray 350ms ease, stroke-dashoffset 350ms ease;
-}
-
-.ring-notes {
-  stroke: #86d6ff;
   transition: stroke-dasharray 350ms ease, stroke-dashoffset 350ms ease;
 }
 
@@ -740,10 +734,6 @@ label.field-group.range-group .field-input.range { flex: 1 1 auto; }
 
 .legend-dot.files {
   background: #5e9cff;
-}
-
-.legend-dot.notes {
-  background: #86d6ff;
 }
 
 @media (max-width: 960px) {

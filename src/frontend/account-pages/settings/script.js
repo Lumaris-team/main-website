@@ -371,7 +371,6 @@ function createStatsPanel(stats) {
     capacityGB: 20,
     items: [
       { key: "files/", label: "lumaris/files/", bytes: 0 },
-      { key: "study-notes/", label: "lumaris/study-notes/", bytes: 0 },
     ],
   };
 
@@ -396,19 +395,10 @@ function createStatsPanel(stats) {
   updateAIRing(clone, aiUsed, aiLimit);
 
   const filesItem = storage.items.find((item) => item.key === "files/") || { label: "lumaris/files/", bytes: 0 };
-  const notesItem = storage.items.find((item) => item.key === "study-notes/") || { label: "lumaris/study-notes/", bytes: 0 };
-
-  // Always use simplified labels
-  const filesLabel = "Files";
-  const notesLabel = "Study notes";
 
   const filesLegend = clone.querySelector(".legend-files .legend-text");
-  const notesLegend = clone.querySelector(".legend-notes .legend-text");
   if (filesLegend) {
-    filesLegend.textContent = `${filesLabel} — ${formatBytesToGB(filesItem.bytes)} GB`;
-  }
-  if (notesLegend) {
-    notesLegend.textContent = `${notesLabel} — ${formatBytesToGB(notesItem.bytes)} GB`;
+    filesLegend.textContent = `Files — ${formatBytesToGB(filesItem.bytes)} GB`;
   }
 
   updateStorageRing(clone, storage);
@@ -440,21 +430,14 @@ function updateStorageRing(panel, storage) {
   const totalBytes = storage?.totalBytes || 0;
   const capacityGB = storage?.capacityGB || 20;
   const filesBytes = storage?.items?.find((item) => item.key === "files/")?.bytes || 0;
-  const notesBytes = storage?.items?.find((item) => item.key === "study-notes/")?.bytes || 0;
 
   const filesLength = totalBytes ? Math.min(filesBytes / totalBytes, 1) * circumference : 0;
-  const notesLength = totalBytes ? Math.min(notesBytes / totalBytes, 1 - filesBytes / totalBytes) * circumference : 0;
 
   const filesCircle = panel.querySelector('.ring-files');
-  const notesCircle = panel.querySelector('.ring-notes');
 
   if (filesCircle) {
     filesCircle.setAttribute('stroke-dasharray', `${filesLength} ${circumference}`);
     filesCircle.setAttribute('stroke-dashoffset', `${circumference}`);
-  }
-  if (notesCircle) {
-    notesCircle.setAttribute('stroke-dasharray', `${notesLength} ${circumference}`);
-    notesCircle.setAttribute('stroke-dashoffset', `${circumference - filesLength}`);
   }
 
   // Calculate percentage and update text
@@ -531,11 +514,6 @@ async function showView(view) {
       if (storageSection) {
         const storage = stats?.storage || { totalBytes: 0, capacityGB: 20, items: [] };
         const filesItem = storage.items.find((item) => item.key === "files/") || { label: "Files", bytes: 0 };
-        const notesItem = storage.items.find((item) => item.key === "study-notes/") || { label: "Study notes", bytes: 0 };
-        
-        // Always use simplified labels
-        const filesLabel = "Files";
-        const notesLabel = "Study notes";
         
         storageSection.innerHTML = `
           <div class="panel-header">
@@ -547,7 +525,6 @@ async function showView(view) {
               <svg viewBox="0 0 120 120" class="storage-ring">
                 <circle class="ring-bg" cx="60" cy="60" r="54" />
                 <circle class="ring-files" cx="60" cy="60" r="54" />
-                <circle class="ring-notes" cx="60" cy="60" r="54" />
               </svg>
               <div class="storage-center">
                 <span class="storage-percentage">0% used</span>
@@ -555,8 +532,7 @@ async function showView(view) {
               </div>
             </div>
             <div class="storage-legend">
-              <div class="legend-item legend-files"><span class="legend-dot files"></span><span class="legend-text">${filesLabel} — ${formatBytesToGB(filesItem.bytes)} GB</span></div>
-              <div class="legend-item legend-notes"><span class="legend-dot notes"></span><span class="legend-text">${notesLabel} — ${formatBytesToGB(notesItem.bytes)} GB</span></div>
+              <div class="legend-item legend-files"><span class="legend-dot files"></span><span class="legend-text">Files — ${formatBytesToGB(filesItem.bytes)} GB</span></div>
             </div>
           </div>
         `;

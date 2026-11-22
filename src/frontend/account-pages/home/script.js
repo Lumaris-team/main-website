@@ -2,19 +2,31 @@ import { createMesh3D } from "./mesh3d.js";
 import { navigateWithAuth } from "/lib/auth.js";
 
 const syncLabel = document.getElementById("syncLabel");
+const clockLabel = document.getElementById("clockLabel");
+const userNameEl = document.getElementById("userName");
 const meshCanvas = document.getElementById("meshCanvas");
 let mesh = null;
 
-function updateSyncTime() {
+function formatTime(date) {
+  return date.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+}
+
+function updateClock() {
   const now = new Date();
-  syncLabel.textContent = now.toLocaleTimeString("fr-FR", {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  if (syncLabel) syncLabel.textContent = formatTime(now);
+  if (clockLabel) clockLabel.textContent = formatTime(now);
+}
+
+function setUserName() {
+  const username = sessionStorage.getItem("username") || localStorage.getItem("username");
+  if (userNameEl && username) {
+    userNameEl.textContent = username;
+  }
 }
 
 function bootHome() {
-  updateSyncTime();
+  updateClock();
+  setUserName();
 
   if (!mesh && meshCanvas) {
     mesh = createMesh3D(meshCanvas);
@@ -26,7 +38,7 @@ function bootHome() {
 }
 
 function wireInternalLinks() {
-  document.querySelectorAll('a[href^="/pages/"]').forEach((link) => {
+  document.querySelectorAll('a[href*="/pages/"]').forEach((link) => {
     link.addEventListener("click", (event) => {
       event.preventDefault();
       navigateWithAuth(link.getAttribute("href"));

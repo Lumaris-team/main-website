@@ -18,7 +18,7 @@ const STEPS = [
     title: "Tout organiser",
     text: "Notes d'étude, fichiers sur MEGA.nz, sites enregistrés, sessions pomodoro, convertisseurs et calculatrices.",
     points: ["Éditeur de notes riche + gestionnaire de fichiers", "Minuteur Pomodoro + historique des calculs", "Convertisseur d'unités + favoris web"],
-    route: "/api/files/* - /api/study-notes/* - /api/tools/*"
+    route: "/api/files/* - /api/tools/*"
   },
   {
     n: "04", icon: "https://shared-assets.lumaris.fr.eu.org/icons/send.svg",

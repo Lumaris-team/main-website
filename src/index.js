@@ -27,7 +27,7 @@ async function serveAccountPage(request, env, username, accountPath) {
   let assetPath = accountPath || "/pages/home";
   if (assetPath === "/" || assetPath === "/pages" || assetPath === "/pages/") {
     assetPath = "/pages/home";
-  } else if (assetPath === "/settings" || assetPath === "/study-notes") {
+  } else if (assetPath === "/settings") {
     assetPath = `/pages${assetPath}`;
   }
   if (assetPath.startsWith("/pages/")) {

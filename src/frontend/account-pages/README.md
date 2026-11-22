@@ -252,49 +252,6 @@ async function uploadFile(file) {
 }
 ```
 
-### Study Notes (`study-notes/`)
-
-**Purpose**: Note-taking and study materials management
-
-**Files**:
-- `index.html`: Notes interface
-- `script.js`: Notes management
-- `style.css`: Notes page styles
-
-**Features**:
-- Rich text editing
-- Note organization by subject
-- Search functionality
-- Export options (PDF, Markdown)
-- Collaboration features
-- Note templates
-- Version history (planned)
-- AI-powered summarization (planned)
-
-**API Endpoints Used**:
-- `GET /api/study-notes/*`: Retrieve notes
-- `POST /api/study-notes/*`: Create/update notes
-- `DELETE /api/study-notes/*`: Delete notes
-
-**Routing**: `/pages/study-notes` or `/study-notes`
-
-**Key Features**:
-```javascript
-// Note management
-async function saveNote(noteId, content, title) {
-  const response = await fetch(`/api/study-notes/${noteId}`, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${getToken()}`,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({ content, title })
-  });
-  
-  showSaveNotification();
-}
-```
-
 ### Tools Interface (`tools/`)
 
 **Purpose**: Productivity and utility tools
@@ -535,7 +492,6 @@ Pages are accessible through multiple routes:
 
 **Special Routes**:
 - `/pages/parent`: Parent workspace variant
-- `/study-notes`: Alias for study-notes page
 - `/settings`: Alias for settings page
 
 ### Route Handling

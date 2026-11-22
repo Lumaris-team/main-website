@@ -6,7 +6,6 @@
 .websites-sidebar,
 .tools-sidebar,
 .files-sidebar,
-.study-notes-sidebar,
 .settings-sidebar {
   position: sticky;
   top: calc(var(--navbar-height) + 14px);
@@ -22,7 +21,6 @@
 .websites-nav,
 .tools-nav,
 .files-nav,
-.study-notes-nav,
 .settings-nav {
   width: 56px;
   height: 56px;
@@ -46,7 +44,6 @@
 .websites-nav svg,
 .tools-nav svg,
 .files-nav svg,
-.study-notes-nav svg,
 .settings-nav svg {
   width: 24px;
   height: 24px;
@@ -62,7 +59,6 @@
 .websites-nav[data-active="true"] svg,
 .tools-nav[data-active="true"] svg,
 .files-nav[data-active="true"] svg,
-.study-notes-nav[data-active="true"] svg,
 .settings-nav.active svg,
 .settings-nav[data-active="true"] svg {
   stroke: rgba(0,0,0,0.8);
@@ -74,8 +70,7 @@
 .ai-icon,
 .websites-icon,
 .tools-icon,
-.files-icon,
-.study-notes-icon {
+.files-icon {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -89,7 +84,7 @@
 .websites-nav:hover,
 .tools-nav:hover,
 .files-nav:hover,
-.study-notes-nav:hover {
+.settings-nav:hover {
   color: var(--accent);
   background: transparent;
 }
@@ -99,8 +94,7 @@
 .ws-nav:active,
 .websites-nav:active,
 .tools-nav:active,
-.files-nav:active,
-.study-notes-nav:active {
+.files-nav:active {
   transform: translateY(1px);
 }
 
@@ -111,7 +105,6 @@
 .websites-nav[data-active="true"],
 .tools-nav[data-active="true"],
 .files-nav[data-active="true"],
-.study-notes-nav[data-active="true"],
 .settings-nav.active,
 .settings-nav[data-active="true"] {
   color: var(--accent);
@@ -126,8 +119,7 @@
   .ws-sidebar,
   .websites-sidebar,
   .tools-sidebar,
-  .files-sidebar,
-  .study-notes-sidebar {
+  .files-sidebar {
     position: sticky;
     top: calc(var(--navbar-height) + 8px);
     z-index: 5;
@@ -146,8 +138,7 @@
   .ws-nav,
   .websites-nav,
   .tools-nav,
-  .files-nav,
-  .study-notes-nav {
+  .files-nav {
     width: 52px;
     height: 48px;
   }

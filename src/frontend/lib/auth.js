@@ -1,4 +1,4 @@
-// Client-side auth guard using JWT from login-client-worker
+// Client-side auth guard using JWT from authentication-client-worker
 // No Supabase - custom JWT system
 
 import { showLoadingOverlay, hideLoadingOverlay } from "/lib/loading.js";

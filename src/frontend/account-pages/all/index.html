@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="fr" data-auth-pending>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#080912">
+    <title>Lumaris — Toutes les pages</title>
+    <meta name="description" content="Répertoire de toutes les sections disponibles dans votre espace Lumaris.">
+    <meta name="robots" content="noindex, nofollow">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="icon" href="https://shared-assets.lumaris.fr.eu.org/logo/logo.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="https://shared-assets.lumaris.fr.eu.org/logo/logo.png">
+    <style>html[data-auth-pending] body { visibility: hidden; }</style>
+    <script type="module" src="/account-pages/init-auth.js"></script>
+    <script type="module" src="/lib/settings.js"></script>
+    <link rel="stylesheet" href="/pages/all/style.css">
+    <script type="module" src="https://shared-assets.lumaris.fr.eu.org/navbar.js?v=20261115-user-cta"></script>
+  </head>
+  <body>
+    <site-navbar site="client-worker" current="all"></site-navbar>
+
+    <main class="all-shell">
+      <header class="all-hero">
+        <p class="all-eyebrow"><span class="pulse"></span>Répertoire</p>
+        <h1>Toutes vos <em>pages.</em></h1>
+        <p class="all-sub">Chaque section de votre espace Lumaris, accessible en un clic.</p>
+      </header>
+
+      <section class="all-grid" aria-label="Toutes les pages">
+        <a class="all-card" href="/pages/home">
+          <span class="all-icon" data-icon="https://shared-assets.lumaris.fr.eu.org/icons/home.svg"></span>
+          <span class="all-card-body">
+            <strong>Accueil</strong>
+            <span>Vue d'ensemble de votre espace.</span>
+          </span>
+          <span class="all-arrow" aria-hidden="true">→</span>
+        </a>
+
+        <a class="all-card" href="/pages/workspace">
+          <span class="all-icon" data-icon="https://shared-assets.lumaris.fr.eu.org/icons/grid.svg"></span>
+          <span class="all-card-body">
+            <strong>Workspace</strong>
+            <span>Notes, devoirs, emploi du temps, pomodoro.</span>
+          </span>
+          <span class="all-arrow" aria-hidden="true">→</span>
+        </a>
+
+        <a class="all-card" href="/pages/ai">
+          <span class="all-icon" data-icon="https://shared-assets.lumaris.fr.eu.org/icons/sparkles.svg"></span>
+          <span class="all-card-body">
+            <strong>Intelligence</strong>
+            <span>Assistant IA et modèles de langage.</span>
+          </span>
+          <span class="all-arrow" aria-hidden="true">→</span>
+        </a>
+
+        <a class="all-card" href="/pages/files">
+          <span class="all-icon" data-icon="https://shared-assets.lumaris.fr.eu.org/icons/database.svg"></span>
+          <span class="all-card-body">
+            <strong>Fichiers</strong>
+            <span>Stockage cloud et gestionnaire de fichiers.</span>
+          </span>
+          <span class="all-arrow" aria-hidden="true">→</span>
+        </a>
+
+        <a class="all-card" href="/pages/tools">
+          <span class="all-icon" data-icon="https://shared-assets.lumaris.fr.eu.org/icons/wrench.svg"></span>
+          <span class="all-card-body">
+            <strong>Outils</strong>
+            <span>Calculateurs, convertisseurs, code et plus.</span>
+          </span>
+          <span class="all-arrow" aria-hidden="true">→</span>
+        </a>
+
+        <a class="all-card" href="/pages/websites">
+          <span class="all-icon" data-icon="https://shared-assets.lumaris.fr.eu.org/icons/web.svg"></span>
+          <span class="all-card-body">
+            <strong>Websites</strong>
+            <span>Vos sites et pages enregistrés.</span>
+          </span>
+          <span class="all-arrow" aria-hidden="true">→</span>
+        </a>
+
+        <a class="all-card" href="/pages/settings">
+          <span class="all-icon" data-icon="https://shared-assets.lumaris.fr.eu.org/icons/settings.svg"></span>
+          <span class="all-card-body">
+            <strong>Réglages</strong>
+            <span>Personnalisation, statistiques, sécurité.</span>
+          </span>
+          <span class="all-arrow" aria-hidden="true">→</span>
+        </a>
+      </section>
+    </main>
+
+    <script type="module" src="/pages/all/script.js"></script>
+    <script type="module">
+      import { loadIcons } from '/lib/icons.js';
+      loadIcons();
+    </script>
+  </body>
+</html>

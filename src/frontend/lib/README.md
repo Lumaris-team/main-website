@@ -89,8 +89,8 @@ The libraries directory provides reusable functionality that is shared across th
 
 ### Authentication Flow
 
-1. **Login**: User submits credentials to login-client-worker
-2. **Token Exchange**: login-client-worker returns JWT and one-time token
+1. **Login**: User submits credentials to authentication-client-worker
+2. **Token Exchange**: authentication-client-worker returns JWT and one-time token
 3. **Redirect**: Redirect to `/account/{username}/?jwt=...&token=...`
 4. **Page Guard**: `guardPage()` checks JWT validity
 5. **Data Loading**: `authedFetch()` makes authenticated API calls

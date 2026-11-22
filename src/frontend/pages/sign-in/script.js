@@ -41,7 +41,7 @@ if (form) {
       return;
     }
     
-    const loginUrl = `https://login-client-worker.${encodeURIComponent(identifier)}-cloudflare-account.workers.dev/api/login`;
+    const loginUrl = `https://authentication-client-worker.${encodeURIComponent(identifier)}-cloudflare-account.workers.dev/api/login`;
     const body = { 
       username: identifier, 
       password: form.elements.password.value,

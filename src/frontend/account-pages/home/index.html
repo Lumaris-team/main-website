@@ -4,23 +4,17 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="#080912">
-    <title>Lumaris-Team Dashboard - Workspace & AI</title>
-    <meta name="description" content="Personal Dashboard by Lumaris-Team - Integrated workspace with grades, homeworks, timetable from EcoleDirecte, AI assistant, file storage and personalized tools.">
+    <title>Lumaris — Accueil</title>
+    <meta name="description" content="Tableau de bord Lumaris : workspace, intelligence artificielle, fichiers, outils et réglages au même endroit.">
     <meta name="robots" content="noindex, nofollow">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="icon" href="https://shared-assets.lumaris.fr.eu.org/logo/logo.png">
     <link rel="icon" type="image/png" sizes="512x512" href="https://shared-assets.lumaris.fr.eu.org/logo/logo.png">
-    
-    
-    
-    <!-- BreadcrumbList structured data -->
     <style>html[data-auth-pending] body { visibility: hidden; }</style>
     <script type="module" src="/account-pages/init-auth.js"></script>
     <script type="module" src="/lib/settings.js"></script>
-    <link rel="stylesheet" href="/styles/sidebar.css">
-    <link rel="stylesheet" href="/styles/block.css">
     <link rel="stylesheet" href="/pages/home/style.css">
     <script type="module" src="https://shared-assets.lumaris.fr.eu.org/navbar.js?v=20261115-user-cta"></script>
   </head>
@@ -28,80 +22,97 @@
     <site-navbar site="client-worker" current="home"></site-navbar>
 
     <main class="home-shell">
-      <section class="bento-grid" aria-label="Accueil">
-        <article class="bento-block block-greeting">
-          <p class="block-eyebrow">Welcome</p>
-          <h1>Hello Daniel</h1>
-        </article>
-
-        <article class="bento-block block-mesh" aria-label="Forme 3D animée">
+      <header class="home-hero">
+        <div class="hero-copy">
+          <p class="hero-eyebrow"><span class="pulse"></span>Espace personnel</p>
+          <h1>Bonjour,<br><em id="userName">vous</em>.</h1>
+          <p class="hero-sub">Tout ce dont vous avez besoin pour apprendre, organiser et progresser — réuni dans un seul espace.</p>
+        </div>
+        <div class="hero-side">
           <canvas id="meshCanvas" aria-hidden="true"></canvas>
-        </article>
+          <div class="hero-status">
+            <span class="status-dot"></span>
+            <span>Session active</span>
+            <time id="clockLabel">--:--</time>
+          </div>
+        </div>
+      </header>
 
-        <article class="bento-block block-status">
-          <p class="block-eyebrow">Home</p>
-          <strong class="status-title">Dashboard</strong>
-          <p class="status-sync">
-            Last synhronisation&nbsp;:
-            <span id="syncLabel">--:--</span>
-          </p>
-        </article>
-
-        <article class="bento-block block-logo">
-          <img src="https://shared-assets.lumaris.fr.eu.org/logo/rectangle_black.png" alt="Logo Dashboard" class="home-logo">
-        </article>
-
-        <a class="bento-block block-link" href="/pages/workspace">
-          <span class="block-eyebrow">Workspace</span>
-          <span class="block-link-body">
-            <strong>School</strong>
-            <span class="block-desc">Grades, homeworks, timetable from EcoleDirecte; notes, pomodoro.</span>
+      <section class="home-grid" aria-label="Sections">
+        <a class="home-card card-feature" href="/pages/workspace">
+          <span class="card-icon" data-icon="https://shared-assets.lumaris.fr.eu.org/icons/grid.svg"></span>
+          <span class="card-body">
+            <strong>Workspace</strong>
+            <span>Notes, devoirs, emploi du temps et pomodoro synchronisés.</span>
           </span>
+          <span class="card-arrow" aria-hidden="true">→</span>
         </a>
 
-        <a class="bento-block block-link" href="/pages/ai">
-          <span class="block-eyebrow">Artificial Intelligence</span>
-          <span class="block-link-body">
+        <a class="home-card" href="/pages/ai">
+          <span class="card-icon" data-icon="https://shared-assets.lumaris.fr.eu.org/icons/sparkles.svg"></span>
+          <span class="card-body">
             <strong>Intelligence</strong>
-            <span class="block-desc">More than 10 AI models, and some methods.</span>
+            <span>Plusieurs modèles IA pour vous aider au quotidien.</span>
           </span>
+          <span class="card-arrow" aria-hidden="true">→</span>
         </a>
 
-        <a class="bento-block block-link" href="/pages/study-notes">
-          <span class="block-eyebrow">Study Notes</span>
-          <span class="block-link-body">
-            <strong>Revision</strong>
-            <span class="block-desc">Manage your subjects and revision cards.</span>
+        <a class="home-card" href="/pages/files">
+          <span class="card-icon" data-icon="https://shared-assets.lumaris.fr.eu.org/icons/database.svg"></span>
+          <span class="card-body">
+            <strong>Fichiers</strong>
+            <span>Votre espace de stockage cloud personnel.</span>
           </span>
+          <span class="card-arrow" aria-hidden="true">→</span>
         </a>
 
-        <a class="bento-block block-link" href="/pages/files">
-          <span class="block-eyebrow">Files storage</span>
-          <span class="block-link-body">
-            <strong>Base of files</strong>
-            <span class="block-desc">10 Go of storage, files and folsers.</span>
+        <a class="home-card" href="/pages/tools">
+          <span class="card-icon" data-icon="https://shared-assets.lumaris.fr.eu.org/icons/wrench.svg"></span>
+          <span class="card-body">
+            <strong>Outils</strong>
+            <span>Calculateurs, convertisseurs et utilitaires scolaires.</span>
           </span>
+          <span class="card-arrow" aria-hidden="true">→</span>
         </a>
 
-        <a class="bento-block block-link" href="/pages/tools">
-          <span class="block-eyebrow">Useful tools</span>
-          <span class="block-link-body">
-            <strong>Tools</strong>
-            <span class="block-desc">Scientist calcultor, converter, code compiler..</span>
+        <a class="home-card" href="/pages/websites">
+          <span class="card-icon" data-icon="https://shared-assets.lumaris.fr.eu.org/icons/web.svg"></span>
+          <span class="card-body">
+            <strong>Websites</strong>
+            <span>Vos sites et pages enregistrés en un clic.</span>
           </span>
+          <span class="card-arrow" aria-hidden="true">→</span>
         </a>
 
-        <a class="bento-block block-link" href="/pages/settings">
-          <span class="block-eyebrow">Personnalisation</span>
-          <span class="block-link-body">
-            <strong>Settings</strong>
-            <span class="block-desc">Background, font-style, passwords...</span>
+        <a class="home-card card-all" href="/pages/all">
+          <span class="card-icon" data-icon="https://shared-assets.lumaris.fr.eu.org/icons/all.svg"></span>
+          <span class="card-body">
+            <strong>Toutes les pages</strong>
+            <span>Le répertoire complet de votre espace.</span>
           </span>
+          <span class="card-arrow" aria-hidden="true">→</span>
+        </a>
+
+        <a class="home-card" href="/pages/settings">
+          <span class="card-icon" data-icon="https://shared-assets.lumaris.fr.eu.org/icons/settings.svg"></span>
+          <span class="card-body">
+            <strong>Réglages</strong>
+            <span>Personnalisation, statistiques et préférences.</span>
+          </span>
+          <span class="card-arrow" aria-hidden="true">→</span>
         </a>
       </section>
 
-      <p class="home-footer">Designed by AI and managed by Lumaris-Team</p>
+      <footer class="home-footer">
+        <span>Lumaris — conçu pour apprendre</span>
+        <span id="syncLabel">--:--</span>
+      </footer>
     </main>
+
     <script type="module" src="/pages/home/script.js"></script>
+    <script type="module">
+      import { loadIcons } from '/lib/icons.js';
+      loadIcons();
+    </script>
   </body>
 </html>

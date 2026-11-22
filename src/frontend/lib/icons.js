@@ -3,7 +3,6 @@ const ICONS = {
   home: 'https://shared-assets.lumaris.fr.eu.org/icons/home.svg',
   grid: 'https://shared-assets.lumaris.fr.eu.org/icons/grid.svg',
   sparkles: 'https://shared-assets.lumaris.fr.eu.org/icons/sparkles.svg',
-  'study-notes': 'https://shared-assets.lumaris.fr.eu.org/icons/study-notes.svg',
   web: 'https://shared-assets.lumaris.fr.eu.org/icons/web.svg',
   database: 'https://shared-assets.lumaris.fr.eu.org/icons/database.svg',
   wrench: 'https://shared-assets.lumaris.fr.eu.org/icons/wrench.svg',
