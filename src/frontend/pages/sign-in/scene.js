@@ -59,7 +59,7 @@ function initScene() {
       galaxy.rotation.y = spinY;
       galaxy.rotation.z = spinZ + Math.sin(time * 0.00035) * 0.035;
       galaxy.position.y = Math.sin(time * 0.0008) * 0.1;
-      galaxy.position.x = Math.sin(time * 0.0005) * 0.12;
+      galaxy.position.x = 1.7 + Math.sin(time * 0.0005) * 0.12;
       galaxy.scale.setScalar(0.32 + Math.sin(time * 0.0006) * 0.015);
     }
     renderer.render(scene, camera);
