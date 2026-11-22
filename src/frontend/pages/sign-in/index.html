@@ -61,6 +61,7 @@
 }
   </script>
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js"}}</script>
   <meta name="format-detection" content="telephone=no">
   <meta name="color-scheme" content="dark">
   <meta name="language" content="French">
@@ -101,6 +102,7 @@
   <div class="noise" aria-hidden="true"></div>
   <header class="site-header"><site-navbar site="main-website"></site-navbar></header>
   <main class="signin-shell">
+    <div class="signin-visual" aria-hidden="true"><canvas id="signin-scene"></canvas></div>
     <section class="signin-card" aria-label="Connexion">
       <img src="https://shared-assets.lumaris.fr.eu.org/logo/logo.png" alt="Lumaris" class="signin-logo">
       <p class="eyebrow"><span class="pulse"></span>Bon retour</p>
@@ -135,5 +137,6 @@
   </main>
   <script type="module" src="https://shared-assets.lumaris.fr.eu.org/navbar.js?v=20261115-user-cta"></script>
   <script type="module" src="/pages/sign-in/script.js"></script>
+  <script type="module" src="/pages/sign-in/scene.js"></script>
 </body>
 </html>
