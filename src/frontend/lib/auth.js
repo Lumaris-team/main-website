@@ -190,7 +190,9 @@ const AUTH_OVERLAY_STYLE = `
     display: flex;
     align-items: center;
     justify-content: center;
-    background: rgba(8, 9, 18, 0.8);
+    background: rgba(8, 9, 18, 0.6);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
     padding: 20px;
     animation: auth-overlay-in 220ms ease-out;
   }
@@ -235,8 +237,12 @@ function fitAuthFrame() {
     if (!card) return;
     const w = Math.min(card.offsetWidth + 36, window.innerWidth * 0.94);
     const h = Math.min(card.offsetHeight + 36, window.innerHeight * 0.9);
-    frame.style.width = `${Math.round(w)}px`;
-    frame.style.height = `${Math.round(h)}px`;
+    const dw = Math.abs(parseFloat(frame.style.width) - w);
+    const dh = Math.abs(parseFloat(frame.style.height) - h);
+    if (dw > 2 || dh > 2 || !authFrameReady) {
+      frame.style.width = `${Math.round(w)}px`;
+      frame.style.height = `${Math.round(h)}px`;
+    }
     if (!authFrameReady) {
       authFrameReady = true;
       frame.classList.add("is-ready");

@@ -105,4 +105,4 @@ body.is-embedded .signin-sub { margin-bottom: 20px; }
 .social-login { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; margin-top: 16px; }
 .social-login-button { padding: 10px 5px; border: 1px solid rgba(255,255,255,.12); border-radius: 9px; background: transparent; color: var(--paper); cursor: pointer; font-size: 10.5px; transition: border-color .15s ease; }
 .social-login-button:hover { border-color: var(--cyan); }
-.turnstile-container { margin: 20px 0; display: flex; justify-content: center; }
+.turnstile-container { margin: 20px 0; display: flex; justify-content: center; min-height: 65px; }

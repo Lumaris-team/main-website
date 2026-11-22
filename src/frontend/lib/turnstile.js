@@ -45,8 +45,7 @@ async function getWidget() {
 
     const id = turnstile.render(container, {
       sitekey,
-      size: "compact", // Minimal visible widget — user clicks it themselves.
-      theme: "dark",
+      size: "normal", // Visible widget — user clicks it themselves.
       callback: (token) => { currentToken = token; },
       "error-callback": () => { currentToken = null; },
       "expired-callback": () => { currentToken = null; },
