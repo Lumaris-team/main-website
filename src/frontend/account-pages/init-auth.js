@@ -61,8 +61,10 @@ async function init() {
   
   // Guard page and start JWT renewal
   const ok = await guardPage();
+  // Always reveal the page once the guard settled: on failure the sign-in
+  // overlay is already covering it, on success the content is ready.
+  document.documentElement.removeAttribute("data-auth-pending");
   if (ok) {
-    document.documentElement.removeAttribute("data-auth-pending");
     startJWTRenewal();
     // Hide loading after page is fully loaded and data is ready
     setTimeout(() => hideLoadingOverlay(), 500);

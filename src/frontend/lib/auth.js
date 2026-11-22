@@ -173,6 +173,88 @@ export async function authedFetch(input, init = {}) {
   }
 }
 
+// --- Sign-in overlay --------------------------------------------------------
+// Instead of navigating to /sign-in when the session is invalid, the real
+// sign-in module is embedded in an iframe over a blurred backdrop. When the
+// iframe lands on /account/<user>/?jwt=...&token=...&username=..., the tokens
+// are stored and the page reloads into an authenticated state.
+
+let authOverlay = null;
+let authOverlayPoll = null;
+
+const AUTH_OVERLAY_STYLE = `
+  #auth-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(8, 9, 18, 0.72);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    padding: 20px;
+  }
+  #auth-overlay-frame {
+    width: min(880px, 100%);
+    height: min(820px, 100%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    background: #080912;
+  }
+`;
+
+function hideAuthOverlay() {
+  if (authOverlayPoll) {
+    clearInterval(authOverlayPoll);
+    authOverlayPoll = null;
+  }
+  if (authOverlay && authOverlay.parentNode) {
+    authOverlay.parentNode.removeChild(authOverlay);
+  }
+  authOverlay = null;
+}
+
+function watchAuthFrame() {
+  const frame = authOverlay?.querySelector("#auth-overlay-frame");
+  if (!frame) return;
+  let loc;
+  try {
+    loc = frame.contentWindow.location;
+  } catch {
+    return; // cross-origin or not loaded yet
+  }
+  if (!loc.pathname.startsWith("/account/")) return;
+  const params = new URLSearchParams(loc.search);
+  const jwt = params.get("jwt");
+  const oneTimeToken = params.get("token");
+  const username = params.get("username");
+  if (!jwt || !oneTimeToken || !username) return;
+  storeJWT(jwt, oneTimeToken, username, 1800);
+  sessionStorage.setItem("show_loading", "1");
+  hideAuthOverlay();
+  window.location.reload();
+}
+
+export function showAuthOverlay() {
+  if (authOverlay) return;
+  if (!document.getElementById("auth-overlay-style")) {
+    const style = document.createElement("style");
+    style.id = "auth-overlay-style";
+    style.textContent = AUTH_OVERLAY_STYLE;
+    document.head.appendChild(style);
+  }
+  authOverlay = document.createElement("div");
+  authOverlay.id = "auth-overlay";
+  const frame = document.createElement("iframe");
+  frame.id = "auth-overlay-frame";
+  frame.src = "/sign-in";
+  frame.title = "Connexion";
+  authOverlay.appendChild(frame);
+  document.body.appendChild(authOverlay);
+  authOverlayPoll = setInterval(watchAuthFrame, 400);
+}
+
 // --- Page guard -------------------------------------------------------------
 
 export async function guardPage() {
@@ -287,7 +369,7 @@ function redirectToAuth() {
   if (target && !normalizePath(target).startsWith(normalizePath(AUTH_PAGE))) {
     setCookie(REDIRECT_COOKIE, target, REDIRECT_COOKIE_TTL);
   }
-  window.location.replace(AUTH_PAGE);
+  showAuthOverlay();
 }
 
 function consumePostAuthRedirect() {
@@ -310,15 +392,15 @@ let renewalInterval = null;
 export function startJWTRenewal() {
   if (renewalInterval) clearInterval(renewalInterval);
   
-  // Renew JWT every 10 minutes
+  // Renew JWT every 9 minutes
   renewalInterval = setInterval(async () => {
     const jwt = await renewJWT();
     if (!jwt) {
-      // JWT renewal failed, show loading and redirect to auth
+      // JWT renewal failed, show loading and ask for a new session in place
       showLoadingOverlay();
       redirectToAuth();
     }
-  }, 600000); // 10 minutes
+  }, 540000); // 9 minutes
 }
 
 export function stopJWTRenewal() {
@@ -333,5 +415,5 @@ export function stopJWTRenewal() {
 export async function logout() {
   clearAuth();
   stopJWTRenewal();
-  window.location.replace(AUTH_PAGE);
+  showAuthOverlay();
 }
