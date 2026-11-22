@@ -190,10 +190,15 @@ const AUTH_OVERLAY_STYLE = `
     display: flex;
     align-items: center;
     justify-content: center;
-    background: rgba(8, 9, 18, 0.72);
+    background: rgba(8, 9, 18, 0.66);
     backdrop-filter: blur(18px);
     -webkit-backdrop-filter: blur(18px);
     padding: 20px;
+    animation: auth-overlay-in 220ms ease-out;
+  }
+  @keyframes auth-overlay-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
   }
   #auth-overlay-frame {
     width: min(500px, 100%);
@@ -202,10 +207,16 @@ const AUTH_OVERLAY_STYLE = `
     border-radius: 20px;
     background: #080912;
     overflow: hidden;
+    opacity: 0;
+    transition: opacity 180ms ease-out;
+  }
+  #auth-overlay-frame.is-ready {
+    opacity: 1;
   }
 `;
 
 function hideAuthOverlay() {
+  authFrameReady = false;
   if (authOverlayPoll) {
     clearInterval(authOverlayPoll);
     authOverlayPoll = null;
@@ -215,6 +226,8 @@ function hideAuthOverlay() {
   }
   authOverlay = null;
 }
+
+let authFrameReady = false;
 
 function fitAuthFrame() {
   const frame = authOverlay?.querySelector("#auth-overlay-frame");
@@ -226,6 +239,10 @@ function fitAuthFrame() {
     const h = Math.min(card.offsetHeight + 36, window.innerHeight * 0.9);
     frame.style.width = `${Math.round(w)}px`;
     frame.style.height = `${Math.round(h)}px`;
+    if (!authFrameReady) {
+      authFrameReady = true;
+      frame.classList.add("is-ready");
+    }
   } catch { /* frame not ready */ }
 }
 
