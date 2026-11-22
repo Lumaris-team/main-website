@@ -57,7 +57,7 @@ form { display: grid; gap: 18px; }
   .signin-sub { margin-bottom: 20px; }
   form { gap: 14px; }
   .field input { padding: 11px 13px; }
-  .turnstile-container { margin: 14px 0; zoom: .9; }
+  body:not(.is-embedded) .turnstile-container { margin: 14px 0; zoom: .9; }
   .social-login { margin-top: 12px; }
   .signin-alt { margin-top: 18px; }
 }
@@ -69,7 +69,7 @@ form { display: grid; gap: 18px; }
   form { gap: 11px; }
   .field { gap: 6px; }
   .field input { padding: 9px 12px; font-size: 13.5px; }
-  .turnstile-container { margin: 10px 0; zoom: .82; }
+  body:not(.is-embedded) .turnstile-container { margin: 10px 0; zoom: .82; }
   .submit { padding: 13px; }
   .social-login { margin-top: 10px; }
   .social-login-button { padding: 8px 4px; font-size: 10px; }
@@ -96,7 +96,7 @@ body.is-embedded .signin-sub { margin-bottom: 20px; }
   .field > span { font-size: 10px; }
   .field input { padding: 8px 11px; font-size: 13px; }
   .eye { width: 30px; height: 30px; }
-  .turnstile-container { margin: 8px 0; zoom: .72; }
+  body:not(.is-embedded) .turnstile-container { margin: 8px 0; zoom: .72; }
   .submit { padding: 11px; font-size: 10px; }
   .social-login { margin-top: 8px; gap: 6px; }
   .social-login-button { padding: 7px 4px; font-size: 9.5px; }
