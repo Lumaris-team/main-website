@@ -39,11 +39,16 @@ form { display: grid; gap: 18px; }
 @media (min-width: 961px) {
   html, body { height: 100%; overflow: hidden; overscroll-behavior: none; }
   .signin-shell { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); height: 100dvh; min-height: 0; padding: 0; place-items: stretch; overflow: hidden; }
-  .signin-card { grid-column: 1; grid-row: 1; justify-self: center; align-self: center; max-height: 100%; overflow: hidden; background: rgba(13,14,26,.62); -webkit-backdrop-filter: blur(18px) saturate(1.2); backdrop-filter: blur(18px) saturate(1.2); }
+  .signin-card { grid-column: 1; grid-row: 1; justify-self: start; align-self: start; margin-left: 14px; margin-top: calc(var(--nav-bottom, 64px) + 14px); max-height: calc(100% - var(--nav-bottom, 64px) - 28px); overflow: hidden; background: rgba(13,14,26,.62); -webkit-backdrop-filter: blur(18px) saturate(1.2); backdrop-filter: blur(18px) saturate(1.2); }
   .signin-visual { grid-column: 1 / -1; grid-row: 1; position: absolute; inset: 0; display: block; overflow: visible; pointer-events: none; }
   .signin-visual::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse 90% 70% at 72% 45%, rgba(124,77,255,.10), transparent 65%); pointer-events: none; }
   .signin-visual canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
   .signin-card { width: min(460px, 100%); }
+}
+@media (max-width: 960px) {
+  .signin-shell { padding: calc(var(--nav-bottom, 56px) + 10px) 10px 40px; justify-items: start; }
+  .signin-card { padding: 34px 24px; border-radius: 16px; }
+  h1 { font-size: 30px; }
 }
 @media (max-height: 780px) {
   .signin-card { padding: 30px 38px; }
@@ -70,11 +75,6 @@ form { display: grid; gap: 18px; }
   .social-login-button { padding: 8px 4px; font-size: 10px; }
   .signin-alt { margin-top: 14px; font-size: 11.5px; }
   .signin-logo { display: none; }
-}
-@media (max-width: 960px) {
-  .signin-shell { padding: 110px 16px 48px; }
-  .signin-card { padding: 34px 24px; border-radius: 16px; }
-  h1 { font-size: 30px; }
 }
 @media (max-height: 620px) and (orientation: landscape) {
   .signin-shell { padding: 84px 20px 28px; min-height: auto; }

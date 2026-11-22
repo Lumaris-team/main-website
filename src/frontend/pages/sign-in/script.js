@@ -6,7 +6,21 @@ const toggle = document.getElementById("toggle-password");
 const password = document.getElementById("password");
 const turnstileContainer = document.getElementById("turnstile-container");
 
-// Preload Turnstile early
+// Align the card with the navbar: same left inset, and a gap below the bar
+// equal to the horizontal page inset (14px on desktop).
+function syncCardOffset() {
+  const nav = document.querySelector("site-navbar");
+  if (!nav) return;
+  const bottom = nav.getBoundingClientRect().bottom;
+  if (bottom > 0) {
+    document.documentElement.style.setProperty("--nav-bottom", `${Math.round(bottom)}px`);
+  }
+}
+window.addEventListener("resize", syncCardOffset);
+window.addEventListener("load", syncCardOffset);
+setTimeout(syncCardOffset, 400);
+setTimeout(syncCardOffset, 1500);
+
 preloadTurnstile();
 
 if (toggle && password) {
@@ -48,13 +62,24 @@ if (form) {
       turnstileToken: turnstileToken
     };
     
-    const loginResponse = await fetch(loginUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    });
+    let loginResponse;
+    try {
+      loginResponse = await fetch(loginUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+    } catch {
+      errorBox.textContent = "Service de connexion indisponible, réessayez dans un instant.";
+      errorBox.hidden = false;
+      return;
+    }
     if (!loginResponse.ok) {
-      errorBox.textContent = "Identifiant ou mot de passe incorrect.";
+      const detail = await loginResponse.text().catch(() => "");
+      console.error("Login failed", loginResponse.status, detail.slice(0, 200));
+      errorBox.textContent = loginResponse.status >= 500
+        ? "Service de connexion indisponible, réessayez dans un instant."
+        : "Identifiant ou mot de passe incorrect.";
       errorBox.hidden = false;
       return;
     }
