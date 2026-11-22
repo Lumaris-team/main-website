@@ -21,3 +21,13 @@ h1 em { color: var(--cyan); font-style: normal; }
 .site-footer { max-width: 1240px; margin: 0 auto; width: 100%; padding: 34px 36px 60px; border-top: 1px solid var(--line); display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; color: #5d5c69; font: 10px 'DM Mono', monospace; letter-spacing: .1em; }
 .site-footer nav { display: flex; gap: 20px; }
 .site-footer a { color: var(--muted); text-decoration: none; }
+@media (max-width: 640px) {
+  .page-hero { padding: 120px 20px 70px; }
+  h1 { font-size: clamp(38px, 11vw, 56px); }
+  .hero-meta { right: 20px; bottom: 22px; left: 20px; font-size: 8px; }
+  .site-footer { padding: 26px 20px 45px; gap: 10px; }
+}
+@media (max-height: 620px) and (orientation: landscape) {
+  .page-hero { min-height: auto; padding: 90px 24px 50px; }
+  .hero-meta { bottom: 16px; }
+}

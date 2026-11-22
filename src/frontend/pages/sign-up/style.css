@@ -31,4 +31,12 @@ form { display: grid; gap: 18px; }
 .submit-icon { color: #4a43a0; font-size: 16px; }
 .signup-alt { margin: 24px 0 0; color: var(--muted); font-size: 12.5px; text-align: center; }
 .signup-alt a { color: var(--cyan); text-decoration: none; }
-@media (max-width: 520px) { .signup-card { padding: 32px 24px; border-radius: 20px; } }
+@media (max-width: 520px) {
+  .signup-shell { padding: 104px 16px 40px; }
+  .signup-card { padding: 32px 22px; border-radius: 20px; }
+  h1 { font-size: 34px; }
+  .signup-sub { margin-bottom: 24px; }
+}
+@media (max-height: 620px) and (orientation: landscape) {
+  .signup-shell { padding: 84px 20px 28px; min-height: auto; }
+}

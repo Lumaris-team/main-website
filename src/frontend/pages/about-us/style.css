@@ -68,4 +68,9 @@ a.org-card:hover { border-color: rgba(140,236,255,.35); }
 .reveal { opacity: 0; transform: translateY(26px); transition: opacity .7s ease, transform .7s ease; }
 .reveal.is-visible { opacity: 1; transform: none; }
 @media (max-width: 960px) { .pillars-grid { grid-template-columns: 1fr; } .stack-grid { grid-template-columns: 1fr 1fr; } }
-@media (max-width: 640px) { section { padding: 80px 20px; } .stack-grid { grid-template-columns: 1fr; } .cta-inner { padding: 50px 26px; } .org-grid { grid-template-columns: 1fr; } }
+@media (max-width: 640px) { section { padding: 80px 20px; } .page-hero { padding: 120px 20px 80px; } .hero-meta { right: 20px; bottom: 22px; left: 20px; font-size: 8px; } .stack-grid { grid-template-columns: 1fr; } .cta-inner { padding: 50px 26px; } .org-grid { grid-template-columns: 1fr; } }
+@media (max-height: 620px) and (orientation: landscape) {
+  .page-hero { min-height: auto; padding: 84px 24px 50px; }
+  .hero-meta { bottom: 16px; }
+  .cta-inner { padding: 45px 30px; }
+}

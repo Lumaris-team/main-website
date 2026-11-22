@@ -78,3 +78,8 @@ section { padding: 110px 36px; }
 .reveal.is-visible { opacity: 1; transform: none; }
 @media (max-width: 960px) { .steps-grid { grid-template-columns: 1fr; } .pipeline-track { grid-template-columns: 1fr 1fr; } .toolbox-grid { grid-template-columns: 1fr; } }
 @media (max-width: 640px) { section { padding: 80px 20px; } .page-hero { padding: 130px 20px 90px; } .pipeline-track { grid-template-columns: 1fr; } .cta-inner { padding: 50px 26px; } }
+@media (max-height: 620px) and (orientation: landscape) {
+  .page-hero { min-height: auto; padding: 84px 24px 50px; }
+  .hero-meta { bottom: 16px; }
+  .cta-inner { padding: 45px 30px; }
+}
