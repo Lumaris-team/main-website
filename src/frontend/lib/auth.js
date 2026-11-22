@@ -196,11 +196,12 @@ const AUTH_OVERLAY_STYLE = `
     padding: 20px;
   }
   #auth-overlay-frame {
-    width: min(880px, 100%);
-    height: min(820px, 100%);
+    width: min(500px, 100%);
+    height: min(780px, 100%);
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 20px;
     background: #080912;
+    overflow: hidden;
   }
 `;
 
@@ -248,7 +249,7 @@ export function showAuthOverlay() {
   authOverlay.id = "auth-overlay";
   const frame = document.createElement("iframe");
   frame.id = "auth-overlay-frame";
-  frame.src = "/sign-in";
+  frame.src = "/sign-in-card";
   frame.title = "Connexion";
   authOverlay.appendChild(frame);
   document.body.appendChild(authOverlay);
