@@ -927,3 +927,63 @@ body {
 .ar-flash-card { width: 100%; min-height: 160px; perspective: 900px; cursor: pointer; }
 .ar-flash-face { width: 100%; min-height: 160px; display: flex; align-items: center; justify-content: center; text-align: center; padding: 22px; border-radius: 16px; background: linear-gradient(135deg, rgba(140,236,255,.1), rgba(122,124,255,.1)); border: 1px solid var(--line); font-size: 1rem; font-weight: 600; backface-visibility: hidden; }
 .ar-flash-back { background: linear-gradient(135deg, rgba(110,231,160,.1), rgba(140,236,255,.08)); }
+
+/* ================= Nav toolbar (Tasks | Subjects + templates) ================= */
+.ws-toolbar-nav {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.ws-nav-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.ws-nav-right {
+  margin-left: auto;
+}
+.ws-subtabs .ws-seg { padding: 7px 13px; font-size: .78rem; }
+.ws-subtabs { padding: 3px; }
+.ws-template-select {
+  padding: 9px 13px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  backdrop-filter: blur(12px);
+  color: var(--text);
+  font: inherit;
+  font-size: .82rem;
+  font-weight: 600;
+  max-width: 190px;
+  outline: none;
+  cursor: pointer;
+}
+.ws-template-select:focus { border-color: rgba(140,236,255,.45); }
+.ws-icon-btn.spin { animation: rot 1s linear infinite; }
+@keyframes rot { to { transform: rotate(360deg); } }
+
+/* Quick-add as its own row under the nav bar */
+.ws-quickadd { margin-top: -4px; }
+
+/* ================= Entity form modal (big block) ================= */
+.ws-modal-form { width: min(1180px, 100%); }
+.ws-modal-form .ws-modal-body { padding: 22px 26px; }
+.ws-modal-form .ws-dgrid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 18px; }
+.ws-modal-form .ws-field-wide { grid-column: 1 / -1; }
+.ws-modal-full {
+  width: 100vw;
+  height: 100vh;
+  max-height: 100vh;
+  border-radius: 0;
+  border: 0;
+}
+.ws-modal-full .ws-dgrid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.ws-modal-foot-spacer { flex: 1; }
+
+@media (max-width: 860px) {
+  .ws-modal-form .ws-dgrid,
+  .ws-modal-full .ws-dgrid { grid-template-columns: 1fr; }
+}

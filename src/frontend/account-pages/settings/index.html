@@ -28,208 +28,238 @@
 
     <div class="settings-shell">
       <aside class="settings-sidebar" aria-label="Settings sections">
-        <button class="settings-nav" type="button" id="customization-btn" aria-label="Customization" data-active="true">
+        <button class="settings-nav" type="button" data-target="sec-appearance" aria-label="Appearance" data-active="true">
           <span class="settings-icon" data-icon="https://shared-assets.lumaris.fr.eu.org/icons/personalization.svg"></span>
         </button>
-        <button class="settings-nav" type="button" id="statistics-btn" aria-label="Statistics">
+        <button class="settings-nav" type="button" data-target="sec-statistics" aria-label="Statistics">
           <span class="settings-icon" data-icon="https://shared-assets.lumaris.fr.eu.org/icons/statistics.svg"></span>
         </button>
-        <button class="settings-nav" type="button" id="workspace-btn" aria-label="Workspace">
+        <button class="settings-nav" type="button" data-target="sec-workspace" aria-label="Workspace">
           <span class="settings-icon" data-icon="https://shared-assets.lumaris.fr.eu.org/icons/database.svg"></span>
+        </button>
+        <button class="settings-nav" type="button" data-target="sec-session" aria-label="Session">
+          <span class="settings-icon" data-icon="https://shared-assets.lumaris.fr.eu.org/icons/key.svg"></span>
         </button>
       </aside>
 
-      <main class="settings-main">
-      <div class="settings-hero-copy bento-block">
-        <span class="block-eyebrow">Settings</span>
-        <h1>Customize your experience</h1>
-        <p>Change the background, gradient orientation, transition style, and typography across the Dashboard.</p>
-      </div>
-      <div class="settings-preview" id="settingsPreview">
-        <div class="preview-card bento-block">
-          <div class="preview-badge">Preview</div>
-          <h2>Dashboard theme</h2>
-          <p>Settings apply to all pages immediately.</p>
-        </div>
-      </div>
-
-      <article class="settings-panel bento-block settings-panel-background">
-        <div class="panel-header">
-          <span class="block-eyebrow">Background</span>
-          <h2>Background & colors</h2>
+      <main class="settings-main" id="settingsMain">
+        <div class="settings-hero-copy bento-block">
+          <span class="block-eyebrow">Settings</span>
+          <h1>Customize your experience</h1>
+          <p>All settings live on this page, grouped by theme. Changes apply immediately.</p>
         </div>
 
-          <label class="field-group">
-            <span class="field-label">Type</span>
-              <!-- hidden input kept for compatibility with existing JS -->
+        <div class="settings-preview" id="settingsPreview">
+          <div class="preview-card bento-block">
+            <div class="preview-badge">Preview</div>
+            <h2>Dashboard theme</h2>
+            <p>Settings apply to all pages immediately.</p>
+          </div>
+        </div>
+
+        <!-- ===== Theme : Appearance ===== -->
+        <section class="settings-theme" id="sec-appearance">
+          <div class="settings-theme-head">
+            <span class="block-eyebrow">Theme</span>
+            <h2>Appearance</h2>
+          </div>
+
+          <article class="settings-panel bento-block settings-panel-background">
+            <div class="panel-header">
+              <span class="block-eyebrow">Background</span>
+              <h2>Background & colors</h2>
+            </div>
+
+            <label class="field-group">
+              <span class="field-label">Type</span>
               <input type="hidden" id="backgroundType" value="gradient">
               <div class="bg-toggle">
                 <button id="bgGradient" type="button" class="bg-toggle-btn" data-value="gradient">Gradient</button>
                 <button id="bgSolid" type="button" class="bg-toggle-btn" data-value="solid">Solid color</button>
               </div>
-          </label>
+            </label>
 
-          <label class="field-group">
-            <span class="field-label">Style</span>
-              <!-- keep a hidden input for compatibility; two buttons provide the UI -->
+            <label class="field-group">
+              <span class="field-label">Style</span>
               <input type="hidden" id="gradientStyle" value="linear">
               <div class="bg-toggle gradient-toggle">
                 <button id="gradientLinear" type="button" class="bg-toggle-btn" data-value="linear">Linear gradient</button>
                 <button id="gradientRadial" type="button" class="bg-toggle-btn" data-value="radial">Radial gradient</button>
               </div>
-          </label>
+            </label>
 
-          <label class="field-group">
-            <span class="field-label">Orientation</span>
-            <!-- hidden input kept for compatibility; four icon buttons provide the UI -->
-            <input type="hidden" id="gradientOrientation" value="0deg">
-            <div class="orientation-toggle">
-              <button id="orient0" type="button" class="orientation-btn" data-value="0deg" aria-label="Top to bottom" style="--orient-rot:0deg">
-                <img src="https://shared-assets.lumaris.fr.eu.org/icons/arrow.svg" alt="">
-              </button>
-              <button id="orient45" type="button" class="orientation-btn" data-value="45deg" aria-label="Top-left to bottom-right" style="--orient-rot:45deg">
-                <img src="https://shared-assets.lumaris.fr.eu.org/icons/arrow.svg" alt="">
-              </button>
-              <button id="orient90" type="button" class="orientation-btn" data-value="90deg" aria-label="Left to right" style="--orient-rot:90deg">
-                <img src="https://shared-assets.lumaris.fr.eu.org/icons/arrow.svg" alt="">
-              </button>
-              <button id="orient135" type="button" class="orientation-btn" data-value="135deg" aria-label="Bottom-left to top-right" style="--orient-rot:135deg">
-                <img src="https://shared-assets.lumaris.fr.eu.org/icons/arrow.svg" alt="">
-              </button>
+            <label class="field-group">
+              <span class="field-label">Orientation</span>
+              <input type="hidden" id="gradientOrientation" value="0deg">
+              <div class="orientation-toggle">
+                <button id="orient0" type="button" class="orientation-btn" data-value="0deg" aria-label="Top to bottom" style="--orient-rot:0deg">
+                  <img src="https://shared-assets.lumaris.fr.eu.org/icons/arrow.svg" alt="">
+                </button>
+                <button id="orient45" type="button" class="orientation-btn" data-value="45deg" aria-label="Top-left to bottom-right" style="--orient-rot:45deg">
+                  <img src="https://shared-assets.lumaris.fr.eu.org/icons/arrow.svg" alt="">
+                </button>
+                <button id="orient90" type="button" class="orientation-btn" data-value="90deg" aria-label="Left to right" style="--orient-rot:90deg">
+                  <img src="https://shared-assets.lumaris.fr.eu.org/icons/arrow.svg" alt="">
+                </button>
+                <button id="orient135" type="button" class="orientation-btn" data-value="135deg" aria-label="Bottom-left to top-right" style="--orient-rot:135deg">
+                  <img src="https://shared-assets.lumaris.fr.eu.org/icons/arrow.svg" alt="">
+                </button>
+              </div>
+            </label>
+
+            <div class="color-row">
+              <label class="field-group color-field">
+                <span class="field-label">Color 1</span>
+                <div class="color-swatch" aria-hidden="true"></div>
+                <input id="color1" class="field-input" type="color" value="#0b3f91">
+              </label>
+              <label class="field-group color-field">
+                <span class="field-label">Color 2</span>
+                <div class="color-swatch" aria-hidden="true"></div>
+                <input id="color2" class="field-input" type="color" value="#1c8cff">
+              </label>
             </div>
-          </label>
 
-          <div class="color-row">
-            <label class="field-group color-field">
-              <span class="field-label">Color 1</span>
+            <label class="field-group color-field solid-field">
+              <span class="field-label">Solid color</span>
               <div class="color-swatch" aria-hidden="true"></div>
-              <input id="color1" class="field-input" type="color" value="#0b3f91">
+              <input id="solidColor" class="field-input" type="color" value="#080912">
+            </label>
+          </article>
+
+          <article class="settings-panel bento-block settings-panel-text">
+            <div class="panel-header">
+              <span class="block-eyebrow">Text</span>
+              <h2>Typography & hierarchy</h2>
+            </div>
+
+            <label class="field-group">
+              <span class="field-label">Font</span>
+              <select id="fontFamily" class="field-input">
+                <option value="Inter, ui-sans-serif, system-ui, sans-serif">Inter</option>
+                <option value="'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif">IBM Plex Sans</option>
+                <option value="'Poppins', ui-sans-serif, system-ui, sans-serif">Poppins</option>
+                <option value="'JetBrains Mono', ui-monospace, monospace">JetBrains Mono</option>
+                <option value="'Lora', Georgia, serif">Lora</option>
+                <option value="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif">Systeme</option>
+              </select>
             </label>
 
-            <label class="field-group color-field">
-              <span class="field-label">Color 2</span>
-              <div class="color-swatch" aria-hidden="true"></div>
-              <input id="color2" class="field-input" type="color" value="#1c8cff">
+            <label class="field-group">
+              <span class="field-label">Bold</span>
+              <input type="hidden" id="fontWeight" value="normal">
+              <div class="bg-toggle">
+                <button id="boldNormal" type="button" class="bg-toggle-btn" data-value="normal">Normal</button>
+                <button id="boldBold" type="button" class="bg-toggle-btn" data-value="bold">Bold</button>
+              </div>
             </label>
+
+            <label class="field-group">
+              <span class="field-label">Text size</span>
+              <input id="fontSize" class="field-input" type="number" min="12" max="32" step="0.5" value="16">
+            </label>
+          </article>
+
+          <div class="settings-actions">
+            <button id="saveSettings" class="button primary">Save</button>
+            <button id="resetSettings" class="button secondary">Reset</button>
+          </div>
+        </section>
+
+        <!-- ===== Theme : Statistics ===== -->
+        <section class="settings-theme" id="sec-statistics">
+          <div class="settings-theme-head">
+            <span class="block-eyebrow">Usage</span>
+            <h2>Statistics</h2>
           </div>
 
-          <label class="field-group color-field solid-field">
-            <span class="field-label">Solid color</span>
-            <div class="color-swatch" aria-hidden="true"></div>
-            <input id="solidColor" class="field-input" type="color" value="#080912">
-          </label>
-        </article>
+          <div class="settings-stats-grid">
+            <article class="settings-panel bento-block settings-panel-storage">
+              <div class="panel-header">
+                <span class="block-eyebrow">Storage</span>
+                <h2>Storage usage</h2>
+              </div>
+              <div class="storage-content">
+                <div class="storage-chart" aria-hidden="true">
+                  <svg viewBox="0 0 120 120" class="storage-ring">
+                    <circle class="ring-bg" cx="60" cy="60" r="54" />
+                    <circle class="ring-files" cx="60" cy="60" r="54" id="ringFiles" />
+                  </svg>
+                  <div class="storage-center">
+                    <span class="storage-percentage" id="storagePct">0% used</span>
+                    <small class="storage-capacity" id="storageCap">of 20GB</small>
+                  </div>
+                </div>
+                <div class="storage-legend">
+                  <div class="legend-item legend-files"><span class="legend-dot files"></span><span class="legend-text" id="storageLegend">Files — 0.0 GB</span></div>
+                </div>
+              </div>
+            </article>
 
-      <article class="settings-panel bento-block settings-panel-text">
-        <div class="panel-header">
-          <span class="block-eyebrow">Text</span>
-          <h2>Typography & hierarchy</h2>
-        </div>
+            <article class="settings-panel bento-block settings-panel-ai">
+              <div class="panel-header">
+                <span class="block-eyebrow">Artificial Intelligence</span>
+                <h2>Daily usage</h2>
+              </div>
+              <div class="ai-content">
+                <div class="ai-chart" aria-hidden="true">
+                  <svg viewBox="0 0 120 120" class="ai-ring">
+                    <circle class="ring-bg" cx="60" cy="60" r="54" />
+                    <circle class="ring-ai" cx="60" cy="60" r="54" id="ringAi" />
+                  </svg>
+                  <div class="ai-center">
+                    <span class="ai-percentage" id="aiPct">0% used</span>
+                    <small class="ai-capacity" id="aiCap">of 10000 neurons</small>
+                  </div>
+                </div>
+                <div class="ai-stats">
+                  <div class="ai-usage" id="aiUsage">0 / 10000 neurons</div>
+                  <div class="stats-description">Remaining AI requests reset daily and are shared across the dashboard.</div>
+                </div>
+              </div>
+            </article>
+          </div>
+        </section>
 
-          <label class="field-group">
-            <span class="field-label">Font</span>
-            <select id="fontFamily" class="field-input">
-              <option value="Inter, ui-sans-serif, system-ui, sans-serif">Inter</option>
-              <option value="'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif">IBM Plex Sans</option>
-              <option value="'Poppins', ui-sans-serif, system-ui, sans-serif">Poppins</option>
-              <option value="'JetBrains Mono', ui-monospace, monospace">JetBrains Mono</option>
-              <option value="'Lora', Georgia, serif">Lora</option>
-              <option value="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif">Systeme</option>
-            </select>
-          </label>
-
-          <label class="field-group">
-            <span class="field-label">Bold</span>
-            <input type="hidden" id="fontWeight" value="normal">
-            <div class="bg-toggle">
-              <button id="boldNormal" type="button" class="bg-toggle-btn" data-value="normal">Normal</button>
-              <button id="boldBold" type="button" class="bg-toggle-btn" data-value="bold">Bold</button>
+        <!-- ===== Theme : Workspace ===== -->
+        <section class="settings-theme wsadmin-main" id="sec-workspace">
+          <div class="settings-theme-head">
+            <span class="block-eyebrow">Workspace</span>
+            <h2>Tasks & lookups</h2>
+          </div>
+          <p class="settings-theme-desc">Manage the labels, flags, types, methods, priorities, attention levels, folders and templates used across the Workspace.</p>
+          <div class="wsadmin-tabs" id="wsadminTabs"></div>
+          <article class="settings-panel bento-block wsadmin-panel" id="wsadminPanel">
+            <div class="wsadmin-body" id="wsadminBody">
+              <p class="state-msg">Loading…</p>
             </div>
-          </label>
+          </article>
+        </section>
 
-          <label class="field-group">
-            <span class="field-label">Text size</span>
-            <input id="fontSize" class="field-input" type="number" min="12" max="32" step="0.5" value="16">
-          </label>
-      </article>
+        <!-- ===== Theme : Session ===== -->
+        <section class="settings-theme" id="sec-session">
+          <div class="settings-theme-head">
+            <span class="block-eyebrow">Account</span>
+            <h2>Session</h2>
+          </div>
 
-      <div class="settings-actions">
-        <button id="saveSettings" class="button primary">Save</button>
-        <button id="resetSettings" class="button secondary">Reset</button>
-      </div>
+          <article class="settings-panel bento-block">
+            <div class="panel-header">
+              <span class="block-eyebrow">Connection</span>
+              <h2>Session & security</h2>
+            </div>
+            <div class="session-info">
+              <div class="session-row"><span class="session-label">Account</span><span class="session-value" id="sessionUser">—</span></div>
+              <div class="session-row"><span class="session-label">JWT expires</span><span class="session-value" id="sessionExp">—</span></div>
+              <div class="session-row session-actions">
+                <button class="button secondary" type="button" id="sessionRefresh">↻ Refresh session</button>
+                <button class="button secondary" type="button" id="sessionLogout">Sign out</button>
+              </div>
+            </div>
+          </article>
+        </section>
       </main>
     </div>
-
-    <template id="statistics-panel-template">
-      <main class="settings-main">
-        <div class="settings-hero-copy bento-block">
-          <span class="block-eyebrow">Statistics</span>
-          <h1>Usage overview</h1>
-          <p>Monitor your AI usage and storage consumption across the dashboard.</p>
-        </div>
-
-        <section class="settings-panel bento-block settings-panel-storage">
-          <div class="panel-header">
-            <span class="block-eyebrow">Storage</span>
-            <h2>Storage usage</h2>
-          </div>
-          <div class="storage-content">
-            <div class="storage-chart" aria-hidden="true">
-              <svg viewBox="0 0 120 120" class="storage-ring">
-                <circle class="ring-bg" cx="60" cy="60" r="54" />
-                <circle class="ring-files" cx="60" cy="60" r="54" />
-              </svg>
-              <div class="storage-center">
-                <span class="storage-percentage">0% used</span>
-                <small class="storage-capacity">of 20GB</small>
-              </div>
-            </div>
-            <div class="storage-legend">
-              <div class="legend-item legend-files"><span class="legend-dot files"></span><span class="legend-text">Files — 0.0 GB</span></div>
-            </div>
-          </div>
-        </section>
-
-        <section class="settings-panel bento-block settings-panel-ai">
-          <div class="panel-header">
-            <span class="block-eyebrow">Artificial Intelligence</span>
-            <h2>Daily usage</h2>
-          </div>
-          <div class="ai-content">
-            <div class="ai-chart" aria-hidden="true">
-              <svg viewBox="0 0 120 120" class="ai-ring">
-                <circle class="ring-bg" cx="60" cy="60" r="54" />
-                <circle class="ring-ai" cx="60" cy="60" r="54" />
-              </svg>
-              <div class="ai-center">
-                <span class="ai-percentage">0% used</span>
-                <small class="ai-capacity">of 10000 neurons</small>
-              </div>
-            </div>
-            <div class="ai-stats">
-              <div class="ai-usage">0 / 10000 neurons</div>
-              <div class="stats-description">Remaining AI requests reset daily and are shared across the dashboard.</div>
-            </div>
-          </div>
-        </section>
-      </main>
-    </template>
-
-    <template id="workspace-panel-template">
-      <main class="settings-main wsadmin-main">
-        <div class="settings-hero-copy bento-block">
-          <span class="block-eyebrow">Workspace</span>
-          <h1>Tasks & lookups</h1>
-          <p>Manage the labels, flags, types, methods, priorities, attention levels and folders used across the Workspace.</p>
-        </div>
-        <div class="wsadmin-tabs" id="wsadminTabs"></div>
-        <section class="settings-panel bento-block wsadmin-panel" id="wsadminPanel">
-          <div class="wsadmin-body" id="wsadminBody">
-            <p class="state-msg">Loading…</p>
-          </div>
-        </section>
-      </main>
-    </template>
 
     <script type="module" src="/pages/settings/script.js"></script>
   </body>

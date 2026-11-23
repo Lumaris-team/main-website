@@ -108,6 +108,18 @@ export async function ensureSessionToken() {
   return jwt || null;
 }
 
+// Force a session renewal (used by the manual refresh button).
+// Returns true when a fresh JWT is available.
+export async function refreshSession() {
+  const jwt = await renewJWT();
+  return !!jwt;
+}
+
+// Session info for display (username + expiry timestamp).
+export function getSessionInfo() {
+  return { username: getUsername(), jwtExp: getJWTExpiry() };
+}
+
 // --- Initial JWT exchange ---------------------------------------------------
 
 export async function exchangeOneTimeToken(username, oneTimeToken) {
@@ -162,10 +174,10 @@ export async function authedFetch(input, init = {}) {
       ? `${ACCOUNT_WORKER_BASE}${input}`
       : input;
     let res = await fetch(requestUrl, withAuth(jwt));
-    
+
     if (res.status === 401) {
-      // JWT expired or invalid, try to renew
-      clearAuth();
+      // JWT expired or invalid — renew it. The one-time token must be kept:
+      // it is what allows the renewal exchange to succeed.
       jwt = await renewJWT();
       if (!jwt) {
         redirectToAuth();
@@ -173,7 +185,7 @@ export async function authedFetch(input, init = {}) {
       }
       res = await fetch(requestUrl, withAuth(jwt));
     }
-    
+
     return res;
   } finally {
     if (!shouldShowLoading) {

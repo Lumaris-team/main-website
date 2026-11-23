@@ -40,25 +40,33 @@
       <nav class="ws-breadcrumb" id="breadcrumb" hidden></nav>
 
       <!-- ===== Toolbar ===== -->
-      <div class="ws-toolbar">
-        <div class="ws-quickadd">
-          <input type="text" id="quickAddInput" placeholder="Add a task…  (Enter)" autocomplete="off" spellcheck="false">
-          <button class="ws-btn ws-btn-primary" type="button" id="quickAddBtn">Add</button>
-          <button class="ws-btn ws-btn-ghost ws-btn-new" type="button" id="newBtn">New</button>
-        </div>
-        <div class="ws-filters">
-          <div class="ws-segmented" role="tablist" id="viewTabs">
-            <button class="ws-seg" type="button" data-view="subjects" data-active="true">Subjects</button>
-            <button class="ws-seg" type="button" data-view="tasks">Tasks</button>
+      <div class="ws-toolbar ws-toolbar-nav">
+        <div class="ws-nav-group">
+          <div class="ws-segmented ws-section-tabs" role="tablist" id="sectionTabs">
+            <button class="ws-seg" type="button" data-section="tasks" data-active="true">Tasks</button>
+            <button class="ws-seg" type="button" data-section="subjects">Subjects</button>
+          </div>
+          <div class="ws-segmented ws-subtabs" role="tablist" id="taskTabs" hidden>
+            <button class="ws-seg" type="button" data-view="all" data-active="true">All</button>
             <button class="ws-seg" type="button" data-view="repeat">Recurring</button>
             <button class="ws-seg" type="button" data-view="events">Events</button>
             <button class="ws-seg" type="button" data-view="trash">Trash</button>
           </div>
+        </div>
+        <div class="ws-nav-group ws-nav-right">
+          <select class="ws-template-select" id="templateSelect" title="Apply a template to the next creation"></select>
+          <button class="ws-icon-btn" type="button" id="refreshBtn" title="Refresh session & data">↻</button>
           <div class="ws-search">
             <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
             <input type="text" id="searchInput" placeholder="Search…" autocomplete="off" spellcheck="false">
           </div>
+          <button class="ws-btn ws-btn-primary" type="button" id="newBtn">+ New</button>
         </div>
+      </div>
+
+      <div class="ws-quickadd" id="quickAddRow">
+        <input type="text" id="quickAddInput" placeholder="Add a task…  (Enter)" autocomplete="off" spellcheck="false">
+        <button class="ws-btn ws-btn-primary" type="button" id="quickAddBtn">Add</button>
       </div>
 
       <!-- ===== Body ===== -->
@@ -81,6 +89,7 @@
               <span class="ws-detail-badges" id="dBadges"></span>
             </div>
             <div class="ws-detail-actions">
+              <button class="ws-icon-btn" type="button" id="dExpand" title="Open fullscreen editor">⛶</button>
               <button class="ws-icon-btn" type="button" id="dToggleDone" title="Toggle done">✓</button>
               <button class="ws-icon-btn" type="button" id="dEdit" title="Edit all fields">✎</button>
               <button class="ws-icon-btn" type="button" id="dClose" title="Close">✕</button>

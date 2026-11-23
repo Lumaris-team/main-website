@@ -1,4 +1,4 @@
-import { authedFetch } from "/lib/auth.js";
+import { authedFetch, refreshSession, showAuthOverlay } from "/lib/auth.js";
 import { openImportModal } from "./import-lesson.js";
 import { openActivityRunner, setLearningApi } from "./activity-runner.js";
 
@@ -46,22 +46,28 @@ setLearningApi(apiLearning);
 // ================= State =================
 const ALL_TABLES = ["tasks", "repeat_tasks", "events", "repeat_events", "trash_tasks", "trash_events"];
 const TASK_VIEWS = {
-  tasks: { tables: ["tasks"], title: "Tasks", empty: ["No tasks", "Create your first task."] },
+  all: { tables: ["tasks"], title: "Tasks", empty: ["No tasks", "Create your first task."] },
   repeat: { tables: ["repeat_tasks"], title: "Recurring tasks", empty: ["No recurring tasks", "Recurring tasks will appear here."] },
   events: { tables: ["events", "repeat_events"], title: "Events", empty: ["No events", "Events will appear here."] },
   trash: { tables: ["trash_tasks", "trash_events"], title: "Trash", empty: ["Trash is empty", "Deleted items land here."] },
 };
+const SUBJECT_VIEWS = ["subjects", "subject"];
 
 const state = {
-  view: "subjects",          // subjects | subject | tasks | repeat | events | trash
+  view: "all",              // tasks section: all|repeat|events|trash — subjects: subjects|subject
   tables: {},
   subjects: [],
   chapters: [],
   meta: {},
+  templates: { task: [], subject: [], chapter: [] },
+  template: null,           // payload of the selected template (applied on next create)
   currentSubject: null,
   q: "",
   selected: null,            // { kind: "task"|"chapter", table?, row }
 };
+
+const section = () => (SUBJECT_VIEWS.includes(state.view) ? "subjects" : "tasks");
+const templateKind = () => (state.view === "subject" ? "chapter" : state.view === "subjects" ? "subject" : "task");
 
 const $ = (sel) => document.querySelector(sel);
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -288,15 +294,20 @@ function lookupName(key, idKey, id) {
 // ================= Loading =================
 async function loadAll() {
   try {
-    const [tasksResp, subjectsResp, metaResp] = await Promise.all([
+    const [tasksResp, subjectsResp, metaResp, tplResp] = await Promise.all([
       apiTasks("list", { tables: ALL_TABLES }),
       apiSubjects("list", { all_chapters: true }),
       apiTasks("meta", {}),
+      apiTasks("templates", {}),
     ]);
     state.tables = tasksResp?.tables || {};
     state.subjects = subjectsResp?.subjects || [];
     state.chapters = subjectsResp?.chapters || [];
     state.meta = metaResp?.meta || {};
+    state.templates = { task: [], subject: [], chapter: [] };
+    for (const t of tplResp?.templates || []) {
+      if (state.templates[t.kind]) state.templates[t.kind].push(t);
+    }
     renderAll();
     if (state.selected) refreshSelected();
   } catch (e) {
@@ -313,9 +324,33 @@ function renderAll() {
 function renderChrome() {
   const titles = {
     subjects: "Subjects", subject: state.currentSubject?.subject_name || "Subject",
-    tasks: "Tasks", repeat: "Recurring", events: "Events", trash: "Trash",
+    all: "Tasks", repeat: "Recurring", events: "Events", trash: "Trash",
   };
   $("#pageTitle").textContent = titles[state.view] || "Workspace";
+
+  // Top-level section tabs (Tasks | Subjects)
+  document.querySelectorAll("#sectionTabs .ws-seg").forEach((b) => {
+    b.dataset.active = b.dataset.section === section() ? "true" : "false";
+  });
+  // Task sub-tabs
+  const taskTabs = $("#taskTabs");
+  const isTasks = section() === "tasks";
+  taskTabs.hidden = !isTasks;
+  if (isTasks) {
+    taskTabs.querySelectorAll(".ws-seg").forEach((b) => {
+      b.dataset.active = b.dataset.view === state.view ? "true" : "false";
+    });
+  }
+
+  // Template selector — kind depends on the current context
+  const sel = $("#templateSelect");
+  const kind = templateKind();
+  const tplList = state.templates[kind] || [];
+  const cur = state.template ? tplList.findIndex((t) => JSON.stringify(t.payload) === JSON.stringify(state.template)) : -1;
+  sel.innerHTML = `<option value="">Templates…</option>` +
+    tplList.map((t, i) => `<option value="${i}" ${i === cur ? "selected" : ""}>${esc(t.name)}</option>`).join("");
+  sel.dataset.kind = kind;
+  sel.style.display = tplList.length ? "" : "none";
 
   // Breadcrumb for subject/chapter drill-down
   const bc = $("#breadcrumb");
@@ -333,10 +368,9 @@ function renderChrome() {
   }
 
   // Contextual primary actions visibility
-  const isTasksView = ["tasks", "repeat", "events"].includes(state.view);
+  const showQuickAdd = isTasks && state.view !== "trash";
+  $("#quickAddRow").style.display = showQuickAdd ? "" : "none";
   $("#quickAddInput").placeholder = state.view === "repeat" ? "Add a recurring task…" : state.view === "events" ? "Add an event…" : "Add a task…  (Enter)";
-  $("#quickAddInput").style.display = isTasksView ? "" : "none";
-  $("#quickAddBtn").style.display = isTasksView ? "" : "none";
   $("#newBtn").textContent = state.view === "subject" ? "+ Chapter" : state.view === "subjects" ? "+ Subject" : "+ New";
   $("#newBtn").style.display = state.view === "trash" ? "none" : "";
 }
@@ -747,7 +781,8 @@ function collectFields(sections, titleKey, titleEl, root = document) {
 }
 
 // ================= Creation / edit modal =================
-function openEntityModal(kind, id = null, existing = null) {
+// opts: { fullscreen, table (task), template }
+function openEntityModal(kind, id = null, existing = null, opts = {}) {
   const defs = {
     task: { title: id ? "Edit task" : "New task", sections: TASK_SECTIONS, titleKey: "title", submit: "Create task" },
     subject: { title: id ? "Edit subject" : "New subject", sections: SUBJECT_SECTIONS, titleKey: null, submit: "Create subject" },
@@ -758,7 +793,11 @@ function openEntityModal(kind, id = null, existing = null) {
   const root = $("#modalRoot");
   root.hidden = false;
 
-  const values = existing || {};
+  // Template defaults apply only on creation; existing values always win.
+  const values = { ...(opts.template || state.template || {}), ...(existing || {}) };
+  delete values.task_id; delete values.lesson_id;
+  if (kind === "chapter" && !values.subject_id && state.currentSubject) values.subject_id = state.currentSubject.subject_id;
+
   const bodyHtml = defs.sections.map((sec) => {
     const items = sec.fields.map((f) => fieldHTML(f, values[f.key])).join("");
     return `<div class="ws-dsec"><h3>${sec.title}</h3><div class="ws-dgrid">${items}</div></div>`;
@@ -766,7 +805,7 @@ function openEntityModal(kind, id = null, existing = null) {
 
   root.innerHTML = `
     <div class="ws-modal-backdrop">
-      <div class="ws-modal" role="dialog" aria-modal="true">
+      <div class="ws-modal ws-modal-form ${opts.fullscreen ? "ws-modal-full" : ""}" role="dialog" aria-modal="true">
         <div class="ws-modal-head">
           <h2>${defs.title}</h2>
           <button class="ws-icon-btn" type="button" data-close>✕</button>
@@ -776,6 +815,8 @@ function openEntityModal(kind, id = null, existing = null) {
           ${bodyHtml}
         </div>
         <div class="ws-modal-foot">
+          <button class="ws-btn ws-btn-ghost" type="button" data-save-tpl title="Save current values as a reusable template">⬒ Save as template</button>
+          <span class="ws-modal-foot-spacer"></span>
           <button class="ws-btn ws-btn-ghost" type="button" data-close>Cancel</button>
           <button class="ws-btn ws-btn-primary" type="button" data-submit>${defs.submit}</button>
         </div>
@@ -786,13 +827,26 @@ function openEntityModal(kind, id = null, existing = null) {
   root.querySelectorAll("[data-close]").forEach((b) => b.addEventListener("click", close));
   root.querySelector(".ws-modal-backdrop").addEventListener("click", (e) => { if (e.target.classList.contains("ws-modal-backdrop")) close(); });
 
+  const collect = () => collectFields(defs.sections, kind === "task" ? "title" : null, kind === "task" ? root.querySelector("#m_title") : null, root.querySelector(".ws-modal"));
+
+  root.querySelector("[data-save-tpl]").addEventListener("click", async () => {
+    const fields = collect();
+    const name = prompt("Template name:", kind === "task" ? (fields.title || "Task template") : `${kind} template`);
+    if (!name?.trim()) return;
+    try {
+      await apiTasks("template-save", { kind, name: name.trim(), payload: fields });
+      toast("Template saved");
+      await loadAll();
+    } catch (e) { toast(e.message); }
+  });
+
   root.querySelector("[data-submit]").addEventListener("click", async () => {
     const btn = root.querySelector("[data-submit]");
     btn.disabled = true; btn.textContent = "Saving…";
     try {
-      const fields = collectFields(defs.sections, kind === "task" ? "title" : null, kind === "task" ? root.querySelector("#m_title") : null, root.querySelector(".ws-modal"));
+      const fields = collect();
       if (kind === "task") {
-        const table = state.view === "repeat" ? "repeat_tasks" : state.view === "events" ? "events" : "tasks";
+        const table = opts.table || (state.view === "repeat" ? "repeat_tasks" : state.view === "events" ? "events" : "tasks");
         if (id) await apiTasks("update", { table, task_id: id, fields });
         else await apiTasks("create", { table, fields });
       } else if (kind === "subject") {
@@ -803,6 +857,8 @@ function openEntityModal(kind, id = null, existing = null) {
         if (id) await apiSubjects("update-chapter", { lesson_id: id, fields });
         else await apiSubjects("create-chapter", { fields });
       }
+      state.template = null;
+      $("#templateSelect").value = "";
       toast(id ? "Saved" : "Created");
       close();
       await loadAll();
@@ -940,14 +996,42 @@ async function runActivities(lessonId) {
 
 // ================= UI events =================
 function bindUI() {
-  $("#viewTabs").addEventListener("click", (e) => {
+  $("#sectionTabs").addEventListener("click", (e) => {
     const btn = e.target.closest(".ws-seg");
     if (!btn) return;
-    document.querySelectorAll(".ws-seg").forEach((b) => b.dataset.active = b === btn ? "true" : "false");
-    state.view = btn.dataset.view;
+    state.view = btn.dataset.section === "subjects" ? "subjects" : "all";
     state.currentSubject = null;
+    state.template = null;
     closeDetail();
     renderAll();
+  });
+
+  $("#taskTabs").addEventListener("click", (e) => {
+    const btn = e.target.closest(".ws-seg");
+    if (!btn) return;
+    state.view = btn.dataset.view;
+    closeDetail();
+    renderAll();
+  });
+
+  $("#templateSelect").addEventListener("change", (e) => {
+    const kind = e.target.dataset.kind;
+    const idx = Number(e.target.value);
+    const tpl = Number.isInteger(idx) && idx >= 0 ? state.templates[kind]?.[idx] : null;
+    state.template = tpl ? tpl.payload : null;
+    toast(tpl ? `Template “${tpl.name}” will be applied` : "Template cleared");
+  });
+
+  $("#refreshBtn").addEventListener("click", async () => {
+    const btn = $("#refreshBtn");
+    btn.classList.add("spin");
+    try {
+      const ok = await refreshSession();
+      if (!ok) { showAuthOverlay(); return; }
+      await loadAll();
+      toast("Session refreshed");
+    } catch (e) { toast(e.message); }
+    btn.classList.remove("spin");
   });
 
   let searchTimer;
@@ -975,9 +1059,9 @@ function bindUI() {
   $("#quickAddInput").addEventListener("keydown", (e) => { if (e.key === "Enter") quickAdd(); });
 
   $("#newBtn").addEventListener("click", () => {
-    if (state.view === "subjects") return openEntityModal("subject");
-    if (state.view === "subject") return openEntityModal("chapter", null, state.currentSubject ? { subject_id: state.currentSubject.subject_id } : null);
-    if (["tasks", "repeat", "events"].includes(state.view)) return openEntityModal("task");
+    if (state.view === "subjects") return openEntityModal("subject", null, null, { template: state.template });
+    if (state.view === "subject") return openEntityModal("chapter", null, state.currentSubject ? { subject_id: state.currentSubject.subject_id } : null, { template: state.template });
+    if (["all", "repeat", "events"].includes(state.view)) return openEntityModal("task", null, null, { template: state.template });
   });
 
   $("#dClose").addEventListener("click", closeDetail);
@@ -991,8 +1075,15 @@ function bindUI() {
   $("#dEdit").addEventListener("click", () => {
     const sel = state.selected;
     if (!sel) return;
-    if (sel.kind === "task") openEntityModal("task", sel.row.task_id, sel.row);
-    else if (sel.kind === "chapter") openEntityModal("chapter", sel.row.lesson_id, sel.row);
+    if (sel.kind === "task") openEntityModal("task", sel.row.task_id, sel.row, { table: sel.table });
+    else if (sel.kind === "chapter") openEntityModal("chapter", sel.row.lesson_id, sel.row, { fullscreen: true });
+  });
+
+  $("#dExpand").addEventListener("click", () => {
+    const sel = state.selected;
+    if (!sel) return;
+    if (sel.kind === "task") openEntityModal("task", sel.row.task_id, sel.row, { table: sel.table, fullscreen: true });
+    else if (sel.kind === "chapter") openEntityModal("chapter", sel.row.lesson_id, sel.row, { fullscreen: true });
   });
 
   $("#dSave").addEventListener("click", async () => {
