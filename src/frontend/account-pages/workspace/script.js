@@ -294,22 +294,25 @@ function lookupName(key, idKey, id) {
 // ================= Loading =================
 async function loadAll() {
   try {
-    const [tasksResp, subjectsResp, metaResp, tplResp] = await Promise.all([
+    const [tasksResp, subjectsResp, metaResp] = await Promise.all([
       apiTasks("list", { tables: ALL_TABLES }),
       apiSubjects("list", { all_chapters: true }),
       apiTasks("meta", {}),
-      apiTasks("templates", {}),
     ]);
     state.tables = tasksResp?.tables || {};
     state.subjects = subjectsResp?.subjects || [];
     state.chapters = subjectsResp?.chapters || [];
     state.meta = metaResp?.meta || {};
-    state.templates = { task: [], subject: [], chapter: [] };
-    for (const t of tplResp?.templates || []) {
-      if (state.templates[t.kind]) state.templates[t.kind].push(t);
-    }
     renderAll();
     if (state.selected) refreshSelected();
+    // Templates are optional — a missing endpoint must not break the page.
+    apiTasks("templates", {}).then((tplResp) => {
+      state.templates = { task: [], subject: [], chapter: [] };
+      for (const t of tplResp?.templates || []) {
+        if (state.templates[t.kind]) state.templates[t.kind].push(t);
+      }
+      renderChrome();
+    }).catch(() => {});
   } catch (e) {
     toast(e.message || "Failed to load data");
   }
@@ -342,15 +345,24 @@ function renderChrome() {
     });
   }
 
-  // Template selector — kind depends on the current context
-  const sel = $("#templateSelect");
+  // Template menu — button shows the selected template name, ✎/🗑 appear with it
   const kind = templateKind();
   const tplList = state.templates[kind] || [];
-  const cur = state.template ? tplList.findIndex((t) => JSON.stringify(t.payload) === JSON.stringify(state.template)) : -1;
-  sel.innerHTML = `<option value="">Templates…</option>` +
-    tplList.map((t, i) => `<option value="${i}" ${i === cur ? "selected" : ""}>${esc(t.name)}</option>`).join("");
-  sel.dataset.kind = kind;
-  sel.style.display = tplList.length ? "" : "none";
+  const cur = state.template ? tplList.find((t) => t.template_id === state.template.template_id) : null;
+  if (state.template && !cur) state.template = null; // stale selection from another kind/view
+  const tplBtn = $("#templateSelect");
+  tplBtn.textContent = cur ? cur.name : "Templates";
+  tplBtn.classList.toggle("has-sel", !!cur);
+  $("#templateEdit").hidden = !cur;
+  $("#templateDel").hidden = !cur;
+  const tplListEl = $("#templateList");
+  tplListEl.innerHTML = tplList.length
+    ? tplList.map((t) => `
+      <button class="ws-tpl-item ${cur && cur.template_id === t.template_id ? "sel" : ""}" type="button" data-tpl="${t.template_id}">
+        <span class="ws-tpl-item-name">${esc(t.name)}</span>
+        <span class="ws-tpl-item-kind">${esc(t.kind)}</span>
+      </button>`).join("")
+    : `<div class="ws-tpl-empty">No ${esc(kind)} templates yet</div>`;
 
   // Breadcrumb for subject/chapter drill-down
   const bc = $("#breadcrumb");
@@ -802,7 +814,8 @@ function openEntityModal(kind, id = null, existing = null, opts = {}) {
   root.hidden = false;
 
   // Template defaults apply only on creation; existing values always win.
-  const values = { ...(opts.template || state.template || {}), ...(existing || {}) };
+  const tpl = opts.template || state.template;
+  const values = { ...(tpl?.payload || {}), ...(existing || {}) };
   delete values.task_id; delete values.lesson_id;
   if (kind === "chapter" && !values.subject_id && state.currentSubject) values.subject_id = state.currentSubject.subject_id;
 
@@ -864,8 +877,20 @@ function openEntityModal(kind, id = null, existing = null, opts = {}) {
       if (kind === "task") {
         const fallback = state.view === "recurring" ? "repeat_tasks" : state.view === "events" ? "events" : "tasks";
         const table = opts.table || root.querySelector("#m_kind")?.value || fallback;
-        if (id) await apiTasks("update", { table, task_id: id, fields });
-        else await apiTasks("create", { table, fields });
+        if (id) {
+          await apiTasks("update", { table, task_id: id, fields });
+        } else {
+          // Link the new row to its template so deleting the template can trash it later.
+          if (tpl?.template_id) {
+            let ad = {};
+            try { ad = JSON.parse(fields.additional_data || "{}"); } catch { ad = {}; }
+            if (typeof ad !== "object" || ad === null) ad = {};
+            ad.template_id = String(tpl.template_id);
+            ad.template_name = tpl.name || "";
+            fields.additional_data = JSON.stringify(ad);
+          }
+          await apiTasks("create", { table, fields });
+        }
       } else if (kind === "subject") {
         if (id) await apiSubjects("update-subject", { subject_id: id, fields });
         else await apiSubjects("create-subject", { fields });
@@ -875,7 +900,6 @@ function openEntityModal(kind, id = null, existing = null, opts = {}) {
         else await apiSubjects("create-chapter", { fields });
       }
       state.template = null;
-      $("#templateSelect").value = "";
       toast(id ? "Saved" : "Created");
       close();
       await loadAll();
@@ -1031,24 +1055,71 @@ function bindUI() {
     renderAll();
   });
 
-  $("#templateSelect").addEventListener("change", (e) => {
-    const kind = e.target.dataset.kind;
-    const idx = Number(e.target.value);
-    const tpl = Number.isInteger(idx) && idx >= 0 ? state.templates[kind]?.[idx] : null;
-    state.template = tpl ? tpl.payload : null;
-    toast(tpl ? `Template “${tpl.name}” will be applied` : "Template cleared");
+  // ---- Template dropdown ----
+  const tplMenu = $("#templateMenu");
+  const tplPop = $("#templatePop");
+  let tplCloseTimer = null;
+  const tplOpen = () => { clearTimeout(tplCloseTimer); tplPop.hidden = false; };
+  const tplClose = (delay = 0) => {
+    clearTimeout(tplCloseTimer);
+    tplCloseTimer = setTimeout(() => { tplPop.hidden = true; }, delay);
+  };
+  tplMenu.addEventListener("mouseenter", tplOpen);
+  tplMenu.addEventListener("mouseleave", () => tplClose(120));
+  $("#templateSelect").addEventListener("click", () => { tplPop.hidden ? tplOpen() : tplClose(0); });
+  tplPop.addEventListener("click", (e) => {
+    const item = e.target.closest("[data-tpl]");
+    if (item) {
+      const t = state.templates[templateKind()]?.find((x) => String(x.template_id) === item.dataset.tpl);
+      state.template = t || null;
+      tplClose(0);
+      renderAll();
+      toast(t ? `Template “${t.name}” selected` : "Template cleared");
+      return;
+    }
+    if (e.target.closest("#templateAdd")) {
+      const name = prompt("Template name:");
+      if (!name?.trim()) return;
+      const kind = templateKind();
+      apiTasks("template-save", { kind, name: name.trim(), payload: {} })
+        .then(loadAll)
+        .then(() => toast("Template added"))
+        .catch((err) => toast(err.message));
+    }
   });
 
-  $("#refreshBtn").addEventListener("click", async () => {
-    const btn = $("#refreshBtn");
-    btn.classList.add("spin");
+  $("#templateEdit").addEventListener("click", async () => {
+    const t = state.template;
+    if (!t) return;
+    const name = prompt("Template name:", t.name);
+    if (!name?.trim() || name.trim() === t.name) return;
     try {
+      await apiTasks("template-save", { kind: t.kind, name: name.trim(), payload: t.payload || {}, template_id: t.template_id });
+      await loadAll();
+      toast("Template renamed");
+    } catch (e) { toast(e.message); }
+  });
+
+  $("#templateDel").addEventListener("click", async () => {
+    const t = state.template;
+    if (!t) return;
+    if (!confirm(`Delete template “${t.name}”? Tasks and events created from it will be moved to trash.`)) return;
+    try {
+      await apiTasks("template-delete", { template_id: t.template_id });
+      state.template = null;
+      toast("Template deleted — linked items moved to trash");
+      await loadAll();
+    } catch (e) { toast(e.message); }
+  });
+
+  // Navbar refresh → renew session + reload workspace data
+  window.addEventListener("site-navbar:refresh", (event) => {
+    const done = (async () => {
       const ok = await refreshSession();
       if (!ok) { showAuthOverlay(); return; }
       await loadAll();
-      toast("Session refreshed");
-    } catch (e) { toast(e.message); }
-    btn.classList.remove("spin");
+    })();
+    event.detail?.waitUntil?.(done);
   });
 
   let searchTimer;

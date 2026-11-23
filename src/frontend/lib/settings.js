@@ -1,4 +1,5 @@
 import { ensureSessionToken } from "/lib/auth.js";
+import "/lib/nav-indicator.js";
 
 const STORAGE_KEY = "dashboard_settings";
 const DEFAULT_SETTINGS = {

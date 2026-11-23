@@ -54,8 +54,15 @@
           </div>
         </div>
         <div class="ws-nav-group ws-nav-right">
-          <select class="ws-template-select" id="templateSelect" title="Apply a template to the next creation"></select>
-          <button class="ws-icon-btn" type="button" id="refreshBtn" title="Refresh session & data">↻</button>
+          <div class="ws-tpl" id="templateMenu">
+            <button class="ws-template-btn" type="button" id="templateSelect">Templates</button>
+            <div class="ws-tpl-pop" id="templatePop" hidden>
+              <div class="ws-tpl-list" id="templateList"></div>
+              <button class="ws-tpl-add" type="button" id="templateAdd">＋ Add template</button>
+            </div>
+            <button class="ws-icon-btn ws-tpl-mini" type="button" id="templateEdit" title="Rename template" hidden>✎</button>
+            <button class="ws-icon-btn ws-tpl-mini" type="button" id="templateDel" title="Delete template" hidden>🗑</button>
+          </div>
           <div class="ws-search">
             <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
             <input type="text" id="searchInput" placeholder="Search…" autocomplete="off" spellcheck="false">
