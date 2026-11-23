@@ -1047,7 +1047,6 @@ function setupNavbarRefreshListener() {
   };
 
   window.addEventListener("site-navbar:refresh", handleRefresh);
-  document.addEventListener("site-navbar:refresh", handleRefresh);
 }
 
 // Start initialization when DOM is ready

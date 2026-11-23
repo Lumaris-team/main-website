@@ -221,23 +221,43 @@ const AUTH_OVERLAY_STYLE = `
     from { opacity: 0; }
     to { opacity: 1; }
   }
-  #auth-overlay-frame {
-    width: min(500px, 100%);
-    height: min(780px, 100%);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 20px;
-    background: #080912;
-    overflow: hidden;
-    opacity: 0;
-    transition: opacity 180ms ease-out;
+  #auth-overlay .signin-shell {
+    animation: auth-card-in 260ms cubic-bezier(.22, 1, .36, 1);
+    max-height: 100%;
+    overflow-y: auto;
   }
-  #auth-overlay-frame.is-ready {
-    opacity: 1;
+  @keyframes auth-card-in {
+    from { opacity: 0; transform: translateY(14px) scale(.98); }
+    to { opacity: 1; transform: none; }
   }
 `;
 
+let authCardCache = null;
+
+async function loadAuthCard() {
+  if (authCardCache) return authCardCache;
+  const res = await fetch("/sign-in-card");
+  if (!res.ok) throw new Error("auth_card_fetch_failed");
+  const html = await res.text();
+  const doc = new DOMParser().parseFromString(html, "text/html");
+  const shell = doc.querySelector(".signin-shell");
+  if (!shell) throw new Error("auth_card_missing");
+  shell.classList.add("is-embedded");
+  authCardCache = shell;
+  return shell;
+}
+
+function ensureAuthOverlayAssets() {
+  if (!document.getElementById("auth-overlay-signin-css")) {
+    const link = document.createElement("link");
+    link.id = "auth-overlay-signin-css";
+    link.rel = "stylesheet";
+    link.href = "/pages/sign-in/style.css";
+    document.head.appendChild(link);
+  }
+}
+
 function hideAuthOverlay() {
-  authFrameReady = false;
   if (authOverlayPoll) {
     clearInterval(authOverlayPoll);
     authOverlayPoll = null;
@@ -248,52 +268,7 @@ function hideAuthOverlay() {
   authOverlay = null;
 }
 
-let authFrameReady = false;
-
-function fitAuthFrame() {
-  const frame = authOverlay?.querySelector("#auth-overlay-frame");
-  if (!frame) return;
-  try {
-    const card = frame.contentDocument?.querySelector(".signin-card");
-    if (!card) return;
-    const w = Math.min(card.offsetWidth + 36, window.innerWidth * 0.94);
-    const h = Math.min(card.offsetHeight + 36, window.innerHeight * 0.9);
-    const dw = Math.abs(parseFloat(frame.style.width) - w);
-    const dh = Math.abs(parseFloat(frame.style.height) - h);
-    if (dw > 2 || dh > 2 || !authFrameReady) {
-      frame.style.width = `${Math.round(w)}px`;
-      frame.style.height = `${Math.round(h)}px`;
-    }
-    if (!authFrameReady) {
-      authFrameReady = true;
-      frame.classList.add("is-ready");
-    }
-  } catch { /* frame not ready */ }
-}
-
-function watchAuthFrame() {
-  fitAuthFrame();
-  const frame = authOverlay?.querySelector("#auth-overlay-frame");
-  if (!frame) return;
-  let loc;
-  try {
-    loc = frame.contentWindow.location;
-  } catch {
-    return; // cross-origin or not loaded yet
-  }
-  if (!loc.pathname.startsWith("/account/")) return;
-  const params = new URLSearchParams(loc.search);
-  const jwt = params.get("jwt");
-  const oneTimeToken = params.get("token");
-  const username = params.get("username");
-  if (!jwt || !oneTimeToken || !username) return;
-  storeJWT(jwt, oneTimeToken, username, 1800);
-  sessionStorage.setItem("show_loading", "1");
-  hideAuthOverlay();
-  window.location.reload();
-}
-
-export function showAuthOverlay() {
+export async function showAuthOverlay() {
   if (authOverlay) return;
   if (!document.getElementById("auth-overlay-style")) {
     const style = document.createElement("style");
@@ -301,16 +276,22 @@ export function showAuthOverlay() {
     style.textContent = AUTH_OVERLAY_STYLE;
     document.head.appendChild(style);
   }
+  ensureAuthOverlayAssets();
+
   authOverlay = document.createElement("div");
   authOverlay.id = "auth-overlay";
-  const frame = document.createElement("iframe");
-  frame.id = "auth-overlay-frame";
-  frame.src = "/sign-in-card";
-  frame.title = "Connexion";
-  frame.addEventListener("load", fitAuthFrame);
-  authOverlay.appendChild(frame);
   document.body.appendChild(authOverlay);
-  authOverlayPoll = setInterval(watchAuthFrame, 400);
+
+  try {
+    const shell = await loadAuthCard();
+    authOverlay.appendChild(shell.cloneNode(true));
+    // Fresh module instance each open so listeners bind to the new DOM.
+    await import(`/pages/sign-in/script.js?overlay=${Date.now()}`);
+  } catch (e) {
+    console.error("Auth overlay failed to load:", e);
+    hideAuthOverlay();
+    redirectToAuth();
+  }
 }
 
 // --- Page guard -------------------------------------------------------------

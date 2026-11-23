@@ -220,8 +220,12 @@ function wireThemeEvents() {
     const settings = getCurrentSettings();
     saveSettings(settings);
     await saveRemoteSettings(settings);
-    fields.saveButton.textContent = "Saved";
-    setTimeout(() => { fields.saveButton.textContent = "Save"; }, 1200);
+    fields.saveButton.classList.add("is-saved");
+    fields.saveButton.textContent = "Saved ✓";
+    setTimeout(() => {
+      fields.saveButton.classList.remove("is-saved");
+      fields.saveButton.textContent = "Save";
+    }, 1600);
   });
 
   fields.resetButton?.addEventListener("click", resetToDefaults);
@@ -299,7 +303,14 @@ function renderSession() {
   if (userEl) userEl.textContent = username || "unknown";
   const expEl = $("#sessionExp");
   if (expEl) {
-    expEl.textContent = jwtExp ? new Date(jwtExp * 1000).toLocaleString() : "—";
+    if (!jwtExp) { expEl.textContent = "—"; return; }
+    const date = new Date(jwtExp * 1000);
+    const mins = Math.round((jwtExp * 1000 - Date.now()) / 60000);
+    expEl.textContent = mins > 0
+      ? `in ${mins} min (${date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })})`
+      : "expired";
+    expEl.title = date.toLocaleString();
+    expEl.style.color = mins <= 5 ? "#fb7185" : "";
   }
 }
 
@@ -355,8 +366,9 @@ async function initSettingsPage() {
   wireThemeEvents();
   wireSession();
   wireSidebar();
-  loadIcons(".settings-icon[data-icon]").catch(() => undefined);
+  loadIcons("[data-icon]").catch(() => undefined);
   renderSession();
+  setInterval(renderSession, 30000); // keep the JWT countdown fresh
 
   const stats = await fetchStatsData();
   renderStats(stats);

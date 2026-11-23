@@ -24,12 +24,17 @@ setTimeout(syncCardOffset, 1500);
 preloadTurnstile();
 
 if (toggle && password) {
-  toggle.addEventListener("click", () => {
-    const show = password.type === "password";
+  // Reveal only while the eye is held down — release anywhere hides it again.
+  const reveal = (show) => {
     password.type = show ? "text" : "password";
     toggle.setAttribute("aria-pressed", String(show));
     toggle.setAttribute("aria-label", show ? "Masquer le mot de passe" : "Afficher le mot de passe");
-  });
+  };
+  toggle.addEventListener("pointerdown", (e) => { e.preventDefault(); reveal(true); });
+  ["pointerup", "pointerleave", "pointercancel"].forEach((evt) =>
+    toggle.addEventListener(evt, () => reveal(false))
+  );
+  toggle.addEventListener("contextmenu", (e) => e.preventDefault());
   document.querySelectorAll("[data-icon]").forEach(async (el) => {
     try { const r = await fetch(el.dataset.icon); if (r.ok) el.innerHTML = await r.text(); } catch (e) {}
   });
@@ -62,29 +67,34 @@ if (form) {
       turnstileToken: turnstileToken
     };
     
-    let loginResponse;
+    const submitBtn = form.querySelector('button[type="submit"]');
+    if (submitBtn) submitBtn.disabled = true;
+
+    // The login worker intentionally never responds on failure — any problem
+    // (wrong credentials, unreachable worker, timeout) surfaces here as the
+    // same generic message. Turnstile keeps its own dedicated errors above.
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 15000);
+
+    let loginResult = null;
     try {
-      loginResponse = await fetch(loginUrl, {
+      const loginResponse = await fetch(loginUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
+        signal: controller.signal,
       });
+      if (loginResponse.ok) {
+        loginResult = await loginResponse.json().catch(() => null);
+      }
     } catch {
-      errorBox.textContent = "Service de connexion indisponible, réessayez dans un instant.";
-      errorBox.hidden = false;
-      return;
+      // network error or abort — fall through to generic message
+    } finally {
+      clearTimeout(timeout);
     }
-    if (!loginResponse.ok) {
-      const detail = await loginResponse.text().catch(() => "");
-      console.error("Login failed", loginResponse.status, detail.slice(0, 200));
-      errorBox.textContent = loginResponse.status >= 500
-        ? "Service de connexion indisponible, réessayez dans un instant."
-        : "Identifiant ou mot de passe incorrect.";
-      errorBox.hidden = false;
-      return;
-    }
-    const loginResult = await loginResponse.json().catch(() => ({}));
-    if (!loginResult.jwt || !loginResult.oneTimeToken) {
+
+    if (!loginResult?.jwt || !loginResult?.oneTimeToken) {
+      if (submitBtn) submitBtn.disabled = false;
       errorBox.textContent = "Identifiant ou mot de passe incorrect.";
       errorBox.hidden = false;
       return;

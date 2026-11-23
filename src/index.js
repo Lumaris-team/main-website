@@ -1,4 +1,31 @@
 const ACCOUNT_PATH = /^\/account\/([A-Za-z0-9_-]+)(\/.*)?$/;
+const SITE_URL = "https://lumaris.fr.eu.org";
+const SITE_ROUTES = {
+  "/how-it-works": "/pages/how-it-works/index.html",
+  "/about-us": "/pages/about-us/index.html",
+  "/security": "/pages/security/index.html",
+  "/sign-in": "/pages/sign-in/index.html",
+  "/sign-in-card": "/pages/sign-in/card.html",
+  "/sign-up": "/pages/sign-up/index.html",
+};
+// Public, indexable pages only (sign-in/sign-up are noindex — excluded).
+const SITEMAP_URLS = [
+  { loc: "/", priority: "1.0" },
+  { loc: "/how-it-works", priority: "0.8" },
+  { loc: "/about-us", priority: "0.7" },
+  { loc: "/security", priority: "0.7" },
+];
+
+function sitemapXml() {
+  const lastmod = new Date().toISOString().slice(0, 10);
+  const urls = SITEMAP_URLS
+    .map(({ loc, priority }) =>
+      `  <url>\n    <loc>${SITE_URL}${loc}</loc>\n    <lastmod>${lastmod}</lastmod>\n    <changefreq>weekly</changefreq>\n    <priority>${priority}</priority>\n  </url>`)
+    .join("\n");
+  return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>\n`;
+}
+
+const ROBOTS_TXT = `User-agent: *\nAllow: /\n\nSitemap: ${SITE_URL}/sitemap.xml\n`;
 
 function rewriteAccountHtml(html, username) {
   const prefix = `/account/${username}`;
@@ -106,23 +133,27 @@ export default {
       }
       return assetResponse;
     }
-    if (url.pathname === "/sitemap.xml" || url.pathname === "/robots.txt") {
-      const assetResponse = await env.ASSETS.fetch(new Request(request, {
-        redirect: "follow"
-      }));
-      const responseHeaders = new Headers(assetResponse.headers);
-      responseHeaders.set(
-        "Content-Type",
-        url.pathname === "/sitemap.xml"
-          ? "application/xml; charset=UTF-8"
-          : "text/plain; charset=UTF-8"
-      );
-      return new Response(assetResponse.body, {
-        status: assetResponse.status,
-        headers: responseHeaders
+    const cleanPath = url.pathname.length > 1 ? url.pathname.replace(/\/+$/, "") : url.pathname;
+
+    // Sitemap & robots are generated dynamically — always fresh, and any
+    // trailing-slash variant 301s to the canonical URL (a submitted
+    // "/sitemap.xml/" used to 404 forever in Search Console).
+    if (cleanPath === "/sitemap.xml" || cleanPath === "/robots.txt") {
+      if (url.pathname !== cleanPath) {
+        return Response.redirect(new URL(cleanPath + url.search, request.url), 301);
+      }
+      const isSitemap = cleanPath === "/sitemap.xml";
+      return new Response(isSitemap ? sitemapXml() : ROBOTS_TXT, {
+        headers: {
+          "Content-Type": isSitemap ? "application/xml; charset=UTF-8" : "text/plain; charset=UTF-8",
+          "Cache-Control": "public, max-age=3600",
+        },
       });
     }
-    if (url.pathname === "/" || url.pathname === "" || url.pathname === "/home") {
+    if (url.pathname === "/home") {
+      return Response.redirect(new URL("/" + url.search, request.url), 301);
+    }
+    if (url.pathname === "/" || url.pathname === "") {
       const assetUrl = new URL(request.url);
       assetUrl.pathname = "/pages/index.html";
       const pageResponse = await env.ASSETS.fetch(new Request(assetUrl, {
@@ -135,18 +166,13 @@ export default {
         headers: pageResponse.headers
       });
     }
-    const siteRoutes = {
-      '/how-it-works': '/pages/how-it-works/index.html',
-      '/about-us': '/pages/about-us/index.html',
-      '/security': '/pages/security/index.html',
-      '/sign-in': '/pages/sign-in/index.html',
-      '/sign-in-card': '/pages/sign-in/card.html',
-      '/sign-up': '/pages/sign-up/index.html',
-    };
-    const cleanPath = url.pathname.length > 1 ? url.pathname.replace(/\/+$/, '') : url.pathname;
-    if (siteRoutes[cleanPath]) {
+    if (SITE_ROUTES[cleanPath]) {
+      // Single canonical URL per page: "/how-it-works/" -> "/how-it-works"
+      if (url.pathname !== cleanPath) {
+        return Response.redirect(new URL(cleanPath + url.search, request.url), 301);
+      }
       const assetUrl = new URL(request.url);
-      assetUrl.pathname = siteRoutes[cleanPath];
+      assetUrl.pathname = SITE_ROUTES[cleanPath];
       return env.ASSETS.fetch(new Request(assetUrl, {
         method,
         headers: request.headers,

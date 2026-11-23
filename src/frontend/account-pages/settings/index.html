@@ -21,7 +21,7 @@
     <link rel="stylesheet" href="/styles/sidebar.css">
     <link rel="stylesheet" href="/styles/block.css">
     <link rel="stylesheet" href="/pages/settings/style.css">
-    <script type="module" src="https://shared-assets.lumaris.fr.eu.org/navbar.js?v=20261122-all-nav"></script>
+    <script type="module" src="https://shared-assets.lumaris.fr.eu.org/navbar.js?v=20261201-refresh-fallback"></script>
   </head>
   <body>
     <site-navbar site="client-worker" current="settings"></site-navbar>
@@ -52,9 +52,13 @@
         <!-- ===== Theme : Appearance ===== -->
         <section class="settings-theme" id="sec-appearance">
           <div class="settings-theme-head">
-            <span class="block-eyebrow">Theme</span>
-            <h2>Appearance</h2>
+            <span class="settings-theme-icon" data-icon="https://shared-assets.lumaris.fr.eu.org/icons/personalization.svg"></span>
+            <div>
+              <span class="block-eyebrow">Theme</span>
+              <h2>Appearance</h2>
+            </div>
           </div>
+          <p class="settings-theme-desc">Background, typography and overall look. Changes apply instantly across the whole dashboard.</p>
 
           <div class="settings-list bento-block">
             <div class="set-row">
@@ -162,9 +166,13 @@
         <!-- ===== Theme : Statistics ===== -->
         <section class="settings-theme" id="sec-statistics">
           <div class="settings-theme-head">
-            <span class="block-eyebrow">Usage</span>
-            <h2>Statistics</h2>
+            <span class="settings-theme-icon" data-icon="https://shared-assets.lumaris.fr.eu.org/icons/statistics.svg"></span>
+            <div>
+              <span class="block-eyebrow">Usage</span>
+              <h2>Statistics</h2>
+            </div>
           </div>
+          <p class="settings-theme-desc">Live usage of your storage quota and AI neurons for today.</p>
 
           <div class="settings-list bento-block">
             <div class="set-row set-row-stat">
@@ -222,9 +230,13 @@
         <!-- ===== Theme : Session ===== -->
         <section class="settings-theme" id="sec-session">
           <div class="settings-theme-head">
-            <span class="block-eyebrow">Account</span>
-            <h2>Session</h2>
+            <span class="settings-theme-icon" data-icon="https://shared-assets.lumaris.fr.eu.org/icons/key.svg"></span>
+            <div>
+              <span class="block-eyebrow">Account</span>
+              <h2>Session</h2>
+            </div>
           </div>
+          <p class="settings-theme-desc">Your current sign-in session. The JWT renews automatically — refresh it manually if needed.</p>
 
           <div class="settings-list bento-block">
             <div class="set-row">

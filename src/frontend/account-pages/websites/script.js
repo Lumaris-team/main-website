@@ -140,7 +140,7 @@ function getFallbackLogo(name) {
 
 // ===================== RENDER FUNCTIONS =====================
 
-function renderWebsites() {
+async function renderWebsites() {
   console.log('renderWebsites called, websites:', websites);
   const grid = document.getElementById('websites-grid');
   
@@ -167,7 +167,7 @@ function renderWebsites() {
   });
 
   // Load icons for dynamically created elements
-  await loadIcons(grid);
+  await loadIcons(grid).catch(() => {});
 
   console.log('All blocks added to grid');
 }

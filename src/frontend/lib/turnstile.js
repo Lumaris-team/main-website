@@ -8,6 +8,7 @@ const SCRIPT_URL =
 
 let scriptPromise;
 let widgetPromise;
+let widgetState = null; // { turnstile, id, container }
 let currentToken = null;
 
 function loadScript() {
@@ -29,6 +30,14 @@ function loadScript() {
 }
 
 async function getWidget() {
+  // Re-render if the previous widget's container was removed from the DOM
+  // (e.g. the auth overlay card was closed and reopened).
+  if (widgetState && !widgetState.container.isConnected) {
+    try { widgetState.turnstile.remove(widgetState.id); } catch { /* already gone */ }
+    widgetState = null;
+    widgetPromise = null;
+    currentToken = null;
+  }
   if (widgetPromise) return widgetPromise;
   widgetPromise = (async () => {
     const sitekey = window.__TURNSTILE_SITE_KEY__ || "0x4AAAAAAGBRuixsOkHxqB2N";
@@ -51,7 +60,8 @@ async function getWidget() {
       "expired-callback": () => { currentToken = null; },
       "timeout-callback": () => { currentToken = null; },
     });
-    return { turnstile, id };
+    widgetState = { turnstile, id, container };
+    return widgetState;
   })();
   return widgetPromise;
 }

@@ -454,7 +454,7 @@ function renderCamera(body, setText) {
     const a = b.dataset.act;
     if (a === "capture") capture();
     else if (a === "apply") applyCrop();
-    else if (a === "retake") { video.hidden = false; overlay.hidden = true; capturedImg = null; show("capture"); };
+    else if (a === "retake") { video.hidden = false; overlay.hidden = true; capturedImg = null; show("capture"); }
     else if (a === "ocr") runOCR();
     else if (a === "stop") { stopCam(); result.hidden = true; };
   }));

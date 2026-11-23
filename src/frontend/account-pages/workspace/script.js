@@ -626,7 +626,7 @@ function taskRowHTML({ table, row }) {
   ].join("");
 
   return `
-    <div class="ws-task ${done ? "is-done" : ""} ${isTrash ? "is-trash" : ""}" data-table="${table}" data-id="${row.task_id}">
+    <div class="ws-task ${done ? "is-done" : ""} ${isTrash ? "is-trash" : ""}" data-table="${table}" data-id="${row.task_id}" ${priColor ? `style="--pri:${priColor}"` : ""}>
       <button class="ws-task-check ${done ? "is-done" : ""}" type="button" title="${done ? "Mark as todo" : "Mark as done"}">${done ? "✓" : ""}</button>
       <div class="ws-task-main">
         <div class="ws-task-title">${esc(row.title || "Untitled")}</div>
