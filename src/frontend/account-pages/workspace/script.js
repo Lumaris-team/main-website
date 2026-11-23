@@ -673,7 +673,7 @@ function renderDetail() {
   }).join("");
 
   if (cfg.tools) {
-    const activities = parseMaybeJSON(c.tests);
+    const activities = parseMaybeJSON(row.tests);
     const actList = Array.isArray(activities?.activities) ? activities.activities : [];
     html += `
       <div class="ws-dsec">
@@ -681,7 +681,7 @@ function renderDetail() {
         <div class="ws-tools">
           <button class="ws-btn ws-btn-ghost" type="button" data-tool="pdf">📄 PDF</button>
           <button class="ws-btn ws-btn-ghost" type="button" data-tool="voice">🎙 Voice</button>
-          <button class="ws-btn ws-btn-ghost" type="button" data-tool="files">� Files</button>
+          <button class="ws-btn ws-btn-ghost" type="button" data-tool="files">📁 Files</button>
           <button class="ws-btn ws-btn-ghost" type="button" data-tool="photo">📷 Camera + OCR</button>
         </div>
         <p class="ws-tools-hint">All extraction runs locally in your browser (pdf.js, Web Speech, Tesseract OCR).</p>
@@ -811,6 +811,131 @@ function openEntityModal(kind, id = null, existing = null) {
       btn.disabled = false; btn.textContent = defs.submit;
     }
   });
+}
+
+// ================= Chapter tools: import & AI =================
+function onChapterTool(tool, chapter) {
+  const lessonId = chapter.lesson_id;
+  const tabs = { pdf: "pdf", voice: "voice", files: "files", photo: "camera" };
+  if (tabs[tool]) {
+    openImportModal({
+      initialTab: tabs[tool],
+      onImport: async (target, text) => {
+        const cur = chapter[target] || "";
+        await apiSubjects("update-chapter", {
+          lesson_id: lessonId,
+          fields: { [target]: cur ? `${cur}\n\n${text}` : text },
+        });
+        toast("Lesson content imported");
+        await loadAll();
+      },
+    });
+    return;
+  }
+  if (tool === "course") return runCourseGeneration(lessonId);
+  if (tool === "flashcards") return runFlashcards(lessonId);
+  if (tool === "activities") return runActivities(lessonId);
+  if (tool === "run") {
+    const parsed = parseMaybeJSON(chapter.tests);
+    const list = Array.isArray(parsed?.activities) ? parsed.activities : [];
+    if (list.length) openActivityRunner(list, { onClose: () => {} });
+  }
+}
+
+// ---------- Course generation (resumable, section by section) ----------
+function openGenModal(title) {
+  const root = document.getElementById("modalRoot");
+  root.hidden = false;
+  root.innerHTML = `
+    <div class="ws-modal-backdrop">
+      <div class="ws-modal ws-gen-modal" role="dialog" aria-modal="true">
+        <div class="ws-modal-head"><h2>${esc(title)}</h2></div>
+        <div class="ws-modal-body"><div class="ws-gen-list" data-list></div><div class="ws-gen-status" data-status></div></div>
+        <div class="ws-modal-foot"><button class="ws-btn ws-btn-ghost" type="button" data-close>Close</button></div>
+      </div>
+    </div>`;
+  const close = () => { root.hidden = true; root.innerHTML = ""; };
+  root.querySelector("[data-close]").addEventListener("click", close);
+  root.querySelector(".ws-modal-backdrop").addEventListener("click", (e) => { if (e.target.classList.contains("ws-modal-backdrop")) close(); });
+  return {
+    list: root.querySelector("[data-list]"),
+    status: root.querySelector("[data-status]"),
+    setSections(sections, done) {
+      this.list.innerHTML = sections.map((s, i) => `
+        <div class="ws-gen-item" data-i="${i}">
+          <span class="ws-gen-dot" data-dot></span>
+          <span class="ws-gen-name">${esc(s.title || `Section ${i + 1}`)}</span>
+          <span class="ws-gen-state" data-state>${done?.[i] ? "done" : "…"}</span>
+        </div>`).join("");
+    },
+    setItem(i, stateName) {
+      const item = this.list.querySelector(`[data-i="${i}"]`);
+      if (!item) return;
+      item.querySelector("[data-state]").textContent = stateName;
+      item.querySelector("[data-dot]").className = `ws-gen-dot ${stateName === "done" ? "ok" : stateName === "error" ? "err" : "run"}`;
+    },
+    setStatus(t) { this.status.textContent = t; },
+  };
+}
+
+async function runCourseGeneration(lessonId) {
+  const modal = openGenModal("Generating course…");
+  try {
+    // Resume an unfinished job if one exists
+    let jobId, outline, done;
+    const st = await apiLearning("course-status", { lesson_id: lessonId });
+    if (st.job && st.job.status !== "done" && st.job.payload?.outline) {
+      jobId = st.job.job_id;
+      const p = typeof st.job.payload === "string" ? JSON.parse(st.job.payload) : st.job.payload;
+      outline = p.outline; done = p.done || outline.map(() => false);
+      modal.setStatus("Resuming previous generation…");
+    } else {
+      modal.setStatus("Planning the course outline…");
+      const plan = await apiLearning("course-plan", { lesson_id: lessonId });
+      jobId = plan.job_id; outline = plan.outline; done = outline.map(() => false);
+    }
+    modal.setSections(outline, done);
+
+    for (let i = 0; i < outline.length; i++) {
+      if (done[i]) { modal.setItem(i, "done"); continue; }
+      modal.setItem(i, "writing…");
+      modal.setStatus(`Section ${i + 1}/${outline.length} — ${outline[i].title || ""}`);
+      try {
+        const r = await apiLearning("course-section", { job_id: jobId, index: i });
+        done[i] = true;
+        modal.setItem(i, "done");
+        if (r.status === "done") break;
+      } catch (e) {
+        modal.setItem(i, "error");
+        modal.setStatus(`Section ${i + 1} failed: ${e.message} — reopen this panel to retry.`);
+        return;
+      }
+    }
+    modal.setStatus("Course complete — body updated.");
+    toast("Course generated");
+    await loadAll();
+  } catch (e) {
+    modal.setStatus(`Error: ${e.message}`);
+    toast(e.message);
+  }
+}
+
+async function runFlashcards(lessonId) {
+  toast("Generating flashcards… this may take a minute");
+  try {
+    const r = await apiLearning("flashcards", { lesson_id: lessonId });
+    toast(`${r.count} flashcards generated`);
+    await loadAll();
+  } catch (e) { toast(e.message); }
+}
+
+async function runActivities(lessonId) {
+  toast("Generating activities… this may take a minute");
+  try {
+    const r = await apiLearning("activities", { lesson_id: lessonId, count: 10 });
+    toast(`${r.count} activities generated (${(r.components || []).join(", ")})`);
+    await loadAll();
+  } catch (e) { toast(e.message); }
 }
 
 // ================= UI events =================
