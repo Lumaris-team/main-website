@@ -28,7 +28,9 @@ const fields = {
   bgSolidBtn: document.getElementById("bgSolid"),
   customizationBtn: document.getElementById("customization-btn"),
   statisticsBtn: document.getElementById("statistics-btn"),
+  workspaceBtn: document.getElementById("workspace-btn"),
   statsTemplate: document.getElementById("statistics-panel-template"),
+  workspaceTemplate: document.getElementById("workspace-panel-template"),
   pageMain: document.querySelector("main.settings-main"),
   settingsPreview: document.getElementById("settingsPreview"),
   fontFamily: document.getElementById("fontFamily"),
@@ -194,6 +196,9 @@ function wireEvents() {
   if (fields.customizationBtn && fields.statisticsBtn) {
     fields.customizationBtn.addEventListener('click', () => showView('customization'));
     fields.statisticsBtn.addEventListener('click', () => showView('statistics'));
+  }
+  if (fields.workspaceBtn) {
+    fields.workspaceBtn.addEventListener('click', () => showView('workspace'));
   }
 
   // Bold toggle buttons handlers
@@ -468,26 +473,50 @@ function updateStorageRing(panel, storage) {
 }
 
 let statsPanel = null;
+let workspacePanel = null;
 
 async function showView(view) {
   if (!fields.pageMain) return;
 
   const isCustomization = view === 'customization';
+  const isStatistics = view === 'statistics';
+  const isWorkspace = view === 'workspace';
   const customizationBtn = fields.customizationBtn;
   const statisticsBtn = fields.statisticsBtn;
+  const workspaceBtn = fields.workspaceBtn;
 
   if (customizationBtn) {
     customizationBtn.dataset.active = isCustomization ? 'true' : 'false';
     customizationBtn.classList.toggle('active', isCustomization);
   }
   if (statisticsBtn) {
-    statisticsBtn.dataset.active = !isCustomization ? 'true' : 'false';
-    statisticsBtn.classList.toggle('active', !isCustomization);
+    statisticsBtn.dataset.active = isStatistics ? 'true' : 'false';
+    statisticsBtn.classList.toggle('active', isStatistics);
+  }
+  if (workspaceBtn) {
+    workspaceBtn.dataset.active = isWorkspace ? 'true' : 'false';
+    workspaceBtn.classList.toggle('active', isWorkspace);
   }
 
   fields.pageMain.style.display = isCustomization ? '' : 'none';
 
-  if (!isCustomization) {
+  // Workspace admin panel
+  if (isWorkspace) {
+    if (!workspacePanel) {
+      if (fields.workspaceTemplate) {
+        workspacePanel = fields.workspaceTemplate.content.firstElementChild.cloneNode(true);
+        fields.pageMain.insertAdjacentElement('afterend', workspacePanel);
+        const { initWorkspaceAdmin } = await import("/pages/settings/workspace-admin.js");
+        initWorkspaceAdmin(workspacePanel);
+      }
+    }
+    if (workspacePanel) workspacePanel.style.display = '';
+    if (statsPanel) statsPanel.style.display = 'none';
+    return;
+  }
+  if (workspacePanel) workspacePanel.style.display = 'none';
+
+  if (isStatistics) {
     if (!statsPanel) {
       // Show loading indicator
       statsPanel = createLoadingPanel();

@@ -1,7 +1,9 @@
 import { authedFetch } from "/lib/auth.js";
+import { openImportModal } from "./import-lesson.js";
+import { openActivityRunner, setLearningApi } from "./activity-runner.js";
 
-// ---------- API ----------
-async function api(action, payload = {}) {
+// ================= API =================
+async function apiTasks(action, payload = {}) {
   const res = await authedFetch(`/api/tasks/${action}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -14,28 +16,76 @@ async function api(action, payload = {}) {
   return resp;
 }
 
-// ---------- State ----------
+async function apiSubjects(action, payload = {}) {
+  const res = await authedFetch(`/api/subjects/${action}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data?.error || `HTTP ${res.status}`);
+  const resp = data?.resp ?? data;
+  if (resp?.error) throw new Error(resp.error);
+  return resp;
+}
+
+async function apiLearning(action, payload = {}) {
+  const res = await authedFetch(`/api/learning/${action}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data?.error || `HTTP ${res.status}`);
+  const resp = data?.resp ?? data;
+  if (resp?.error) throw new Error(resp.error);
+  return resp;
+}
+setLearningApi(apiLearning);
+
+// ================= State =================
 const ALL_TABLES = ["tasks", "repeat_tasks", "events", "repeat_events", "trash_tasks", "trash_events"];
-const VIEWS = {
-  tasks: { tables: ["tasks"], empty: ["No tasks", "Create your first task above."] },
-  repeat: { tables: ["repeat_tasks"], empty: ["No recurring tasks", "Recurring tasks will appear here."] },
-  events: { tables: ["events", "repeat_events"], empty: ["No events", "Events will appear here."] },
-  trash: { tables: ["trash_tasks", "trash_events"], empty: ["Trash is empty", "Deleted items land here."] },
+const TASK_VIEWS = {
+  tasks: { tables: ["tasks"], title: "Tasks", empty: ["No tasks", "Create your first task."] },
+  repeat: { tables: ["repeat_tasks"], title: "Recurring tasks", empty: ["No recurring tasks", "Recurring tasks will appear here."] },
+  events: { tables: ["events", "repeat_events"], title: "Events", empty: ["No events", "Events will appear here."] },
+  trash: { tables: ["trash_tasks", "trash_events"], title: "Trash", empty: ["Trash is empty", "Deleted items land here."] },
 };
 
 const state = {
+  view: "subjects",          // subjects | subject | tasks | repeat | events | trash
   tables: {},
-  view: "tasks",
+  subjects: [],
+  chapters: [],
+  meta: {},
+  currentSubject: null,
   q: "",
-  selected: null, // { table, row }
+  selected: null,            // { kind: "task"|"chapter", table?, row }
 };
 
 const $ = (sel) => document.querySelector(sel);
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
-// ---------- Field definitions for the detail editor ----------
-// Rendered only when the column exists on the row (events lack subject fields, etc.)
-const SECTIONS = [
+// ================= Lookup helpers =================
+function lookupOptions(key, idKey, nameKey = "name") {
+  return (state.meta[key] || []).map((r) => ({ value: String(r[idKey]), label: r[nameKey] || `#${r[idKey]}` }));
+}
+const LOOKUP_FIELDS = {
+  labels_id: () => lookupOptions("labels", "label_id"),
+  flags_id: () => lookupOptions("flags", "flag_id"),
+  type_id: () => lookupOptions("types", "type_id"),
+  methods_id: () => lookupOptions("methods", "method_id"),
+  priority_id: () => lookupOptions("priorities", "priority_id"),
+  attention_level_id: () => lookupOptions("attention", "attention_level_id"),
+  path: () => (state.meta.folders || []).map((f) => ({ value: f.path, label: f.name ? `${f.name} (${f.path})` : f.path })),
+  subject_id: () => state.subjects.map((s) => ({ value: String(s.subject_id), label: s.subject_name || `Subject ${s.subject_id}` })),
+  chapter_id: () => state.chapters.map((c) => ({ value: String(c.lesson_id), label: c.lesson_name || `Lesson ${c.lesson_id}` })),
+};
+
+// ================= Field definitions =================
+// type: text | textarea | number | select | checkbox | datetime | lines | mono
+// optionsFrom: key into LOOKUP_FIELDS resolved at render time
+const TASK_SECTIONS = [
   {
     title: "Content",
     fields: [
@@ -46,16 +96,16 @@ const SECTIONS = [
   {
     title: "Organization",
     fields: [
-      { key: "subject_id", label: "Subject", type: "text", placeholder: "e.g. Maths" },
-      { key: "chapter_id", label: "Chapter", type: "number" },
+      { key: "subject_id", label: "Subject", type: "select", optionsFrom: "subject_id", placeholder: "—" },
+      { key: "chapter_id", label: "Chapter", type: "select", optionsFrom: "chapter_id", placeholder: "—" },
       { key: "chapter_part_id", label: "Chapter part", type: "number" },
-      { key: "type_id", label: "Type", type: "number" },
-      { key: "methods_id", label: "Method", type: "number" },
-      { key: "priority_id", label: "Priority", type: "select", options: ["", "1", "2", "3", "4"], labels: ["—", "Low", "Normal", "High", "Urgent"] },
-      { key: "attention_level_id", label: "Attention", type: "select", options: ["", "1", "2", "3"], labels: ["—", "Low", "Medium", "High"] },
-      { key: "flags_id", label: "Flag", type: "number" },
-      { key: "labels_id", label: "Label", type: "number" },
-      { key: "path", label: "Path", type: "text", placeholder: "/folder/…" },
+      { key: "type_id", label: "Type", type: "select", optionsFrom: "type_id", placeholder: "—" },
+      { key: "methods_id", label: "Method", type: "select", optionsFrom: "methods_id", placeholder: "—" },
+      { key: "priority_id", label: "Priority", type: "select", optionsFrom: "priority_id", placeholder: "—" },
+      { key: "attention_level_id", label: "Attention", type: "select", optionsFrom: "attention_level_id", placeholder: "—" },
+      { key: "flags_id", label: "Flag", type: "select", optionsFrom: "flags_id", placeholder: "—" },
+      { key: "labels_id", label: "Label", type: "select", optionsFrom: "labels_id", placeholder: "—" },
+      { key: "path", label: "Folder", type: "select", optionsFrom: "path", placeholder: "/" },
     ],
   },
   {
@@ -85,17 +135,80 @@ const SECTIONS = [
       { key: "ai_comments", label: "AI comments", type: "textarea", rows: 3 },
     ],
   },
+];
+
+const SUBJECT_SECTIONS = [
   {
-    title: "Advanced",
+    title: "Subject",
     fields: [
-      { key: "additional_data", label: "Additional data (JSON)", type: "textarea", rows: 3, mono: true },
+      { key: "subject_name", label: "Name", type: "text", placeholder: "e.g. Mathematics" },
+      { key: "ed_subject_id", label: "ED subject id", type: "number" },
+      { key: "ed_subject_code", label: "ED code", type: "text", placeholder: "e.g. MATH" },
+      { key: "ed_subject_name", label: "ED name", type: "text" },
+      { key: "methods", label: "Methods (JSON ids)", type: "textarea", rows: 2, mono: true },
+    ],
+  },
+  {
+    title: "Notes",
+    fields: [
+      { key: "comments", label: "Comments", type: "textarea", rows: 3 },
+      { key: "tests_comments", label: "Tests comments", type: "textarea", rows: 3 },
+      { key: "ai_comments", label: "AI comments", type: "textarea", rows: 3 },
+    ],
+  },
+];
+
+const CHAPTER_SECTIONS = [
+  {
+    title: "Chapter",
+    fields: [
+      { key: "lesson_name", label: "Name", type: "text", placeholder: "e.g. Chapter 1 — Limits" },
+      { key: "lesson_description", label: "Description", type: "textarea", rows: 3 },
+      { key: "subject_id", label: "Subject", type: "select", optionsFrom: "subject_id", placeholder: "—" },
+      { key: "tests_date", label: "Next test", type: "text", placeholder: "YYYY-MM-DD" },
+      { key: "parents_lessons_id", label: "Parent chapters (ids, comma-separated)", type: "text" },
+      { key: "childs_lessons_id", label: "Child chapters (ids, comma-separated)", type: "text" },
+      { key: "is_method", label: "Is a method/resource", type: "checkbox" },
+      { key: "is_yearly", label: "Yearly", type: "checkbox" },
+      { key: "methods", label: "Methods (JSON ids)", type: "textarea", rows: 2, mono: true },
+    ],
+  },
+  {
+    title: "Course content",
+    fields: [
+      { key: "body", label: "Course body", type: "textarea", rows: 10, placeholder: "The generated / written course…" },
+      { key: "raw_lessons", label: "Raw lessons", type: "textarea", rows: 6, mono: true },
+      { key: "raw_recorded_lessons", label: "Raw recorded lessons", type: "textarea", rows: 4, mono: true },
+    ],
+  },
+  {
+    title: "AI & tests",
+    fields: [
+      { key: "flashcards", label: "Flashcards (JSON)", type: "textarea", rows: 4, mono: true },
+      { key: "tests", label: "Tests (JSON)", type: "textarea", rows: 4, mono: true },
+      { key: "tests_results", label: "Test results (JSON)", type: "textarea", rows: 3, mono: true },
+    ],
+  },
+  {
+    title: "Links",
+    fields: [
+      { key: "linked_files", label: "Linked files", type: "lines", placeholder: "One per line" },
+      { key: "linked_quizlets", label: "Linked Quizlets", type: "lines", placeholder: "One URL per line" },
+      { key: "linked_websites", label: "Linked websites", type: "lines", placeholder: "One URL per line" },
+    ],
+  },
+  {
+    title: "Notes",
+    fields: [
+      { key: "comments", label: "Comments", type: "textarea", rows: 3 },
+      { key: "ai_comments", label: "AI comments", type: "textarea", rows: 3 },
     ],
   },
 ];
 
 const PRIORITY_COLORS = { 1: "#6ee7a0", 2: "#8cecff", 3: "#fbbf24", 4: "#fb7185" };
 
-// ---------- Helpers ----------
+// ================= Helpers =================
 function parseMaybeJSON(v) {
   if (typeof v !== "string") return v;
   const t = v.trim();
@@ -143,97 +256,250 @@ function dueBucket(iso) {
 }
 
 const GROUP_DEFS = [
-  ["overdue", "Overdue", "overdue"],
-  ["today", "Today", "today"],
-  ["week", "This week", "week"],
-  ["later", "Later", "later"],
-  ["nodate", "No date", "nodate"],
-  ["done", "Completed", "done"],
+  ["overdue", "Overdue"], ["today", "Today"], ["week", "This week"],
+  ["later", "Later"], ["nodate", "No date"], ["done", "Completed"],
 ];
-
-function groupLabel(bucket) {
-  return GROUP_DEFS.find(([k]) => k === bucket)?.[1] || bucket;
-}
 
 function fmtDate(iso) {
   if (!iso) return "";
   const d = new Date(iso);
   if (isNaN(d)) return "";
   const now = new Date();
-  const sameDay = d.toDateString() === now.toDateString();
   const tomorrow = new Date(now); tomorrow.setDate(tomorrow.getDate() + 1);
   const time = d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-  if (sameDay) return `Today · ${time}`;
+  if (d.toDateString() === now.toDateString()) return `Today · ${time}`;
   if (d.toDateString() === tomorrow.toDateString()) return `Tomorrow · ${time}`;
   return d.toLocaleDateString([], { day: "numeric", month: "short" }) + ` · ${time}`;
 }
 
-function matchesQ(row, q) {
-  if (!q) return true;
-  const hay = [row.title, row.text_body, row.subject_id, row.path, row.comments]
-    .map((v) => String(v ?? "").toLowerCase()).join(" ");
-  return hay.includes(q);
+function subjectName(id) {
+  const s = state.subjects.find((x) => String(x.subject_id) === String(id));
+  return s?.subject_name || "";
+}
+function chapterName(id) {
+  const c = state.chapters.find((x) => String(x.lesson_id) === String(id));
+  return c?.lesson_name || "";
+}
+function lookupName(key, idKey, id) {
+  const row = (state.meta[key] || []).find((r) => String(r[idKey]) === String(id));
+  return row?.name || "";
 }
 
-// ---------- Data ----------
-async function load() {
+// ================= Loading =================
+async function loadAll() {
   try {
-    const resp = await api("list", { tables: ALL_TABLES });
-    state.tables = resp?.tables || {};
-    renderStats();
-    renderList();
+    const [tasksResp, subjectsResp, metaResp] = await Promise.all([
+      apiTasks("list", { tables: ALL_TABLES }),
+      apiSubjects("list", { all_chapters: true }),
+      apiTasks("meta", {}),
+    ]);
+    state.tables = tasksResp?.tables || {};
+    state.subjects = subjectsResp?.subjects || [];
+    state.chapters = subjectsResp?.chapters || [];
+    state.meta = metaResp?.meta || {};
+    renderAll();
     if (state.selected) refreshSelected();
   } catch (e) {
-    toast(e.message || "Failed to load tasks");
+    toast(e.message || "Failed to load data");
   }
 }
 
-function rowsForView() {
-  const view = VIEWS[state.view];
-  const rows = [];
-  for (const t of view.tables) {
-    for (const row of state.tables[t] || []) {
-      if (!matchesQ(row, state.q.toLowerCase())) continue;
-      rows.push({ table: t, row });
-    }
-  }
-  return rows;
+function renderAll() {
+  renderChrome();
+  renderStats();
+  renderContent();
 }
 
-// ---------- Rendering: stats ----------
+function renderChrome() {
+  const titles = {
+    subjects: "Subjects", subject: state.currentSubject?.subject_name || "Subject",
+    tasks: "Tasks", repeat: "Recurring", events: "Events", trash: "Trash",
+  };
+  $("#pageTitle").textContent = titles[state.view] || "Workspace";
+
+  // Breadcrumb for subject/chapter drill-down
+  const bc = $("#breadcrumb");
+  if (state.view === "subject" && state.currentSubject) {
+    bc.hidden = false;
+    bc.innerHTML = `
+      <button class="ws-crumb" type="button" data-nav="subjects">Subjects</button>
+      <span class="ws-crumb-sep">/</span>
+      <span class="ws-crumb-current">${esc(state.currentSubject.subject_name || "Subject")}</span>`;
+    bc.querySelector('[data-nav="subjects"]').addEventListener("click", () => {
+      state.view = "subjects"; state.currentSubject = null; closeDetail(); renderAll();
+    });
+  } else {
+    bc.hidden = true;
+  }
+
+  // Contextual primary actions visibility
+  const isTasksView = ["tasks", "repeat", "events"].includes(state.view);
+  $("#quickAddInput").placeholder = state.view === "repeat" ? "Add a recurring task…" : state.view === "events" ? "Add an event…" : "Add a task…  (Enter)";
+  $("#quickAddInput").style.display = isTasksView ? "" : "none";
+  $("#quickAddBtn").style.display = isTasksView ? "" : "none";
+  $("#newBtn").textContent = state.view === "subject" ? "+ Chapter" : state.view === "subjects" ? "+ Subject" : "+ New";
+  $("#newBtn").style.display = state.view === "trash" ? "none" : "";
+}
+
+// ================= Stats =================
 function renderStats() {
   const tasks = state.tables.tasks || [];
   const pending = tasks.filter((t) => !t.is_done);
   const today = pending.filter((t) => dueBucket(t.remind_date) === "today").length;
   const overdue = pending.filter((t) => dueBucket(t.remind_date) === "overdue").length;
   const trash = (state.tables.trash_tasks || []).length + (state.tables.trash_events || []).length;
-  const repeat = (state.tables.repeat_tasks || []).length + (state.tables.repeat_events || []).length;
-  $("#statsBar").innerHTML = [
-    [pending.length, "open"],
-    [today, "today"],
-    [overdue, "overdue"],
-    [repeat, "recurring"],
-    [trash, "trash"],
-  ].map(([n, l]) => `<span class="ws-stat"><b>${n}</b>${l}</span>`).join("");
+  let html;
+  if (state.view === "subjects") {
+    const chapters = state.chapters.length;
+    html = [[state.subjects.length, "subjects"], [chapters, "chapters"]];
+  } else if (state.view === "subject" && state.currentSubject) {
+    const chs = chaptersOf(state.currentSubject.subject_id);
+    html = [[chs.length, "chapters"], [chs.filter((c) => c.body).length, "with course"]];
+  } else {
+    const repeat = (state.tables.repeat_tasks || []).length + (state.tables.repeat_events || []).length;
+    html = [[pending.length, "open"], [today, "today"], [overdue, "overdue"], [repeat, "recurring"], [trash, "trash"]];
+  }
+  $("#statsBar").innerHTML = html.map(([n, l]) => `<span class="ws-stat"><b>${n}</b>${l}</span>`).join("");
 }
 
-// ---------- Rendering: list ----------
-function renderList() {
-  const groupsEl = $("#taskGroups");
-  const emptyEl = $("#emptyState");
-  const rows = rowsForView();
+// ================= Content router =================
+function renderContent() {
+  $("#taskGroups").innerHTML = "";
+  $("#subjectGrid").hidden = state.view !== "subjects";
+  if (state.view === "subjects") return renderSubjects();
+  if (state.view === "subject") return renderSubjectDetail();
+  return renderTaskGroups();
+}
 
-  if (!rows.length) {
-    groupsEl.innerHTML = "";
-    emptyEl.hidden = false;
-    const [t, s] = VIEWS[state.view].empty;
-    $("#emptyTitle").textContent = state.q ? "No results" : t;
-    $("#emptySub").textContent = state.q ? `Nothing matches “${state.q}”.` : s;
-    return;
+function matchesQText(...vals) {
+  if (!state.q) return true;
+  const q = state.q.toLowerCase();
+  return vals.some((v) => String(v ?? "").toLowerCase().includes(q));
+}
+
+// ================= Subjects =================
+function chaptersOf(subjectId) {
+  return state.chapters.filter((c) => String(c.subject_id) === String(subjectId));
+}
+
+function renderSubjects() {
+  const grid = $("#subjectGrid");
+  const list = state.subjects.filter((s) => matchesQText(s.subject_name, s.ed_subject_code, s.ed_subject_name));
+  if (!list.length) return showEmpty("No subjects", "Create your first subject with “+ Subject”.");
+  grid.innerHTML = list.map((s) => {
+    const chs = chaptersOf(s.subject_id);
+    const withBody = chs.filter((c) => c.body).length;
+    return `
+      <button class="ws-subject-card" type="button" data-id="${s.subject_id}">
+        <div class="ws-subject-top">
+          <span class="ws-subject-initial">${esc((s.subject_name || "?").trim().charAt(0).toUpperCase())}</span>
+          <div class="ws-subject-head">
+            <span class="ws-subject-name">${esc(s.subject_name || "Untitled")}</span>
+            ${s.ed_subject_code ? `<span class="ws-chip ws-chip-subject">${esc(s.ed_subject_code)}</span>` : ""}
+          </div>
+          <span class="ws-icon-btn ws-subject-edit" title="Edit subject">✎</span>
+        </div>
+        ${s.ed_subject_name ? `<div class="ws-subject-ed">ED · ${esc(s.ed_subject_name)}</div>` : ""}
+        <div class="ws-subject-foot">
+          <span class="ws-chip">${chs.length} chapter${chs.length > 1 ? "s" : ""}</span>
+          <span class="ws-chip">${withBody} course${withBody > 1 ? "s" : ""}</span>
+        </div>
+      </button>`;
+  }).join("");
+
+  grid.querySelectorAll(".ws-subject-card").forEach((el) => {
+    el.addEventListener("click", (e) => {
+      if (e.target.closest(".ws-subject-edit")) {
+        e.stopPropagation();
+        const s = state.subjects.find((x) => String(x.subject_id) === el.dataset.id);
+        if (s) openEntityModal("subject", s.subject_id, s);
+        return;
+      }
+      const s = state.subjects.find((x) => String(x.subject_id) === el.dataset.id);
+      if (s) {
+        state.currentSubject = s;
+        state.view = "subject";
+        closeDetail();
+        renderAll();
+      }
+    });
+  });
+}
+
+function renderSubjectDetail() {
+  const s = state.currentSubject;
+  const chs = chaptersOf(s.subject_id).filter((c) => matchesQText(c.lesson_name, c.lesson_description));
+  const host = $("#taskGroups");
+  if (!chs.length) return showEmpty("No chapters", "Add your first chapter with “+ Chapter”.");
+
+  host.innerHTML = `
+    <div class="ws-group">
+      <div class="ws-group-head"><span>Chapters</span><span class="ws-group-count">${chs.length}</span></div>
+      <div class="ws-group-items">
+        ${chs.map((c) => chapterRowHTML(c)).join("")}
+      </div>
+    </div>`;
+
+  host.querySelectorAll(".ws-task").forEach((el) => {
+    el.addEventListener("click", () => {
+      const c = state.chapters.find((x) => String(x.lesson_id) === el.dataset.id);
+      if (c) openDetail({ kind: "chapter", row: { ...c } });
+    });
+    const del = el.querySelector(".ws-task-del");
+    del?.addEventListener("click", async (e) => {
+      e.stopPropagation();
+      try {
+        await apiSubjects("delete-chapter", { lesson_id: Number(el.dataset.id) });
+        toast("Chapter deleted");
+        await loadAll();
+      } catch (err) { toast(err.message); }
+    });
+  });
+}
+
+function chapterRowHTML(c) {
+  const hasBody = !!(c.body && String(c.body).trim());
+  const hasFlash = !!(c.flashcards && String(c.flashcards).trim() && c.flashcards !== "[]");
+  const chips = [
+    c.is_method ? `<span class="ws-chip ws-chip-method">method</span>` : "",
+    c.is_yearly ? `<span class="ws-chip">yearly</span>` : "",
+    c.tests_date ? `<span class="ws-chip ws-chip-due">test ${esc(c.tests_date)}</span>` : "",
+    hasBody ? `<span class="ws-chip ws-chip-course">course ✓</span>` : `<span class="ws-chip">no course</span>`,
+    hasFlash ? `<span class="ws-chip ws-chip-flash">flashcards</span>` : "",
+  ].join("");
+  return `
+    <div class="ws-task ws-chapter" data-id="${c.lesson_id}">
+      <div class="ws-task-main">
+        <div class="ws-task-title">${esc(c.lesson_name || "Untitled")}</div>
+        ${c.lesson_description ? `<div class="ws-task-sub">${esc(String(c.lesson_description).slice(0, 110))}${String(c.lesson_description).length > 110 ? "…" : ""}</div>` : ""}
+        <div class="ws-task-meta">${chips}</div>
+      </div>
+      <button class="ws-icon-btn ws-task-del" type="button" title="Delete chapter">🗑</button>
+    </div>`;
+}
+
+// ================= Task views =================
+function rowsForView() {
+  const view = TASK_VIEWS[state.view];
+  if (!view) return [];
+  const rows = [];
+  for (const t of view.tables) {
+    for (const row of state.tables[t] || []) {
+      if (!matchesQText(row.title, row.text_body, row.subject_id ? subjectName(row.subject_id) : "", row.path, row.comments)) continue;
+      rows.push({ table: t, row });
+    }
   }
-  emptyEl.hidden = true;
+  return rows;
+}
 
-  // Group rows
+function renderTaskGroups() {
+  const groupsEl = $("#taskGroups");
+  const rows = rowsForView();
+  if (!rows.length) {
+    const [t, s] = TASK_VIEWS[state.view].empty;
+    return showEmpty(state.q ? "No results" : t, state.q ? `Nothing matches “${state.q}”.` : s);
+  }
+
   const groups = new Map();
   for (const item of rows) {
     let bucket;
@@ -245,57 +511,44 @@ function renderList() {
     groups.get(bucket).push(item);
   }
 
-  // Order groups
   const order = state.view === "repeat"
     ? [...groups.keys()].sort()
-    : state.view === "trash"
-      ? ["trash"]
-      : GROUP_DEFS.map(([k]) => k);
+    : state.view === "trash" ? ["trash"] : GROUP_DEFS.map(([k]) => k);
 
-  groupsEl.innerHTML = order
-    .filter((k) => groups.has(k))
-    .map((k) => {
-      const items = groups.get(k);
-      const label = state.view === "repeat" ? `Repeats · ${k}` : state.view === "trash" ? "Recently deleted" : groupLabel(k);
-      return `
-        <div class="ws-group">
-          <div class="ws-group-head"><span>${esc(label)}</span><span class="ws-group-count">${items.length}</span></div>
-          <div class="ws-group-items">
-            ${items.map((it) => taskRowHTML(it)).join("")}
-          </div>
-        </div>`;
-    })
-    .join("");
+  groupsEl.innerHTML = order.filter((k) => groups.has(k)).map((k) => {
+    const items = groups.get(k);
+    const label = state.view === "repeat" ? `Repeats · ${k}` : state.view === "trash" ? "Recently deleted" : (GROUP_DEFS.find(([g]) => g === k)?.[1] || k);
+    return `
+      <div class="ws-group">
+        <div class="ws-group-head"><span>${esc(label)}</span><span class="ws-group-count">${items.length}</span></div>
+        <div class="ws-group-items">${items.map((it) => taskRowHTML(it)).join("")}</div>
+      </div>`;
+  }).join("");
 
   groupsEl.querySelectorAll(".ws-task").forEach((el) => {
     el.addEventListener("click", (e) => {
       if (e.target.closest(".ws-task-check")) return;
       const { table, id } = el.dataset;
       const row = (state.tables[table] || []).find((r) => String(r.task_id) === id);
-      if (row) openDetail(table, row);
+      if (row) openDetail({ kind: "task", table, row: { ...row } });
     });
     const check = el.querySelector(".ws-task-check");
     check?.addEventListener("click", async () => {
       const { table, id } = el.dataset;
       check.classList.add("spin");
-      try {
-        await api("toggle", { table, task_id: Number(id) });
-        await load();
-      } catch (e) {
-        toast(e.message);
-        check.classList.remove("spin");
-      }
+      try { await apiTasks("toggle", { table, task_id: Number(id) }); await loadAll(); }
+      catch (e) { toast(e.message); check.classList.remove("spin"); }
     });
     const del = el.querySelector(".ws-task-del");
     del?.addEventListener("click", async (e) => {
       e.stopPropagation();
       const { table, id } = el.dataset;
       try {
-        if (table.startsWith("trash_")) await api("purge", { table, task_id: Number(id) });
-        else await api("delete", { table, task_id: Number(id) });
+        if (table.startsWith("trash_")) await apiTasks("purge", { table, task_id: Number(id) });
+        else await apiTasks("delete", { table, task_id: Number(id) });
         toast(table.startsWith("trash_") ? "Deleted forever" : "Moved to trash");
-        if (state.selected?.row?.task_id === Number(id) && state.selected.table === table) closeDetail();
-        await load();
+        if (state.selected?.kind === "task" && state.selected.table === table && String(state.selected.row.task_id) === id) closeDetail();
+        await loadAll();
       } catch (err) { toast(err.message); }
     });
   });
@@ -308,39 +561,41 @@ function taskRowHTML({ table, row }) {
   const due = row.remind_date ? fmtDate(row.remind_date) : "";
   const bucket = dueBucket(row.remind_date);
   const pri = Number(row.priority_id) || 0;
-  const priColor = PRIORITY_COLORS[pri];
+  const priColor = PRIORITY_COLORS[pri] || lookupColor("priorities", "priority_id", pri);
+  const subName = row.subject_id ? subjectName(row.subject_id) : "";
   const urlCount = (() => { const p = parseMaybeJSON(row.urls); return Array.isArray(p) ? p.length : (row.urls ? 1 : 0); })();
 
   const chips = [
-    row.subject_id ? `<span class="ws-chip ws-chip-subject">${esc(row.subject_id)}</span>` : "",
+    subName ? `<span class="ws-chip ws-chip-subject">${esc(subName)}</span>` : "",
     due && !isTrash ? `<span class="ws-chip ws-chip-due ${bucket}">${esc(due)}</span>` : "",
     row.is_homework ? `<span class="ws-chip ws-chip-homework">HW</span>` : "",
   ].join("");
 
   return `
     <div class="ws-task ${done ? "is-done" : ""} ${isTrash ? "is-trash" : ""}" data-table="${table}" data-id="${row.task_id}">
-      <button class="ws-task-check ${done ? "is-done" : ""}" type="button" title="${done ? "Mark as todo" : "Mark as done"}">
-        ${done ? "✓" : ""}
-      </button>
+      <button class="ws-task-check ${done ? "is-done" : ""}" type="button" title="${done ? "Mark as todo" : "Mark as done"}">${done ? "✓" : ""}</button>
       <div class="ws-task-main">
         <div class="ws-task-title">${esc(row.title || "Untitled")}</div>
         ${row.text_body ? `<div class="ws-task-sub">${esc(String(row.text_body).slice(0, 90))}${String(row.text_body).length > 90 ? "…" : ""}</div>` : ""}
         <div class="ws-task-meta">
-          ${priColor ? `<span class="ws-pri-dot" style="background:${priColor}" title="Priority ${pri}"></span>` : ""}
+          ${priColor ? `<span class="ws-pri-dot" style="background:${priColor}" title="Priority"></span>` : ""}
           ${chips}
           ${isRepeat ? `<span class="ws-chip ws-chip-repeat" title="Recurring${row.frequency ? ` · ${esc(row.frequency)}` : ""}">↻</span>` : ""}
           ${urlCount ? `<span class="ws-chip ws-chip-link">🔗 ${urlCount}</span>` : ""}
         </div>
       </div>
-      <button class="ws-icon-btn ws-task-del" type="button" title="${isTrash ? "Delete forever" : "Delete"}">
-        ${isTrash ? "🗑" : "⌫"}
-      </button>
+      <button class="ws-icon-btn ws-task-del" type="button" title="${isTrash ? "Delete forever" : "Delete"}">${isTrash ? "🗑" : "⌫"}</button>
     </div>`;
 }
 
-// ---------- Detail panel ----------
-function openDetail(table, row) {
-  state.selected = { table, row: { ...row } };
+function lookupColor(key, idKey, id) {
+  const row = (state.meta[key] || []).find((r) => String(r[idKey]) === String(id));
+  return row?.color || "";
+}
+
+// ================= Detail panel =================
+function openDetail(sel) {
+  state.selected = sel;
   $("#detailPanel").hidden = false;
   $("#detailPanel").classList.add("is-open");
   renderDetail();
@@ -354,45 +609,111 @@ function closeDetail() {
 
 function refreshSelected() {
   if (!state.selected) return;
-  const fresh = (state.tables[state.selected.table] || []).find((r) => r.task_id === state.selected.row.task_id);
-  if (fresh) { state.selected.row = { ...fresh }; renderDetail(); }
-  else closeDetail();
+  const sel = state.selected;
+  if (sel.kind === "task") {
+    const fresh = (state.tables[sel.table] || []).find((r) => r.task_id === sel.row.task_id);
+    if (fresh) { sel.row = { ...fresh }; renderDetail(); } else closeDetail();
+  } else if (sel.kind === "chapter") {
+    const fresh = state.chapters.find((r) => r.lesson_id === sel.row.lesson_id);
+    if (fresh) { sel.row = { ...fresh }; renderDetail(); } else closeDetail();
+  }
+}
+
+function detailConfig() {
+  const sel = state.selected;
+  if (sel.kind === "task") {
+    const isTrash = sel.table.startsWith("trash_");
+    return {
+      titleKey: "title",
+      sections: TASK_SECTIONS,
+      isDone: !!sel.row.is_done,
+      isTrash,
+      deleteLabel: isTrash ? "Delete forever" : "Move to trash",
+      badges: [sel.table.replace("_", "-"), sel.row.is_done ? "done" : "open", sel.row.frequency ? `↻ ${sel.row.frequency}` : ""].filter(Boolean),
+    };
+  }
+  // chapter
+  const c = sel.row;
+  const badges = [
+    c.is_method ? "method" : "", c.is_yearly ? "yearly" : "",
+    c.body ? "course ✓" : "no course",
+    c.flashcards && c.flashcards !== "[]" ? "flashcards" : "",
+  ].filter(Boolean);
+  return {
+    titleKey: "lesson_name",
+    hideKeys: ["lesson_name"],
+    sections: CHAPTER_SECTIONS,
+    isDone: false,
+    isTrash: false,
+    showDoneToggle: false,
+    deleteLabel: "Delete chapter",
+    badges,
+    tools: true,
+  };
 }
 
 function renderDetail() {
-  const { table, row } = state.selected;
-  const isTrash = table.startsWith("trash_");
+  const sel = state.selected;
+  const cfg = detailConfig();
+  const row = sel.row;
 
-  $("#dTitle").value = row.title || "";
-  $("#dToggleDone").textContent = row.is_done ? "↺" : "✓";
-  $("#dToggleDone").classList.toggle("is-done", !!row.is_done);
-  $("#dDelete").textContent = isTrash ? "Delete forever" : "Move to trash";
-  $("#dDelete").classList.toggle("is-danger", isTrash);
+  $("#dTitle").value = row[cfg.titleKey] || "";
+  const doneBtn = $("#dToggleDone");
+  doneBtn.style.display = cfg.showDoneToggle === false ? "none" : "";
+  doneBtn.textContent = row.is_done ? "↺" : "✓";
+  doneBtn.classList.toggle("is-done", !!row.is_done);
+  $("#dDelete").textContent = cfg.deleteLabel;
+  $("#dDelete").classList.toggle("is-danger", cfg.isTrash);
+  $("#dBadges").innerHTML = cfg.badges.map((b) => `<span class="ws-badge">${esc(b)}</span>`).join("");
 
-  const badges = [
-    table.replace("_", "-"),
-    row.is_done ? "done" : "open",
-    row.frequency ? `↻ ${row.frequency}` : "",
-  ].filter(Boolean);
-  $("#dBadges").innerHTML = badges.map((b) => `<span class="ws-badge">${esc(b)}</span>`).join("");
-
-  // Build fields
   const wrap = $("#dFields");
-  wrap.innerHTML = SECTIONS.map((sec) => {
-    const items = sec.fields.filter((f) => f.key in row).map((f) => fieldHTML(f, row[f.key])).join("");
+  let html = cfg.sections.map((sec) => {
+    const items = sec.fields.filter((f) => f.key in row && !(cfg.hideKeys || []).includes(f.key)).map((f) => fieldHTML(f, row[f.key])).join("");
     return items ? `<div class="ws-dsec"><h3>${sec.title}</h3><div class="ws-dgrid">${items}</div></div>` : "";
   }).join("");
+
+  if (cfg.tools) {
+    const activities = parseMaybeJSON(c.tests);
+    const actList = Array.isArray(activities?.activities) ? activities.activities : [];
+    html += `
+      <div class="ws-dsec">
+        <h3>Import lesson</h3>
+        <div class="ws-tools">
+          <button class="ws-btn ws-btn-ghost" type="button" data-tool="pdf">📄 PDF</button>
+          <button class="ws-btn ws-btn-ghost" type="button" data-tool="voice">🎙 Voice</button>
+          <button class="ws-btn ws-btn-ghost" type="button" data-tool="files">� Files</button>
+          <button class="ws-btn ws-btn-ghost" type="button" data-tool="photo">📷 Camera + OCR</button>
+        </div>
+        <p class="ws-tools-hint">All extraction runs locally in your browser (pdf.js, Web Speech, Tesseract OCR).</p>
+      </div>
+      <div class="ws-dsec">
+        <h3>AI generation</h3>
+        <div class="ws-tools">
+          <button class="ws-btn ws-btn-primary" type="button" data-tool="course">✨ Generate course</button>
+          <button class="ws-btn ws-btn-primary" type="button" data-tool="flashcards">✨ Generate flashcards</button>
+          <button class="ws-btn ws-btn-primary" type="button" data-tool="activities">✨ Generate activities</button>
+          ${actList.length ? `<button class="ws-btn ws-btn-ghost" type="button" data-tool="run">▶ Run activities (${actList.length})</button>` : ""}
+        </div>
+        <p class="ws-tools-hint">GPT OSS 120B via Workers AI — the course is built section by section and can be resumed anytime.</p>
+      </div>`;
+    wrap.innerHTML = html;
+    wrap.querySelectorAll("[data-tool]").forEach((b) => b.addEventListener("click", () => onChapterTool(b.dataset.tool, sel.row)));
+    return;
+  }
+  wrap.innerHTML = html;
 }
 
 function fieldHTML(f, value) {
   const id = `f_${f.key}`;
+  const opts = f.optionsFrom ? (LOOKUP_FIELDS[f.optionsFrom]?.() || []) : (f.options || []);
   let input;
   if (f.type === "textarea") {
     input = `<textarea id="${id}" rows="${f.rows || 3}" placeholder="${esc(f.placeholder || "")}" ${f.mono ? 'class="mono"' : ""}>${esc(value ?? "")}</textarea>`;
   } else if (f.type === "checkbox") {
     input = `<label class="ws-check"><input type="checkbox" id="${id}" ${value ? "checked" : ""}><span class="ws-check-ui"></span></label>`;
   } else if (f.type === "select") {
-    input = `<select id="${id}">${f.options.map((o, i) => `<option value="${o}" ${String(value ?? "") === String(o) ? "selected" : ""}>${esc(f.labels[i] ?? o)}</option>`).join("")}</select>`;
+    const hasEmpty = f.placeholder !== undefined || opts.length === 0;
+    input = `<select id="${id}">${hasEmpty ? `<option value="">${esc(f.placeholder || "—")}</option>` : ""}${opts.map((o) => `<option value="${esc(o.value)}" ${String(value ?? "") === String(o.value) ? "selected" : ""}>${esc(o.label)}</option>`).join("")}</select>`;
   } else if (f.type === "datetime") {
     input = `<input type="datetime-local" id="${id}" value="${toLocalInput(value)}">`;
   } else if (f.type === "lines") {
@@ -401,46 +722,113 @@ function fieldHTML(f, value) {
     input = `<input type="${f.type === "number" ? "number" : "text"}" id="${id}" value="${esc(value ?? "")}" placeholder="${esc(f.placeholder || "")}" ${f.type === "number" ? 'step="any"' : ""}>`;
   }
   return `
-    <label class="ws-field ${f.type === "checkbox" ? "ws-field-check" : ""}">
+    <label class="ws-field ${f.type === "checkbox" ? "ws-field-check" : ""} ${f.type === "textarea" || f.type === "lines" ? "ws-field-wide" : ""}">
       <span class="ws-field-label">${esc(f.label)}</span>
       ${input}
     </label>`;
 }
 
-function collectFields() {
-  const { row } = state.selected;
+function collectFields(sections, titleKey, titleEl, root = document) {
   const fields = {};
-  for (const sec of SECTIONS) {
+  for (const sec of sections) {
     for (const f of sec.fields) {
-      if (!(f.key in row)) continue;
-      const el = $(`#f_${f.key}`);
+      const el = root.querySelector(`[id="f_${f.key}"]`);
       if (!el) continue;
       if (f.type === "checkbox") fields[f.key] = el.checked ? 1 : 0;
       else if (f.type === "number") fields[f.key] = el.value === "" ? null : Number(el.value);
       else if (f.type === "datetime") fields[f.key] = fromLocalInput(el.value);
       else if (f.type === "lines") fields[f.key] = fromLines(el.value);
+      else if (f.type === "select") fields[f.key] = el.value === "" ? (f.key === "path" ? "/" : null) : el.value;
       else fields[f.key] = el.value;
     }
   }
-  fields.title = $("#dTitle").value;
+  if (titleKey && titleEl) fields[titleKey] = titleEl.value;
   return fields;
 }
 
-// ---------- Events ----------
+// ================= Creation / edit modal =================
+function openEntityModal(kind, id = null, existing = null) {
+  const defs = {
+    task: { title: id ? "Edit task" : "New task", sections: TASK_SECTIONS, titleKey: "title", submit: "Create task" },
+    subject: { title: id ? "Edit subject" : "New subject", sections: SUBJECT_SECTIONS, titleKey: null, submit: "Create subject" },
+    chapter: { title: id ? "Edit chapter" : "New chapter", sections: CHAPTER_SECTIONS, titleKey: null, submit: "Create chapter" },
+  }[kind];
+  if (!defs) return;
+
+  const root = $("#modalRoot");
+  root.hidden = false;
+
+  const values = existing || {};
+  const bodyHtml = defs.sections.map((sec) => {
+    const items = sec.fields.map((f) => fieldHTML(f, values[f.key])).join("");
+    return `<div class="ws-dsec"><h3>${sec.title}</h3><div class="ws-dgrid">${items}</div></div>`;
+  }).join("");
+
+  root.innerHTML = `
+    <div class="ws-modal-backdrop">
+      <div class="ws-modal" role="dialog" aria-modal="true">
+        <div class="ws-modal-head">
+          <h2>${defs.title}</h2>
+          <button class="ws-icon-btn" type="button" data-close>✕</button>
+        </div>
+        <div class="ws-modal-body">
+          ${kind === "task" ? `<label class="ws-field ws-field-wide"><span class="ws-field-label">Title</span><input type="text" id="m_title" value="${esc(values.title || "")}" placeholder="Task title"></label>` : ""}
+          ${bodyHtml}
+        </div>
+        <div class="ws-modal-foot">
+          <button class="ws-btn ws-btn-ghost" type="button" data-close>Cancel</button>
+          <button class="ws-btn ws-btn-primary" type="button" data-submit>${defs.submit}</button>
+        </div>
+      </div>
+    </div>`;
+
+  const close = () => { root.hidden = true; root.innerHTML = ""; };
+  root.querySelectorAll("[data-close]").forEach((b) => b.addEventListener("click", close));
+  root.querySelector(".ws-modal-backdrop").addEventListener("click", (e) => { if (e.target.classList.contains("ws-modal-backdrop")) close(); });
+
+  root.querySelector("[data-submit]").addEventListener("click", async () => {
+    const btn = root.querySelector("[data-submit]");
+    btn.disabled = true; btn.textContent = "Saving…";
+    try {
+      const fields = collectFields(defs.sections, kind === "task" ? "title" : null, kind === "task" ? root.querySelector("#m_title") : null, root.querySelector(".ws-modal"));
+      if (kind === "task") {
+        const table = state.view === "repeat" ? "repeat_tasks" : state.view === "events" ? "events" : "tasks";
+        if (id) await apiTasks("update", { table, task_id: id, fields });
+        else await apiTasks("create", { table, fields });
+      } else if (kind === "subject") {
+        if (id) await apiSubjects("update-subject", { subject_id: id, fields });
+        else await apiSubjects("create-subject", { fields });
+      } else if (kind === "chapter") {
+        if (!fields.subject_id && state.currentSubject) fields.subject_id = state.currentSubject.subject_id;
+        if (id) await apiSubjects("update-chapter", { lesson_id: id, fields });
+        else await apiSubjects("create-chapter", { fields });
+      }
+      toast(id ? "Saved" : "Created");
+      close();
+      await loadAll();
+    } catch (e) {
+      toast(e.message);
+      btn.disabled = false; btn.textContent = defs.submit;
+    }
+  });
+}
+
+// ================= UI events =================
 function bindUI() {
   $("#viewTabs").addEventListener("click", (e) => {
     const btn = e.target.closest(".ws-seg");
     if (!btn) return;
     document.querySelectorAll(".ws-seg").forEach((b) => b.dataset.active = b === btn ? "true" : "false");
     state.view = btn.dataset.view;
+    state.currentSubject = null;
     closeDetail();
-    renderList();
+    renderAll();
   });
 
   let searchTimer;
   $("#searchInput").addEventListener("input", (e) => {
     clearTimeout(searchTimer);
-    searchTimer = setTimeout(() => { state.q = e.target.value.trim(); renderList(); }, 150);
+    searchTimer = setTimeout(() => { state.q = e.target.value.trim(); renderContent(); renderStats(); }, 150);
   });
 
   const quickAdd = async () => {
@@ -450,9 +838,10 @@ function bindUI() {
     input.value = "";
     input.disabled = true;
     try {
-      await api("create", { table: "tasks", fields: { title } });
-      toast("Task created");
-      await load();
+      const table = state.view === "repeat" ? "repeat_tasks" : state.view === "events" ? "events" : "tasks";
+      await apiTasks("create", { table, fields: { title } });
+      toast("Created");
+      await loadAll();
     } catch (e) { toast(e.message); input.value = title; }
     input.disabled = false;
     input.focus();
@@ -460,43 +849,76 @@ function bindUI() {
   $("#quickAddBtn").addEventListener("click", quickAdd);
   $("#quickAddInput").addEventListener("keydown", (e) => { if (e.key === "Enter") quickAdd(); });
 
+  $("#newBtn").addEventListener("click", () => {
+    if (state.view === "subjects") return openEntityModal("subject");
+    if (state.view === "subject") return openEntityModal("chapter", null, state.currentSubject ? { subject_id: state.currentSubject.subject_id } : null);
+    if (["tasks", "repeat", "events"].includes(state.view)) return openEntityModal("task");
+  });
+
   $("#dClose").addEventListener("click", closeDetail);
-  document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeDetail(); });
+  document.addEventListener("keydown", (e) => {
+    if (e.key !== "Escape") return;
+    const root = $("#modalRoot");
+    if (!root.hidden) { root.hidden = true; root.innerHTML = ""; }
+    else closeDetail();
+  });
+
+  $("#dEdit").addEventListener("click", () => {
+    const sel = state.selected;
+    if (!sel) return;
+    if (sel.kind === "task") openEntityModal("task", sel.row.task_id, sel.row);
+    else if (sel.kind === "chapter") openEntityModal("chapter", sel.row.lesson_id, sel.row);
+  });
 
   $("#dSave").addEventListener("click", async () => {
-    if (!state.selected) return;
-    const { table, row } = state.selected;
+    const sel = state.selected;
+    if (!sel) return;
     const btn = $("#dSave");
     btn.disabled = true; btn.textContent = "Saving…";
     try {
-      await api("update", { table, task_id: row.task_id, fields: collectFields() });
+      const cfg = detailConfig();
+      const fields = collectFields(cfg.sections, cfg.titleKey, document.getElementById("dTitle"), document.getElementById("detailPanel"));
+      if (sel.kind === "task") await apiTasks("update", { table: sel.table, task_id: sel.row.task_id, fields });
+      else await apiSubjects("update-chapter", { lesson_id: sel.row.lesson_id, fields });
       toast("Saved");
-      await load();
+      await loadAll();
     } catch (e) { toast(e.message); }
     btn.disabled = false; btn.textContent = "Save changes";
   });
 
   $("#dToggleDone").addEventListener("click", async () => {
-    if (!state.selected) return;
-    const { table, row } = state.selected;
-    try {
-      await api("toggle", { table, task_id: row.task_id });
-      await load();
-    } catch (e) { toast(e.message); }
+    const sel = state.selected;
+    if (!sel || sel.kind !== "task") return;
+    try { await apiTasks("toggle", { table: sel.table, task_id: sel.row.task_id }); await loadAll(); }
+    catch (e) { toast(e.message); }
   });
 
   $("#dDelete").addEventListener("click", async () => {
-    if (!state.selected) return;
-    const { table, row } = state.selected;
-    const isTrash = table.startsWith("trash_");
+    const sel = state.selected;
+    if (!sel) return;
     try {
-      if (isTrash) await api("purge", { table, task_id: row.task_id });
-      else await api("delete", { table, task_id: row.task_id });
-      toast(isTrash ? "Deleted forever" : "Moved to trash");
+      if (sel.kind === "chapter") {
+        await apiSubjects("delete-chapter", { lesson_id: sel.row.lesson_id });
+        toast("Chapter deleted");
+      } else {
+        const isTrash = sel.table.startsWith("trash_");
+        if (isTrash) await apiTasks("purge", { table: sel.table, task_id: sel.row.task_id });
+        else await apiTasks("delete", { table: sel.table, task_id: sel.row.task_id });
+        toast(isTrash ? "Deleted forever" : "Moved to trash");
+      }
       closeDetail();
-      await load();
+      await loadAll();
     } catch (e) { toast(e.message); }
   });
+}
+
+function showEmpty(title, sub) {
+  $("#taskGroups").innerHTML = "";
+  $("#subjectGrid").hidden = true;
+  const el = $("#emptyState");
+  el.hidden = false;
+  $("#emptyTitle").textContent = title;
+  $("#emptySub").textContent = sub;
 }
 
 let toastTimer;
@@ -509,12 +931,11 @@ function toast(msg) {
   toastTimer = setTimeout(() => { el.classList.remove("show"); setTimeout(() => { el.hidden = true; }, 250); }, 2400);
 }
 
-// ---------- Init ----------
 function init() {
   const now = new Date();
   $("#todayLabel").textContent = now.toLocaleDateString([], { weekday: "long", day: "numeric", month: "long" });
   bindUI();
-  load();
+  loadAll();
 }
 
 if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);

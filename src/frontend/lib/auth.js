@@ -99,6 +99,15 @@ async function renewJWT() {
   }
 }
 
+// Returns a valid JWT, renewing it when expired. Null when unauthenticated.
+export async function ensureSessionToken() {
+  let jwt = getJWT();
+  if (!jwt || !isJWTValid()) {
+    jwt = await renewJWT();
+  }
+  return jwt || null;
+}
+
 // --- Initial JWT exchange ---------------------------------------------------
 
 export async function exchangeOneTimeToken(username, oneTimeToken) {

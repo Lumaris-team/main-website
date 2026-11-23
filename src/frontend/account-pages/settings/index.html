@@ -34,6 +34,9 @@
         <button class="settings-nav" type="button" id="statistics-btn" aria-label="Statistics">
           <span class="settings-icon" data-icon="https://shared-assets.lumaris.fr.eu.org/icons/statistics.svg"></span>
         </button>
+        <button class="settings-nav" type="button" id="workspace-btn" aria-label="Workspace">
+          <span class="settings-icon" data-icon="https://shared-assets.lumaris.fr.eu.org/icons/database.svg"></span>
+        </button>
       </aside>
 
       <main class="settings-main">
@@ -207,6 +210,22 @@
               <div class="ai-usage">0 / 10000 neurons</div>
               <div class="stats-description">Remaining AI requests reset daily and are shared across the dashboard.</div>
             </div>
+          </div>
+        </section>
+      </main>
+    </template>
+
+    <template id="workspace-panel-template">
+      <main class="settings-main wsadmin-main">
+        <div class="settings-hero-copy bento-block">
+          <span class="block-eyebrow">Workspace</span>
+          <h1>Tasks & lookups</h1>
+          <p>Manage the labels, flags, types, methods, priorities, attention levels and folders used across the Workspace.</p>
+        </div>
+        <div class="wsadmin-tabs" id="wsadminTabs"></div>
+        <section class="settings-panel bento-block wsadmin-panel" id="wsadminPanel">
+          <div class="wsadmin-body" id="wsadminBody">
+            <p class="state-msg">Loading…</p>
           </div>
         </section>
       </main>

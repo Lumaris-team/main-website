@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="#080912">
     <title>Workspace - Lumaris-Team Dashboard</title>
-    <meta name="description" content="Workspace - Manage your tasks, recurring tasks and events.">
+    <meta name="description" content="Workspace - Subjects, chapters, tasks, recurring tasks and events.">
     <meta name="robots" content="noindex, nofollow">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -31,20 +31,25 @@
       <header class="ws-header">
         <div class="ws-header-left">
           <p class="ws-eyebrow" id="todayLabel">Workspace</p>
-          <h1 class="ws-title">Tasks</h1>
+          <h1 class="ws-title" id="pageTitle">Tasks</h1>
         </div>
         <div class="ws-stats" id="statsBar"></div>
       </header>
+
+      <!-- ===== Breadcrumb ===== -->
+      <nav class="ws-breadcrumb" id="breadcrumb" hidden></nav>
 
       <!-- ===== Toolbar ===== -->
       <div class="ws-toolbar">
         <div class="ws-quickadd">
           <input type="text" id="quickAddInput" placeholder="Add a task…  (Enter)" autocomplete="off" spellcheck="false">
           <button class="ws-btn ws-btn-primary" type="button" id="quickAddBtn">Add</button>
+          <button class="ws-btn ws-btn-ghost ws-btn-new" type="button" id="newBtn">New</button>
         </div>
         <div class="ws-filters">
           <div class="ws-segmented" role="tablist" id="viewTabs">
-            <button class="ws-seg" type="button" data-view="tasks" data-active="true">Tasks</button>
+            <button class="ws-seg" type="button" data-view="subjects" data-active="true">Subjects</button>
+            <button class="ws-seg" type="button" data-view="tasks">Tasks</button>
             <button class="ws-seg" type="button" data-view="repeat">Recurring</button>
             <button class="ws-seg" type="button" data-view="events">Events</button>
             <button class="ws-seg" type="button" data-view="trash">Trash</button>
@@ -60,14 +65,15 @@
       <div class="ws-body">
         <section class="ws-list-pane" id="listPane">
           <div class="ws-groups" id="taskGroups"></div>
+          <div class="ws-subjects" id="subjectGrid" hidden></div>
           <div class="ws-empty" id="emptyState" hidden>
             <div class="ws-empty-icon">✦</div>
             <p class="ws-empty-title" id="emptyTitle">Nothing here</p>
-            <p class="ws-empty-sub" id="emptySub">Create your first task above.</p>
+            <p class="ws-empty-sub" id="emptySub">Create your first item.</p>
           </div>
         </section>
 
-        <!-- ===== Detail drawer ===== -->
+        <!-- ===== Detail panel ===== -->
         <aside class="ws-detail" id="detailPanel" hidden>
           <div class="ws-detail-head">
             <div class="ws-detail-title-wrap">
@@ -76,6 +82,7 @@
             </div>
             <div class="ws-detail-actions">
               <button class="ws-icon-btn" type="button" id="dToggleDone" title="Toggle done">✓</button>
+              <button class="ws-icon-btn" type="button" id="dEdit" title="Edit all fields">✎</button>
               <button class="ws-icon-btn" type="button" id="dClose" title="Close">✕</button>
             </div>
           </div>
@@ -83,12 +90,15 @@
           <div class="ws-detail-scroll" id="dFields"></div>
 
           <div class="ws-detail-foot">
-            <button class="ws-btn ws-btn-ghost" type="button" id="dDelete">Move to trash</button>
+            <button class="ws-btn ws-btn-ghost" type="button" id="dDelete">Delete</button>
             <button class="ws-btn ws-btn-primary" type="button" id="dSave">Save changes</button>
           </div>
         </aside>
       </div>
     </div>
+
+    <!-- ===== Creation / edit modal ===== -->
+    <div class="ws-modal-root" id="modalRoot" hidden></div>
 
     <div class="ws-toast" id="toast" hidden></div>
 
