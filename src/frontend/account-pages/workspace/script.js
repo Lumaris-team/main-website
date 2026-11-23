@@ -453,6 +453,7 @@ function renderSubjects() {
       if (s) {
         state.currentSubject = s;
         state.view = "subject";
+        state.template = null;
         closeDetail();
         renderAll();
       }
@@ -1076,7 +1077,7 @@ function bindUI() {
     const sel = state.selected;
     if (!sel) return;
     if (sel.kind === "task") openEntityModal("task", sel.row.task_id, sel.row, { table: sel.table });
-    else if (sel.kind === "chapter") openEntityModal("chapter", sel.row.lesson_id, sel.row, { fullscreen: true });
+    else if (sel.kind === "chapter") openEntityModal("chapter", sel.row.lesson_id, sel.row);
   });
 
   $("#dExpand").addEventListener("click", () => {

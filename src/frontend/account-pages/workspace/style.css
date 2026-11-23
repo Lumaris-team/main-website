@@ -976,7 +976,7 @@ body {
 .ws-modal-full {
   width: 100vw;
   height: 100vh;
-  max-height: 100vh;
+  max-height: 100vh !important;
   border-radius: 0;
   border: 0;
 }

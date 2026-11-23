@@ -1,45 +1,33 @@
 import { defaultSettings, loadSettings, saveSettings, applyThemeSettings, saveRemoteSettings } from "/lib/settings.js";
 import { loadIcons } from "/lib/icons.js";
-import { authedFetch } from "/lib/auth.js";
+import { authedFetch, refreshSession, getSessionInfo, logout } from "/lib/auth.js";
 
-const statsData = {
-  aiUsage: 12,
-  aiLimit: 20,
-  storageCapacity: 20,
-  storageTotal: 8.5,
-  storageFiles: 5.3,
-  storageNotes: 3.2,
-};
+const $ = (sel) => document.querySelector(sel);
 
+// ================= Theme / Appearance =================
 const fields = {
-  backgroundType: document.getElementById("backgroundType"),
-  gradientStyle: document.getElementById("gradientStyle"),
-  gradientOrientation: document.getElementById("gradientOrientation"),
-  gradientLinearBtn: document.getElementById("gradientLinear"),
-  gradientRadialBtn: document.getElementById("gradientRadial"),
-  color1: document.getElementById("color1"),
-  color2: document.getElementById("color2"),
-  solidColor: document.getElementById("solidColor"),
-  orient0: document.getElementById("orient0"),
-  orient45: document.getElementById("orient45"),
-  orient90: document.getElementById("orient90"),
-  orient135: document.getElementById("orient135"),
-  bgGradientBtn: document.getElementById("bgGradient"),
-  bgSolidBtn: document.getElementById("bgSolid"),
-  customizationBtn: document.getElementById("customization-btn"),
-  statisticsBtn: document.getElementById("statistics-btn"),
-  workspaceBtn: document.getElementById("workspace-btn"),
-  statsTemplate: document.getElementById("statistics-panel-template"),
-  workspaceTemplate: document.getElementById("workspace-panel-template"),
-  pageMain: document.querySelector("main.settings-main"),
-  settingsPreview: document.getElementById("settingsPreview"),
-  fontFamily: document.getElementById("fontFamily"),
-  fontWeight: document.getElementById("fontWeight"),
-  boldNormal: document.getElementById("boldNormal"),
-  boldBold: document.getElementById("boldBold"),
-  fontSize: document.getElementById("fontSize"),
-  saveButton: document.getElementById("saveSettings"),
-  resetButton: document.getElementById("resetSettings"),
+  backgroundType: $("#backgroundType"),
+  gradientStyle: $("#gradientStyle"),
+  gradientOrientation: $("#gradientOrientation"),
+  gradientLinearBtn: $("#gradientLinear"),
+  gradientRadialBtn: $("#gradientRadial"),
+  color1: $("#color1"),
+  color2: $("#color2"),
+  solidColor: $("#solidColor"),
+  orient0: $("#orient0"),
+  orient45: $("#orient45"),
+  orient90: $("#orient90"),
+  orient135: $("#orient135"),
+  bgGradientBtn: $("#bgGradient"),
+  bgSolidBtn: $("#bgSolid"),
+  settingsPreview: $("#settingsPreview"),
+  fontFamily: $("#fontFamily"),
+  fontWeight: $("#fontWeight"),
+  boldNormal: $("#boldNormal"),
+  boldBold: $("#boldBold"),
+  fontSize: $("#fontSize"),
+  saveButton: $("#saveSettings"),
+  resetButton: $("#resetSettings"),
 };
 
 function getCurrentSettings() {
@@ -58,33 +46,28 @@ function getCurrentSettings() {
 
 function syncSolidFieldVisibility() {
   const showSolid = fields.backgroundType.value === "solid";
-  // show/hide the standalone solid color row
   document.querySelectorAll(".solid-field").forEach((node) => {
     node.style.display = showSolid ? "grid" : "none";
   });
-  // hide/disable gradient-related controls when solid is selected
   const gradientControls = [fields.gradientStyle, fields.gradientOrientation, fields.color1, fields.color2];
   gradientControls.forEach((ctrl) => {
     if (!ctrl) return;
-    const group = ctrl.closest('.field-group');
+    const group = ctrl.closest(".field-group");
     if (!group) return;
     if (showSolid) {
-      group.style.display = 'none';
-      try { ctrl.disabled = true; } catch (e) {}
-      group.setAttribute('aria-hidden', 'true');
+      group.style.display = "none";
+      try { ctrl.disabled = true; } catch {}
+      group.setAttribute("aria-hidden", "true");
     } else {
-      group.style.display = 'grid';
-      try { ctrl.disabled = false; } catch (e) {}
-      group.removeAttribute('aria-hidden');
+      group.style.display = "grid";
+      try { ctrl.disabled = false; } catch {}
+      group.removeAttribute("aria-hidden");
     }
   });
-
-  // hide the whole color-row (Color 1 / Color 2) when solid is selected
-  const colorRow = document.querySelector('.color-row');
+  const colorRow = document.querySelector(".color-row");
   if (colorRow) {
-    colorRow.style.display = showSolid ? 'none' : 'grid';
+    colorRow.style.display = showSolid ? "none" : "grid";
     if (showSolid) {
-      // disable individual inputs to avoid them being sent accidentally
       if (fields.color1) fields.color1.disabled = true;
       if (fields.color2) fields.color2.disabled = true;
     } else {
@@ -92,31 +75,28 @@ function syncSolidFieldVisibility() {
       if (fields.color2) fields.color2.disabled = false;
     }
   }
-  // after showing/hiding gradient controls, ensure orientation matches gradient style
   syncGradientStyleVisibility();
 }
 
 function syncGradientStyleVisibility() {
   if (!fields.gradientStyle || !fields.gradientOrientation) return;
-  const orientGroup = fields.gradientOrientation.closest('.field-group');
+  const orientGroup = fields.gradientOrientation.closest(".field-group");
   if (!orientGroup) return;
-  const isRadial = fields.gradientStyle.value === 'radial';
+  const isRadial = fields.gradientStyle.value === "radial";
   if (isRadial) {
-    orientGroup.style.display = 'none';
-    try { fields.gradientOrientation.disabled = true; } catch (e) {}
-    orientGroup.setAttribute('aria-hidden', 'true');
+    orientGroup.style.display = "none";
+    try { fields.gradientOrientation.disabled = true; } catch {}
+    orientGroup.setAttribute("aria-hidden", "true");
   } else {
-    // only show if not hidden by solid selection
-    if (fields.backgroundType && fields.backgroundType.value === 'solid') return;
-    orientGroup.style.display = 'grid';
-    try { fields.gradientOrientation.disabled = false; } catch (e) {}
-    orientGroup.removeAttribute('aria-hidden');
+    if (fields.backgroundType && fields.backgroundType.value === "solid") return;
+    orientGroup.style.display = "grid";
+    try { fields.gradientOrientation.disabled = false; } catch {}
+    orientGroup.removeAttribute("aria-hidden");
   }
 }
 
 function renderPreview(settings) {
-  if (!fields.settingsPreview) return;
-  const card = fields.settingsPreview.querySelector(".preview-card");
+  const card = fields.settingsPreview?.querySelector(".preview-card");
   if (!card) return;
   card.style.background =
     settings.backgroundType === "solid"
@@ -141,15 +121,10 @@ function populateForm(settings) {
   fields.fontSize.value = settings.fontSize;
   syncSolidFieldVisibility();
   renderPreview(settings);
-  // update visual swatches for color inputs
   updateColorSwatches();
-  // update background toggle buttons active state
   updateBgToggleButtons();
-  // update gradient toggle buttons active state
   updateGradientToggleButtons();
-  // update orientation buttons active state
   updateOrientationButtons();
-  // update bold toggle buttons active state
   updateBoldToggleButtons();
 }
 
@@ -169,111 +144,104 @@ function resetToDefaults() {
   saveRemoteSettings(initial).catch(() => undefined);
 }
 
-function wireEvents() {
-  Object.values(fields).forEach((input) => {
-    if (!input || input.tagName === "BUTTON" || input.tagName === "OUTPUT") return;
-    input.addEventListener("change", () => {
-      handleFieldChange();
+function updateColorSwatch(input) {
+  try {
+    const parent = input.closest(".color-field") || input.closest(".solid-field");
+    if (!parent) return;
+    const swatch = parent.querySelector(".color-swatch");
+    if (!swatch) return;
+    swatch.style.background = input.value;
+    const c = input.value.replace("#", "");
+    if (c.length === 6) {
+      const r = parseInt(c.slice(0, 2), 16);
+      const g = parseInt(c.slice(2, 4), 16);
+      const b = parseInt(c.slice(4, 6), 16);
+      const l = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+      swatch.style.borderColor = l > 0.6 ? "rgba(0,0,0,0.08)" : "rgba(255,255,255,0.08)";
+    }
+  } catch {}
+}
+
+function updateColorSwatches() {
+  [fields.color1, fields.color2, fields.solidColor].forEach((inp) => inp && updateColorSwatch(inp));
+}
+
+function updateBgToggleButtons() {
+  const val = fields.backgroundType.value;
+  fields.bgGradientBtn.classList.toggle("active", val === "gradient");
+  fields.bgSolidBtn.classList.toggle("active", val === "solid");
+  fields.bgGradientBtn.setAttribute("aria-pressed", String(val === "gradient"));
+  fields.bgSolidBtn.setAttribute("aria-pressed", String(val === "solid"));
+}
+
+function updateBoldToggleButtons() {
+  const val = fields.fontWeight.value;
+  fields.boldNormal.classList.toggle("active", val === "normal");
+  fields.boldBold.classList.toggle("active", val === "bold");
+  fields.boldNormal.setAttribute("aria-pressed", String(val === "normal"));
+  fields.boldBold.setAttribute("aria-pressed", String(val === "bold"));
+}
+
+function updateGradientToggleButtons() {
+  const val = fields.gradientStyle.value;
+  fields.gradientLinearBtn.classList.toggle("active", val === "linear");
+  fields.gradientRadialBtn.classList.toggle("active", val === "radial");
+  fields.gradientLinearBtn.setAttribute("aria-pressed", String(val === "linear"));
+  fields.gradientRadialBtn.setAttribute("aria-pressed", String(val === "radial"));
+}
+
+function updateOrientationButtons() {
+  const val = fields.gradientOrientation?.value || "";
+  [fields.orient0, fields.orient45, fields.orient90, fields.orient135].forEach((btn) => {
+    if (!btn) return;
+    btn.classList.toggle("active", btn.dataset.value === val);
+    btn.setAttribute("aria-pressed", String(btn.dataset.value === val));
+  });
+}
+
+function wireThemeEvents() {
+  [fields.backgroundType, fields.gradientStyle, fields.gradientOrientation, fields.fontFamily, fields.fontWeight, fields.fontSize]
+    .forEach((input) => input?.addEventListener("change", handleFieldChange));
+
+  fields.bgGradientBtn?.addEventListener("click", () => {
+    fields.backgroundType.value = "gradient";
+    updateBgToggleButtons(); syncSolidFieldVisibility(); handleFieldChange();
+  });
+  fields.bgSolidBtn?.addEventListener("click", () => {
+    fields.backgroundType.value = "solid";
+    updateBgToggleButtons(); syncSolidFieldVisibility(); handleFieldChange();
+  });
+  fields.boldNormal?.addEventListener("click", () => {
+    fields.fontWeight.value = "normal";
+    updateBoldToggleButtons(); handleFieldChange();
+  });
+  fields.boldBold?.addEventListener("click", () => {
+    fields.fontWeight.value = "bold";
+    updateBoldToggleButtons(); handleFieldChange();
+  });
+  fields.gradientLinearBtn?.addEventListener("click", () => {
+    fields.gradientStyle.value = "linear";
+    updateGradientToggleButtons(); syncGradientStyleVisibility(); handleFieldChange();
+  });
+  fields.gradientRadialBtn?.addEventListener("click", () => {
+    fields.gradientStyle.value = "radial";
+    updateGradientToggleButtons(); syncGradientStyleVisibility(); handleFieldChange();
+  });
+  [fields.orient0, fields.orient45, fields.orient90, fields.orient135].forEach((btn) => {
+    btn?.addEventListener("click", () => {
+      fields.gradientOrientation.value = btn.dataset.value;
+      updateOrientationButtons(); handleFieldChange();
     });
   });
 
-  // Background toggle buttons handlers
-  if (fields.bgGradientBtn && fields.bgSolidBtn && fields.backgroundType) {
-    fields.bgGradientBtn.addEventListener('click', () => {
-      fields.backgroundType.value = 'gradient';
-      updateBgToggleButtons();
-      syncSolidFieldVisibility();
-      handleFieldChange();
-    });
-    fields.bgSolidBtn.addEventListener('click', () => {
-      fields.backgroundType.value = 'solid';
-      updateBgToggleButtons();
-      syncSolidFieldVisibility();
-      handleFieldChange();
-    });
-  }
-
-  if (fields.customizationBtn && fields.statisticsBtn) {
-    fields.customizationBtn.addEventListener('click', () => showView('customization'));
-    fields.statisticsBtn.addEventListener('click', () => showView('statistics'));
-  }
-  if (fields.workspaceBtn) {
-    fields.workspaceBtn.addEventListener('click', () => showView('workspace'));
-  }
-
-  // Bold toggle buttons handlers
-  if (fields.boldNormal && fields.boldBold && fields.fontWeight) {
-    fields.boldNormal.addEventListener('click', () => {
-      fields.fontWeight.value = 'normal';
-      updateBoldToggleButtons();
-      handleFieldChange();
-    });
-    fields.boldBold.addEventListener('click', () => {
-      fields.fontWeight.value = 'bold';
-      updateBoldToggleButtons();
-      handleFieldChange();
-    });
-  }
-
-  // Font size validation - only allow integers or .5 values
-  if (fields.fontSize) {
-    fields.fontSize.addEventListener('input', () => {
-      let value = parseFloat(fields.fontSize.value);
-      if (!isNaN(value)) {
-        // Round to nearest 0.5
-        const rounded = Math.round(value * 2) / 2;
-        fields.fontSize.value = rounded;
-      }
-    });
-  }
-
-  // Gradient style toggle buttons handlers
-  if (fields.gradientLinearBtn && fields.gradientRadialBtn && fields.gradientStyle) {
-    fields.gradientLinearBtn.addEventListener('click', () => {
-      fields.gradientStyle.value = 'linear';
-      updateGradientToggleButtons();
-      syncGradientStyleVisibility();
-      handleFieldChange();
-    });
-    fields.gradientRadialBtn.addEventListener('click', () => {
-      fields.gradientStyle.value = 'radial';
-      updateGradientToggleButtons();
-      syncGradientStyleVisibility();
-      handleFieldChange();
-    });
-  }
-
-  // Orientation buttons handlers
-  const orientationButtons = [fields.orient0, fields.orient45, fields.orient90, fields.orient135];
-  orientationButtons.forEach((btn) => {
-    if (!btn || !fields.gradientOrientation) return;
-    btn.addEventListener('click', () => {
-      const val = btn.dataset.value;
-      fields.gradientOrientation.value = val;
-      updateOrientationButtons();
-      handleFieldChange();
-    });
+  fields.fontSize?.addEventListener("input", () => {
+    const value = parseFloat(fields.fontSize.value);
+    if (!isNaN(value)) fields.fontSize.value = Math.round(value * 2) / 2;
   });
 
-  // ensure switching background type updates which controls are visible
-  fields.backgroundType?.addEventListener('change', () => {
-    syncSolidFieldVisibility();
-    // update immediate preview and persist change
-    handleFieldChange();
-  });
-
-  // ensure switching gradient style hides/shows orientation appropriately
-  fields.gradientStyle?.addEventListener('change', () => {
-    syncGradientStyleVisibility();
-    handleFieldChange();
-  });
-
-  // color inputs should update the visible swatch on input (live)
   [fields.color1, fields.color2, fields.solidColor].forEach((colorInput) => {
-    if (!colorInput) return;
-    colorInput.addEventListener("input", (e) => {
+    colorInput?.addEventListener("input", () => {
       updateColorSwatch(colorInput);
-      // trigger the normal change handling (live preview/save)
       handleFieldChange();
     });
   });
@@ -283,24 +251,20 @@ function wireEvents() {
     saveSettings(settings);
     await saveRemoteSettings(settings);
     fields.saveButton.textContent = "Saved";
-    setTimeout(() => {
-      fields.saveButton.textContent = "Save";
-    }, 1200);
+    setTimeout(() => { fields.saveButton.textContent = "Save"; }, 1200);
   });
 
-  fields.resetButton?.addEventListener("click", () => {
-    resetToDefaults();
-  });
+  fields.resetButton?.addEventListener("click", resetToDefaults);
 }
 
+// ================= Statistics =================
 async function fetchStatsData() {
   try {
     const response = await authedFetch("/api/settings/stats", { method: "GET" });
     if (!response.ok) return null;
     const payload = await response.json();
     return payload?.resp ?? payload ?? null;
-  } catch (error) {
-    console.warn("Unable to fetch stats data:", error);
+  } catch {
     return null;
   }
 }
@@ -309,396 +273,132 @@ function formatBytesToGB(bytes) {
   return (bytes / 1024 / 1024 / 1024).toFixed(1);
 }
 
-function createLoadingPanel() {
-  const main = document.createElement('main');
-  main.className = 'settings-main';
-  main.style.height = 'auto';
-  main.style.minHeight = 'auto';
-  
-  const hero = document.createElement('div');
-  hero.className = 'settings-hero-copy bento-block';
-  hero.style.height = 'auto';
-  hero.style.minHeight = 'auto';
-  hero.innerHTML = `
-    <span class="block-eyebrow">Statistics</span>
-    <h1>Usage overview</h1>
-    <p>Monitor your AI usage and storage consumption across the dashboard.</p>
-  `;
-  
-  const storageSection = document.createElement('section');
-  storageSection.className = 'settings-panel bento-block settings-panel-storage';
-  storageSection.style.height = 'auto';
-  storageSection.style.minHeight = 'auto';
-  storageSection.innerHTML = `
-    <div class="panel-header">
-      <span class="block-eyebrow">Storage</span>
-      <h2>Storage usage</h2>
-    </div>
-    <div class="stats-loading">Loading...</div>
-  `;
-  
-  const aiSection = document.createElement('section');
-  aiSection.className = 'settings-panel bento-block settings-panel-ai';
-  aiSection.style.height = 'auto';
-  aiSection.style.minHeight = 'auto';
-  aiSection.innerHTML = `
-    <div class="panel-header">
-      <span class="block-eyebrow">Artificial Intelligence</span>
-      <h2>Daily usage</h2>
-    </div>
-    <div class="stats-loading">Loading...</div>
-  `;
-  
-  main.appendChild(hero);
-  main.appendChild(storageSection);
-  main.appendChild(aiSection);
-  
-  return main;
-}
+function renderStats(stats) {
+  const storage = stats?.storage || { totalBytes: 0, capacityGB: 20, items: [] };
+  const ai = stats?.ai?.daily || { used: 0, limit: 10000 };
 
-function createStatsPanel(stats) {
-  if (!fields.statsTemplate) return null;
-  const clone = fields.statsTemplate.content.firstElementChild.cloneNode(true);
-  if (!clone) return null;
+  const capacityGB = storage.capacityGB || 20;
+  const totalBytes = storage.totalBytes || 0;
+  const filesItem = storage.items?.find((i) => i.key === "files/") || { bytes: 0 };
 
-  const aiData = stats?.ai || {
-    daily: {
-      used: 0,
-      limit: 10000,
-      percentage: 0,
-      unit: "neurons"
-    },
-    models: []
-  };
-  
-  const storage = stats?.storage || {
-    totalBytes: 0,
-    capacityGB: 20,
-    items: [
-      { key: "files/", label: "lumaris/files/", bytes: 0 },
-    ],
-  };
-
-  const aiUsed = aiData.daily.used || 0;
-  const aiLimit = aiData.daily.limit || 10000;
-  const aiPercentage = Math.round((aiUsed / aiLimit) * 100);
-  
-  const aiPercentageEl = clone.querySelector('.ai-percentage');
-  const aiCapacityEl = clone.querySelector('.ai-capacity');
-  const aiUsageEl = clone.querySelector('.ai-usage');
-  
-  if (aiPercentageEl) {
-    aiPercentageEl.textContent = `${aiPercentage}% used`;
+  const pct = totalBytes > 0 ? (totalBytes / (capacityGB * 1024 * 1024 * 1024)) * 100 : 0;
+  const pctText = Number.isInteger(pct) ? String(pct) : pct.toFixed(2).replace(/\.?0+$/, "");
+  const pctEl = $("#storagePct");
+  if (pctEl) {
+    pctEl.textContent = `${pctText}% used`;
+    pctEl.style.fontSize = pctText.length <= 3 ? "1.6rem" : pctText.length <= 4 ? "1.4rem" : "1.2rem";
   }
-  if (aiCapacityEl) {
-    aiCapacityEl.textContent = `of ${aiLimit} neurons`;
-  }
-  if (aiUsageEl) {
-    aiUsageEl.textContent = `${aiUsed} / ${aiLimit} neurons`;
-  }
-  
-  updateAIRing(clone, aiUsed, aiLimit);
+  const capEl = $("#storageCap");
+  if (capEl) capEl.textContent = `of ${capacityGB}GB`;
+  const legendEl = $("#storageLegend");
+  if (legendEl) legendEl.textContent = `Files — ${formatBytesToGB(filesItem.bytes)} GB`;
 
-  const filesItem = storage.items.find((item) => item.key === "files/") || { label: "lumaris/files/", bytes: 0 };
-
-  const filesLegend = clone.querySelector(".legend-files .legend-text");
-  if (filesLegend) {
-    filesLegend.textContent = `Files — ${formatBytesToGB(filesItem.bytes)} GB`;
-  }
-
-  updateStorageRing(clone, storage);
-  return clone;
-}
-
-function updateAIRing(panel, used, limit) {
   const circumference = 339.292;
-  const percentage = limit ? Math.min(used / limit, 1) : 0;
-  const length = percentage * circumference;
-
-  const aiCircle = panel.querySelector('.ring-ai');
-  if (aiCircle) {
-    // Start with full circle (stroke-dasharray = circumference, stroke-dashoffset = 0)
-    aiCircle.setAttribute('stroke-dasharray', `${circumference} ${circumference}`);
-    aiCircle.setAttribute('stroke-dashoffset', '0');
-    
-    // Force reflow to ensure the initial state is rendered
-    aiCircle.getBoundingClientRect();
-    
-    // Animate to target state
-    aiCircle.setAttribute('stroke-dasharray', `${length} ${circumference}`);
-    aiCircle.setAttribute('stroke-dashoffset', `${circumference}`);
-  }
-}
-
-function updateStorageRing(panel, storage) {
-  const circumference = 339.292;
-  const totalBytes = storage?.totalBytes || 0;
-  const capacityGB = storage?.capacityGB || 20;
-  const filesBytes = storage?.items?.find((item) => item.key === "files/")?.bytes || 0;
-
-  const filesLength = totalBytes ? Math.min(filesBytes / totalBytes, 1) * circumference : 0;
-
-  const filesCircle = panel.querySelector('.ring-files');
-
+  const filesCircle = $("#ringFiles");
   if (filesCircle) {
-    filesCircle.setAttribute('stroke-dasharray', `${filesLength} ${circumference}`);
-    filesCircle.setAttribute('stroke-dashoffset', `${circumference}`);
+    const filesLen = totalBytes ? Math.min(filesItem.bytes / totalBytes, 1) * circumference : 0;
+    filesCircle.setAttribute("stroke-dasharray", `${filesLen} ${circumference}`);
+    filesCircle.setAttribute("stroke-dashoffset", `${circumference}`);
   }
 
-  // Calculate percentage and update text
-  const percentage = totalBytes > 0 ? (totalBytes / (capacityGB * 1024 * 1024 * 1024)) * 100 : 0;
-  const roundedPercentage = parseFloat(percentage.toFixed(2));
-  const percentageText = roundedPercentage % 1 === 0 ? roundedPercentage.toString() : roundedPercentage.toFixed(2).replace(/\.?0+$/, '');
+  const aiUsed = ai.used || 0;
+  const aiLimit = ai.limit || 10000;
+  const aiPct = Math.round((aiUsed / aiLimit) * 100);
+  const aiPctEl = $("#aiPct");
+  if (aiPctEl) aiPctEl.textContent = `${aiPct}% used`;
+  const aiCapEl = $("#aiCap");
+  if (aiCapEl) aiCapEl.textContent = `of ${aiLimit} neurons`;
+  const aiUsageEl = $("#aiUsage");
+  if (aiUsageEl) aiUsageEl.textContent = `${aiUsed} / ${aiLimit} neurons`;
 
-  const percentageEl = panel.querySelector('.storage-percentage');
-  const capacityEl = panel.querySelector('.storage-capacity');
-
-  if (percentageEl) {
-    percentageEl.textContent = `${percentageText}% used`;
-    
-    // Adapt font size based on text length
-    const textLength = percentageText.length;
-    if (textLength <= 3) {
-      percentageEl.style.fontSize = '1.6rem';
-    } else if (textLength <= 4) {
-      percentageEl.style.fontSize = '1.4rem';
-    } else {
-      percentageEl.style.fontSize = '1.2rem';
-    }
-  }
-
-  if (capacityEl) {
-    capacityEl.textContent = `of ${capacityGB}GB`;
+  const aiCircle = $("#ringAi");
+  if (aiCircle) {
+    const len = Math.min(aiUsed / aiLimit, 1) * circumference;
+    aiCircle.setAttribute("stroke-dasharray", `${circumference} ${circumference}`);
+    aiCircle.setAttribute("stroke-dashoffset", "0");
+    aiCircle.getBoundingClientRect();
+    aiCircle.setAttribute("stroke-dasharray", `${len} ${circumference}`);
+    aiCircle.setAttribute("stroke-dashoffset", `${circumference}`);
   }
 }
 
-let statsPanel = null;
-let workspacePanel = null;
-
-async function showView(view) {
-  if (!fields.pageMain) return;
-
-  const isCustomization = view === 'customization';
-  const isStatistics = view === 'statistics';
-  const isWorkspace = view === 'workspace';
-  const customizationBtn = fields.customizationBtn;
-  const statisticsBtn = fields.statisticsBtn;
-  const workspaceBtn = fields.workspaceBtn;
-
-  if (customizationBtn) {
-    customizationBtn.dataset.active = isCustomization ? 'true' : 'false';
-    customizationBtn.classList.toggle('active', isCustomization);
+// ================= Session =================
+function renderSession() {
+  const { username, jwtExp } = getSessionInfo();
+  const userEl = $("#sessionUser");
+  if (userEl) userEl.textContent = username || "unknown";
+  const expEl = $("#sessionExp");
+  if (expEl) {
+    expEl.textContent = jwtExp ? new Date(jwtExp * 1000).toLocaleString() : "—";
   }
-  if (statisticsBtn) {
-    statisticsBtn.dataset.active = isStatistics ? 'true' : 'false';
-    statisticsBtn.classList.toggle('active', isStatistics);
-  }
-  if (workspaceBtn) {
-    workspaceBtn.dataset.active = isWorkspace ? 'true' : 'false';
-    workspaceBtn.classList.toggle('active', isWorkspace);
-  }
+}
 
-  fields.pageMain.style.display = isCustomization ? '' : 'none';
-
-  // Workspace admin panel
-  if (isWorkspace) {
-    if (!workspacePanel) {
-      if (fields.workspaceTemplate) {
-        workspacePanel = fields.workspaceTemplate.content.firstElementChild.cloneNode(true);
-        fields.pageMain.insertAdjacentElement('afterend', workspacePanel);
-        const { initWorkspaceAdmin } = await import("/pages/settings/workspace-admin.js");
-        initWorkspaceAdmin(workspacePanel);
-      }
-    }
-    if (workspacePanel) workspacePanel.style.display = '';
-    if (statsPanel) statsPanel.style.display = 'none';
-    return;
-  }
-  if (workspacePanel) workspacePanel.style.display = 'none';
-
-  if (isStatistics) {
-    if (!statsPanel) {
-      // Show loading indicator
-      statsPanel = createLoadingPanel();
-      if (statsPanel && fields.pageMain) {
-        fields.pageMain.insertAdjacentElement('afterend', statsPanel);
-      }
-      
-      // Fetch actual data
+function wireSession() {
+  $("#sessionRefresh")?.addEventListener("click", async () => {
+    const btn = $("#sessionRefresh");
+    btn.disabled = true; btn.textContent = "Refreshing…";
+    try {
+      const ok = await refreshSession();
+      if (!ok) { btn.textContent = "Session expired"; renderSession(); return; }
+      btn.textContent = "Refreshed ✓";
+      renderSession();
       const stats = await fetchStatsData();
-      
-      // Update the loading panel in place instead of replacing it
-      const hero = statsPanel.querySelector('.settings-hero-copy');
-      const storageSection = statsPanel.querySelector('.settings-panel-storage');
-      const aiSection = statsPanel.querySelector('.settings-panel-ai');
-      
-      if (hero) {
-        hero.innerHTML = `
-          <span class="block-eyebrow">Statistics</span>
-          <h1>Usage overview</h1>
-          <p>Monitor your AI usage and storage consumption across the dashboard.</p>
-        `;
-      }
-      
-      if (storageSection) {
-        const storage = stats?.storage || { totalBytes: 0, capacityGB: 20, items: [] };
-        const filesItem = storage.items.find((item) => item.key === "files/") || { label: "Files", bytes: 0 };
-        
-        storageSection.innerHTML = `
-          <div class="panel-header">
-            <span class="block-eyebrow">Storage</span>
-            <h2>Storage usage</h2>
-          </div>
-          <div class="storage-content">
-            <div class="storage-chart" aria-hidden="true">
-              <svg viewBox="0 0 120 120" class="storage-ring">
-                <circle class="ring-bg" cx="60" cy="60" r="54" />
-                <circle class="ring-files" cx="60" cy="60" r="54" />
-              </svg>
-              <div class="storage-center">
-                <span class="storage-percentage">0% used</span>
-                <small class="storage-capacity">of 20GB</small>
-              </div>
-            </div>
-            <div class="storage-legend">
-              <div class="legend-item legend-files"><span class="legend-dot files"></span><span class="legend-text">Files — ${formatBytesToGB(filesItem.bytes)} GB</span></div>
-            </div>
-          </div>
-        `;
-        
-        // Force reflow after updating content
-        storageSection.offsetHeight;
-        
-        updateStorageRing(statsPanel, storage);
-      }
-      
-      if (aiSection) {
-        const aiUsed = stats?.ai?.daily?.used || 0;
-        const aiLimit = stats?.ai?.daily?.limit || 10000;
-        const aiPercentage = Math.round((aiUsed / aiLimit) * 100);
-        
-        aiSection.innerHTML = `
-          <div class="panel-header">
-            <span class="block-eyebrow">Artificial Intelligence</span>
-            <h2>Daily usage</h2>
-          </div>
-          <div class="ai-content">
-            <div class="ai-chart" aria-hidden="true">
-              <svg viewBox="0 0 120 120" class="ai-ring">
-                <circle class="ring-bg" cx="60" cy="60" r="54" />
-                <circle class="ring-ai" cx="60" cy="60" r="54" />
-              </svg>
-              <div class="ai-center">
-                <span class="ai-percentage">${aiPercentage}% used</span>
-                <small class="ai-capacity">of ${aiLimit} neurons</small>
-              </div>
-            </div>
-            <div class="ai-stats">
-              <div class="ai-usage">${aiUsed} / ${aiLimit} neurons</div>
-              <div class="stats-description">Remaining AI requests reset daily and are shared across the dashboard.</div>
-            </div>
-          </div>
-        `;
-        
-        // Update AI ring
-        updateAIRing(statsPanel, aiUsed, aiLimit);
-      }
-      
-      // Force final reflow on the entire stats panel
-      statsPanel.offsetHeight;
-      
-      // Force grid recalculation on the main container
-      const settingsMain = statsPanel.closest('.settings-main');
-      if (settingsMain) {
-        settingsMain.offsetHeight;
-        // Force grid to recalculate by temporarily changing display
-        const originalDisplay = settingsMain.style.display;
-        settingsMain.style.display = 'grid';
-        void settingsMain.offsetHeight; // Force reflow
-        settingsMain.style.display = originalDisplay;
-      }
+      renderStats(stats);
+    } catch {
+      btn.textContent = "Refresh failed";
     }
-    if (statsPanel) statsPanel.style.display = '';
-  } else if (statsPanel) {
-    statsPanel.style.display = 'none';
-  }
+    setTimeout(() => { btn.disabled = false; btn.textContent = "↻ Refresh session"; }, 1600);
+  });
+
+  $("#sessionLogout")?.addEventListener("click", () => logout());
 }
 
-function loadSettingsIcons() {
-  loadIcons('.settings-icon[data-icon]').catch(() => undefined);
+// ================= Sidebar anchors =================
+function wireSidebar() {
+  const buttons = document.querySelectorAll(".settings-nav[data-target]");
+  const sections = [...document.querySelectorAll(".settings-theme")];
+  if (!buttons.length || !sections.length) return;
+
+  buttons.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const target = document.getElementById(btn.dataset.target);
+      target?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  });
+
+  const spy = new IntersectionObserver((entries) => {
+    for (const entry of entries) {
+      if (!entry.isIntersecting) continue;
+      buttons.forEach((b) => {
+        b.dataset.active = b.dataset.target === entry.target.id ? "true" : "false";
+        b.classList.toggle("active", b.dataset.target === entry.target.id);
+      });
+    }
+  }, { rootMargin: "-30% 0px -60% 0px" });
+  sections.forEach((s) => spy.observe(s));
 }
 
-function initSettingsPage() {
+// ================= Init =================
+async function initSettingsPage() {
   const settings = loadSettings();
   populateForm(settings);
-  wireEvents();
-  loadSettingsIcons();
-  showView('customization');
+  wireThemeEvents();
+  wireSession();
+  wireSidebar();
+  loadIcons(".settings-icon[data-icon]").catch(() => undefined);
+  renderSession();
+
+  const stats = await fetchStatsData();
+  renderStats(stats);
+
+  // Workspace admin — lookups CRUD
+  try {
+    const { initWorkspaceAdmin } = await import("/pages/settings/workspace-admin.js");
+    const section = $("#sec-workspace");
+    if (section) initWorkspaceAdmin(section);
+  } catch (e) {
+    console.warn("Workspace admin failed to load:", e);
+  }
 }
 
 document.addEventListener("DOMContentLoaded", initSettingsPage);
-
-/* Helpers: update the .color-swatch element background to match input value */
-function updateColorSwatch(input) {
-  try {
-    const parent = input.closest('.color-field') || input.closest('.solid-field');
-    if (!parent) return;
-    const swatch = parent.querySelector('.color-swatch');
-    if (!swatch) return;
-    swatch.style.background = input.value;
-    // ensure contrast for swatch border when dark
-    const c = input.value.replace('#','');
-    if (c.length === 6) {
-      const r = parseInt(c.slice(0,2),16);
-      const g = parseInt(c.slice(2,4),16);
-      const b = parseInt(c.slice(4,6),16);
-      const l = (0.299*r + 0.587*g + 0.114*b)/255;
-      swatch.style.borderColor = l > 0.6 ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.08)';
-    }
-  } catch (err) {
-    // ignore
-  }
-}
-
-function updateColorSwatches() {
-  [fields.color1, fields.color2, fields.solidColor].forEach((inp) => {
-    if (inp) updateColorSwatch(inp);
-  });
-}
-
-function updateBgToggleButtons() {
-  if (!fields.bgGradientBtn || !fields.bgSolidBtn || !fields.backgroundType) return;
-  const val = fields.backgroundType.value;
-  fields.bgGradientBtn.classList.toggle('active', val === 'gradient');
-  fields.bgSolidBtn.classList.toggle('active', val === 'solid');
-  fields.bgGradientBtn.setAttribute('aria-pressed', String(val === 'gradient'));
-  fields.bgSolidBtn.setAttribute('aria-pressed', String(val === 'solid'));
-}
-
-function updateBoldToggleButtons() {
-  if (!fields.boldNormal || !fields.boldBold || !fields.fontWeight) return;
-  const val = fields.fontWeight.value;
-  fields.boldNormal.classList.toggle('active', val === 'normal');
-  fields.boldBold.classList.toggle('active', val === 'bold');
-  fields.boldNormal.setAttribute('aria-pressed', String(val === 'normal'));
-  fields.boldBold.setAttribute('aria-pressed', String(val === 'bold'));
-}
-
-function updateGradientToggleButtons() {
-  if (!fields.gradientLinearBtn || !fields.gradientRadialBtn || !fields.gradientStyle) return;
-  const val = fields.gradientStyle.value;
-  fields.gradientLinearBtn.classList.toggle('active', val === 'linear');
-  fields.gradientRadialBtn.classList.toggle('active', val === 'radial');
-  fields.gradientLinearBtn.setAttribute('aria-pressed', String(val === 'linear'));
-  fields.gradientRadialBtn.setAttribute('aria-pressed', String(val === 'radial'));
-}
-
-function updateOrientationButtons() {
-  if (!fields.orient0) return;
-  const val = fields.gradientOrientation?.value || '';
-  [fields.orient0, fields.orient45, fields.orient90, fields.orient135].forEach((btn) => {
-    if (!btn) return;
-    btn.classList.toggle('active', btn.dataset.value === val);
-    btn.setAttribute('aria-pressed', String(btn.dataset.value === val));
-  });
-}
