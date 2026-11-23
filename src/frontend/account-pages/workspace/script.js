@@ -46,8 +46,8 @@ setLearningApi(apiLearning);
 // ================= State =================
 const ALL_TABLES = ["tasks", "repeat_tasks", "events", "repeat_events", "trash_tasks", "trash_events"];
 const TASK_VIEWS = {
-  all: { tables: ["tasks"], title: "Tasks", empty: ["No tasks", "Create your first task."] },
-  repeat: { tables: ["repeat_tasks"], title: "Recurring tasks", empty: ["No recurring tasks", "Recurring tasks will appear here."] },
+  all: { tables: ["tasks", "events", "repeat_tasks", "repeat_events"], title: "All", empty: ["Nothing here", "Create your first task or event."] },
+  recurring: { tables: ["repeat_tasks", "repeat_events"], title: "Recurring", empty: ["No recurring items", "Recurring tasks and events will appear here."] },
   events: { tables: ["events", "repeat_events"], title: "Events", empty: ["No events", "Events will appear here."] },
   trash: { tables: ["trash_tasks", "trash_events"], title: "Trash", empty: ["Trash is empty", "Deleted items land here."] },
 };
@@ -324,7 +324,7 @@ function renderAll() {
 function renderChrome() {
   const titles = {
     subjects: "Subjects", subject: state.currentSubject?.subject_name || "Subject",
-    all: "Tasks", repeat: "Recurring", events: "Events", trash: "Trash",
+    all: "All", recurring: "Recurring", events: "Events", trash: "Trash",
   };
   $("#pageTitle").textContent = titles[state.view] || "Workspace";
 
@@ -368,10 +368,7 @@ function renderChrome() {
   }
 
   // Contextual primary actions visibility
-  const showQuickAdd = isTasks && state.view !== "trash";
-  $("#quickAddRow").style.display = showQuickAdd ? "" : "none";
-  $("#quickAddInput").placeholder = state.view === "repeat" ? "Add a recurring task…" : state.view === "events" ? "Add an event…" : "Add a task…  (Enter)";
-  $("#newBtn").textContent = state.view === "subject" ? "+ Chapter" : state.view === "subjects" ? "+ Subject" : "+ New";
+  $("#newBtn").textContent = state.view === "subject" ? "＋ Chapter" : state.view === "subjects" ? "＋ Subject" : "＋ New";
   $("#newBtn").style.display = state.view === "trash" ? "none" : "";
 }
 
@@ -537,22 +534,25 @@ function renderTaskGroups() {
 
   const groups = new Map();
   for (const item of rows) {
+    const kind = tableKind(item.table);
     let bucket;
     if (state.view === "trash") bucket = "trash";
-    else if (state.view === "repeat") bucket = item.row.frequency || "custom";
+    else if (state.view === "recurring") bucket = `${kind}:${item.row.frequency || "custom"}`;
     else if (item.row.is_done) bucket = "done";
     else bucket = dueBucket(item.row.remind_date);
     if (!groups.has(bucket)) groups.set(bucket, []);
     groups.get(bucket).push(item);
   }
 
-  const order = state.view === "repeat"
+  const order = state.view === "recurring"
     ? [...groups.keys()].sort()
     : state.view === "trash" ? ["trash"] : GROUP_DEFS.map(([k]) => k);
 
   groupsEl.innerHTML = order.filter((k) => groups.has(k)).map((k) => {
     const items = groups.get(k);
-    const label = state.view === "repeat" ? `Repeats · ${k}` : state.view === "trash" ? "Recently deleted" : (GROUP_DEFS.find(([g]) => g === k)?.[1] || k);
+    const label = state.view === "recurring"
+      ? `${k.startsWith("event:") ? "Events" : "Tasks"} · ${k.split(":")[1]}`
+      : state.view === "trash" ? "Recently deleted" : (GROUP_DEFS.find(([g]) => g === k)?.[1] || k);
     return `
       <div class="ws-group">
         <div class="ws-group-head"><span>${esc(label)}</span><span class="ws-group-count">${items.length}</span></div>
@@ -589,18 +589,25 @@ function renderTaskGroups() {
   });
 }
 
+function tableKind(table) {
+  return table.includes("events") ? "event" : "task";
+}
+
 function taskRowHTML({ table, row }) {
   const done = !!row.is_done;
   const isTrash = table.startsWith("trash_");
   const isRepeat = table.includes("repeat");
+  const isEvent = tableKind(table) === "event";
   const due = row.remind_date ? fmtDate(row.remind_date) : "";
   const bucket = dueBucket(row.remind_date);
   const pri = Number(row.priority_id) || 0;
   const priColor = PRIORITY_COLORS[pri] || lookupColor("priorities", "priority_id", pri);
   const subName = row.subject_id ? subjectName(row.subject_id) : "";
   const urlCount = (() => { const p = parseMaybeJSON(row.urls); return Array.isArray(p) ? p.length : (row.urls ? 1 : 0); })();
+  const showKind = ["all", "recurring", "trash"].includes(state.view);
 
   const chips = [
+    showKind ? `<span class="ws-chip ws-chip-kind ${isEvent ? "is-event" : ""}">${isEvent ? "event" : "task"}</span>` : "",
     subName ? `<span class="ws-chip ws-chip-subject">${esc(subName)}</span>` : "",
     due && !isTrash ? `<span class="ws-chip ws-chip-due ${bucket}">${esc(due)}</span>` : "",
     row.is_homework ? `<span class="ws-chip ws-chip-homework">HW</span>` : "",
@@ -813,6 +820,14 @@ function openEntityModal(kind, id = null, existing = null, opts = {}) {
         </div>
         <div class="ws-modal-body">
           ${kind === "task" ? `<label class="ws-field ws-field-wide"><span class="ws-field-label">Title</span><input type="text" id="m_title" value="${esc(values.title || "")}" placeholder="Task title"></label>` : ""}
+          ${kind === "task" && !id && ["all", "recurring", "events"].includes(state.view) ? `
+          <label class="ws-field ws-field-wide"><span class="ws-field-label">Kind</span>
+            <select id="m_kind">
+              ${state.view === "all" ? `<option value="tasks">Task</option><option value="events">Event</option>` : ""}
+              ${state.view === "recurring" ? `<option value="repeat_tasks">Recurring task</option><option value="repeat_events">Recurring event</option>` : ""}
+              ${state.view === "events" ? `<option value="events">Event</option><option value="repeat_events">Recurring event</option>` : ""}
+            </select>
+          </label>` : ""}
           ${bodyHtml}
         </div>
         <div class="ws-modal-foot">
@@ -847,7 +862,8 @@ function openEntityModal(kind, id = null, existing = null, opts = {}) {
     try {
       const fields = collect();
       if (kind === "task") {
-        const table = opts.table || (state.view === "repeat" ? "repeat_tasks" : state.view === "events" ? "events" : "tasks");
+        const fallback = state.view === "recurring" ? "repeat_tasks" : state.view === "events" ? "events" : "tasks";
+        const table = opts.table || root.querySelector("#m_kind")?.value || fallback;
         if (id) await apiTasks("update", { table, task_id: id, fields });
         else await apiTasks("create", { table, fields });
       } else if (kind === "subject") {
@@ -1041,28 +1057,10 @@ function bindUI() {
     searchTimer = setTimeout(() => { state.q = e.target.value.trim(); renderContent(); renderStats(); }, 150);
   });
 
-  const quickAdd = async () => {
-    const input = $("#quickAddInput");
-    const title = input.value.trim();
-    if (!title) return;
-    input.value = "";
-    input.disabled = true;
-    try {
-      const table = state.view === "repeat" ? "repeat_tasks" : state.view === "events" ? "events" : "tasks";
-      await apiTasks("create", { table, fields: { title } });
-      toast("Created");
-      await loadAll();
-    } catch (e) { toast(e.message); input.value = title; }
-    input.disabled = false;
-    input.focus();
-  };
-  $("#quickAddBtn").addEventListener("click", quickAdd);
-  $("#quickAddInput").addEventListener("keydown", (e) => { if (e.key === "Enter") quickAdd(); });
-
   $("#newBtn").addEventListener("click", () => {
     if (state.view === "subjects") return openEntityModal("subject", null, null, { template: state.template });
     if (state.view === "subject") return openEntityModal("chapter", null, state.currentSubject ? { subject_id: state.currentSubject.subject_id } : null, { template: state.template });
-    if (["all", "repeat", "events"].includes(state.view)) return openEntityModal("task", null, null, { template: state.template });
+    if (["all", "recurring", "events"].includes(state.view)) return openEntityModal("task", null, null, { template: state.template });
   });
 
   $("#dClose").addEventListener("click", closeDetail);

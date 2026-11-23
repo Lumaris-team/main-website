@@ -987,3 +987,35 @@ body {
   .ws-modal-form .ws-dgrid,
   .ws-modal-full .ws-dgrid { grid-template-columns: 1fr; }
 }
+
+/* [hidden] must always win over component display rules */
+.ws-app [hidden],
+.ws-app [hidden] * { display: none !important; }
+
+/* ================= Single-line toolbar ================= */
+.ws-toolbar-nav { flex-wrap: nowrap; }
+.ws-section-tabs, .ws-subtabs {
+  height: 42px;
+  align-items: center;
+}
+.ws-section-tabs .ws-seg, .ws-subtabs .ws-seg {
+  height: 100%;
+  display: inline-flex;
+  align-items: center;
+}
+.ws-nav-right { flex-wrap: nowrap; }
+.ws-nav-right .ws-search { min-width: 150px; flex: 0 1 220px; }
+@media (max-width: 900px) {
+  .ws-toolbar-nav { flex-wrap: wrap; }
+}
+
+/* Kind chip (task vs event) in mixed views */
+.ws-chip-kind {
+  font-size: .66rem;
+  font-weight: 800;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--muted);
+  border: 1px solid var(--line);
+}
+.ws-chip-kind.is-event { color: #c4b5fd; border-color: rgba(196,181,253,.35); }

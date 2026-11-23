@@ -44,55 +44,25 @@ function getCurrentSettings() {
   };
 }
 
+function setRow(key, hidden) {
+  const row = document.querySelector(`.set-row[data-setting="${key}"]`);
+  if (row) row.classList.toggle("is-hidden", hidden);
+}
+
 function syncSolidFieldVisibility() {
   const showSolid = fields.backgroundType.value === "solid";
-  document.querySelectorAll(".solid-field").forEach((node) => {
-    node.style.display = showSolid ? "grid" : "none";
-  });
-  const gradientControls = [fields.gradientStyle, fields.gradientOrientation, fields.color1, fields.color2];
-  gradientControls.forEach((ctrl) => {
-    if (!ctrl) return;
-    const group = ctrl.closest(".field-group");
-    if (!group) return;
-    if (showSolid) {
-      group.style.display = "none";
-      try { ctrl.disabled = true; } catch {}
-      group.setAttribute("aria-hidden", "true");
-    } else {
-      group.style.display = "grid";
-      try { ctrl.disabled = false; } catch {}
-      group.removeAttribute("aria-hidden");
-    }
-  });
-  const colorRow = document.querySelector(".color-row");
-  if (colorRow) {
-    colorRow.style.display = showSolid ? "none" : "grid";
-    if (showSolid) {
-      if (fields.color1) fields.color1.disabled = true;
-      if (fields.color2) fields.color2.disabled = true;
-    } else {
-      if (fields.color1) fields.color1.disabled = false;
-      if (fields.color2) fields.color2.disabled = false;
-    }
-  }
+  setRow("gradientStyle", showSolid);
+  setRow("orientation", showSolid);
+  setRow("colors", showSolid);
+  setRow("solid", !showSolid);
   syncGradientStyleVisibility();
 }
 
 function syncGradientStyleVisibility() {
   if (!fields.gradientStyle || !fields.gradientOrientation) return;
-  const orientGroup = fields.gradientOrientation.closest(".field-group");
-  if (!orientGroup) return;
   const isRadial = fields.gradientStyle.value === "radial";
-  if (isRadial) {
-    orientGroup.style.display = "none";
-    try { fields.gradientOrientation.disabled = true; } catch {}
-    orientGroup.setAttribute("aria-hidden", "true");
-  } else {
-    if (fields.backgroundType && fields.backgroundType.value === "solid") return;
-    orientGroup.style.display = "grid";
-    try { fields.gradientOrientation.disabled = false; } catch {}
-    orientGroup.removeAttribute("aria-hidden");
-  }
+  const hiddenBySolid = fields.backgroundType && fields.backgroundType.value === "solid";
+  setRow("orientation", isRadial || hiddenBySolid);
 }
 
 function renderPreview(settings) {

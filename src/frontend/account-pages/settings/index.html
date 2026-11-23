@@ -46,15 +46,7 @@
         <div class="settings-hero-copy bento-block">
           <span class="block-eyebrow">Settings</span>
           <h1>Customize your experience</h1>
-          <p>All settings live on this page, grouped by theme. Changes apply immediately.</p>
-        </div>
-
-        <div class="settings-preview" id="settingsPreview">
-          <div class="preview-card bento-block">
-            <div class="preview-badge">Preview</div>
-            <h2>Dashboard theme</h2>
-            <p>Settings apply to all pages immediately.</p>
-          </div>
+          <p>Every setting is a single line, grouped by theme. Changes apply immediately.</p>
         </div>
 
         <!-- ===== Theme : Appearance ===== -->
@@ -64,32 +56,27 @@
             <h2>Appearance</h2>
           </div>
 
-          <article class="settings-panel bento-block settings-panel-background">
-            <div class="panel-header">
-              <span class="block-eyebrow">Background</span>
-              <h2>Background & colors</h2>
-            </div>
-
-            <label class="field-group">
-              <span class="field-label">Type</span>
+          <div class="settings-list bento-block">
+            <div class="set-row">
+              <span class="set-label">Background type</span>
               <input type="hidden" id="backgroundType" value="gradient">
               <div class="bg-toggle">
                 <button id="bgGradient" type="button" class="bg-toggle-btn" data-value="gradient">Gradient</button>
                 <button id="bgSolid" type="button" class="bg-toggle-btn" data-value="solid">Solid color</button>
               </div>
-            </label>
+            </div>
 
-            <label class="field-group">
-              <span class="field-label">Style</span>
+            <div class="set-row" data-setting="gradientStyle">
+              <span class="set-label">Gradient style</span>
               <input type="hidden" id="gradientStyle" value="linear">
               <div class="bg-toggle gradient-toggle">
-                <button id="gradientLinear" type="button" class="bg-toggle-btn" data-value="linear">Linear gradient</button>
-                <button id="gradientRadial" type="button" class="bg-toggle-btn" data-value="radial">Radial gradient</button>
+                <button id="gradientLinear" type="button" class="bg-toggle-btn" data-value="linear">Linear</button>
+                <button id="gradientRadial" type="button" class="bg-toggle-btn" data-value="radial">Radial</button>
               </div>
-            </label>
+            </div>
 
-            <label class="field-group">
-              <span class="field-label">Orientation</span>
+            <div class="set-row" data-setting="orientation">
+              <span class="set-label">Orientation</span>
               <input type="hidden" id="gradientOrientation" value="0deg">
               <div class="orientation-toggle">
                 <button id="orient0" type="button" class="orientation-btn" data-value="0deg" aria-label="Top to bottom" style="--orient-rot:0deg">
@@ -105,37 +92,35 @@
                   <img src="https://shared-assets.lumaris.fr.eu.org/icons/arrow.svg" alt="">
                 </button>
               </div>
-            </label>
+            </div>
 
-            <div class="color-row">
-              <label class="field-group color-field">
-                <span class="field-label">Color 1</span>
+            <div class="set-row set-row-col" data-setting="colors">
+              <span class="set-label">Colors</span>
+              <div class="color-row">
+                <label class="color-field">
+                  <span class="color-name">Color 1</span>
+                  <div class="color-swatch" aria-hidden="true"></div>
+                  <input id="color1" class="field-input" type="color" value="#0b3f91">
+                </label>
+                <label class="color-field">
+                  <span class="color-name">Color 2</span>
+                  <div class="color-swatch" aria-hidden="true"></div>
+                  <input id="color2" class="field-input" type="color" value="#1c8cff">
+                </label>
+              </div>
+            </div>
+
+            <div class="set-row" data-setting="solid">
+              <span class="set-label">Solid color</span>
+              <label class="color-field solid-field">
                 <div class="color-swatch" aria-hidden="true"></div>
-                <input id="color1" class="field-input" type="color" value="#0b3f91">
-              </label>
-              <label class="field-group color-field">
-                <span class="field-label">Color 2</span>
-                <div class="color-swatch" aria-hidden="true"></div>
-                <input id="color2" class="field-input" type="color" value="#1c8cff">
+                <input id="solidColor" class="field-input" type="color" value="#080912">
               </label>
             </div>
 
-            <label class="field-group color-field solid-field">
-              <span class="field-label">Solid color</span>
-              <div class="color-swatch" aria-hidden="true"></div>
-              <input id="solidColor" class="field-input" type="color" value="#080912">
-            </label>
-          </article>
-
-          <article class="settings-panel bento-block settings-panel-text">
-            <div class="panel-header">
-              <span class="block-eyebrow">Text</span>
-              <h2>Typography & hierarchy</h2>
-            </div>
-
-            <label class="field-group">
-              <span class="field-label">Font</span>
-              <select id="fontFamily" class="field-input">
+            <div class="set-row">
+              <span class="set-label">Font</span>
+              <select id="fontFamily" class="field-input set-input">
                 <option value="Inter, ui-sans-serif, system-ui, sans-serif">Inter</option>
                 <option value="'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif">IBM Plex Sans</option>
                 <option value="'Poppins', ui-sans-serif, system-ui, sans-serif">Poppins</option>
@@ -143,26 +128,34 @@
                 <option value="'Lora', Georgia, serif">Lora</option>
                 <option value="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif">Systeme</option>
               </select>
-            </label>
+            </div>
 
-            <label class="field-group">
-              <span class="field-label">Bold</span>
+            <div class="set-row">
+              <span class="set-label">Weight</span>
               <input type="hidden" id="fontWeight" value="normal">
               <div class="bg-toggle">
                 <button id="boldNormal" type="button" class="bg-toggle-btn" data-value="normal">Normal</button>
                 <button id="boldBold" type="button" class="bg-toggle-btn" data-value="bold">Bold</button>
               </div>
-            </label>
+            </div>
 
-            <label class="field-group">
-              <span class="field-label">Text size</span>
-              <input id="fontSize" class="field-input" type="number" min="12" max="32" step="0.5" value="16">
-            </label>
-          </article>
+            <div class="set-row">
+              <span class="set-label">Text size</span>
+              <input id="fontSize" class="field-input set-input set-input-num" type="number" min="12" max="32" step="0.5" value="16">
+            </div>
+          </div>
 
           <div class="settings-actions">
             <button id="saveSettings" class="button primary">Save</button>
             <button id="resetSettings" class="button secondary">Reset</button>
+          </div>
+
+          <div class="settings-preview" id="settingsPreview">
+            <div class="preview-card bento-block">
+              <div class="preview-badge">Preview</div>
+              <h2>Dashboard theme</h2>
+              <p>Settings apply to all pages immediately.</p>
+            </div>
           </div>
         </section>
 
@@ -173,13 +166,9 @@
             <h2>Statistics</h2>
           </div>
 
-          <div class="settings-stats-grid">
-            <article class="settings-panel bento-block settings-panel-storage">
-              <div class="panel-header">
-                <span class="block-eyebrow">Storage</span>
-                <h2>Storage usage</h2>
-              </div>
-              <div class="storage-content">
+          <div class="settings-list bento-block">
+            <div class="set-row set-row-stat">
+              <div class="stat-cell">
                 <div class="storage-chart" aria-hidden="true">
                   <svg viewBox="0 0 120 120" class="storage-ring">
                     <circle class="ring-bg" cx="60" cy="60" r="54" />
@@ -190,18 +179,12 @@
                     <small class="storage-capacity" id="storageCap">of 20GB</small>
                   </div>
                 </div>
-                <div class="storage-legend">
-                  <div class="legend-item legend-files"><span class="legend-dot files"></span><span class="legend-text" id="storageLegend">Files — 0.0 GB</span></div>
+                <div class="stat-text">
+                  <span class="stat-title">Storage</span>
+                  <span class="legend-text" id="storageLegend">Files — 0.0 GB</span>
                 </div>
               </div>
-            </article>
-
-            <article class="settings-panel bento-block settings-panel-ai">
-              <div class="panel-header">
-                <span class="block-eyebrow">Artificial Intelligence</span>
-                <h2>Daily usage</h2>
-              </div>
-              <div class="ai-content">
+              <div class="stat-cell">
                 <div class="ai-chart" aria-hidden="true">
                   <svg viewBox="0 0 120 120" class="ai-ring">
                     <circle class="ring-bg" cx="60" cy="60" r="54" />
@@ -212,12 +195,12 @@
                     <small class="ai-capacity" id="aiCap">of 10000 neurons</small>
                   </div>
                 </div>
-                <div class="ai-stats">
-                  <div class="ai-usage" id="aiUsage">0 / 10000 neurons</div>
-                  <div class="stats-description">Remaining AI requests reset daily and are shared across the dashboard.</div>
+                <div class="stat-text">
+                  <span class="stat-title">AI requests</span>
+                  <span class="legend-text" id="aiUsage">0 / 10000 neurons</span>
                 </div>
               </div>
-            </article>
+            </div>
           </div>
         </section>
 
@@ -243,20 +226,23 @@
             <h2>Session</h2>
           </div>
 
-          <article class="settings-panel bento-block">
-            <div class="panel-header">
-              <span class="block-eyebrow">Connection</span>
-              <h2>Session & security</h2>
+          <div class="settings-list bento-block">
+            <div class="set-row">
+              <span class="set-label">Account</span>
+              <span class="set-value" id="sessionUser">—</span>
             </div>
-            <div class="session-info">
-              <div class="session-row"><span class="session-label">Account</span><span class="session-value" id="sessionUser">—</span></div>
-              <div class="session-row"><span class="session-label">JWT expires</span><span class="session-value" id="sessionExp">—</span></div>
-              <div class="session-row session-actions">
+            <div class="set-row">
+              <span class="set-label">JWT expires</span>
+              <span class="set-value" id="sessionExp">—</span>
+            </div>
+            <div class="set-row">
+              <span class="set-label">Actions</span>
+              <div class="set-actions">
                 <button class="button secondary" type="button" id="sessionRefresh">↻ Refresh session</button>
                 <button class="button secondary" type="button" id="sessionLogout">Sign out</button>
               </div>
             </div>
-          </article>
+          </div>
         </section>
       </main>
     </div>
