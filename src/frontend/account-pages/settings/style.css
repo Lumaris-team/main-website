@@ -75,15 +75,6 @@ body {
   max-width: 720px;
 }
 
-.settings-preview {
-  display: flex;
-  align-items: stretch;
-  justify-content: center;
-  width: 100%;
-  box-sizing: border-box;
-  justify-self: stretch;
-}
-
 .preview-card {
   width: 100%;
   max-width: 100%;
@@ -126,18 +117,6 @@ body {
   line-height: 1.8;
 }
 
-.settings-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 24px;
-  width: 100%;
-  align-items: stretch;
-}
-
-.settings-panel-tall {
-  grid-row: span 2;
-}
-
 .settings-panel {
   padding: 26px;
   border-radius: 28px;
@@ -178,27 +157,6 @@ body {
   -webkit-backdrop-filter: none !important;
 }
 
-.panel-header h2 {
-  margin: 6px 0 0;
-  font-size: 1.5rem;
-}
-
-.field-group {
-  display: grid;
-  gap: 10px;
-}
-
-.field-group:not(:first-child) {
-  margin-top: 20px;
-}
-
-.field-label {
-  color: var(--settings-muted);
-  font-size: 0.87rem;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-}
-
 .field-input {
   width: 100%;
   min-height: 50px;
@@ -223,16 +181,6 @@ body {
 .field-input:focus {
   border-color: rgba(255, 255, 255, 0.34);
   transform: translateY(-1px);
-}
-
-.color-row {
-  display: grid;
-  gap: 18px;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-.color-row .field-group {
-  margin-top: 20px;
 }
 
 /* Background type toggle buttons */
@@ -317,172 +265,6 @@ body {
   .orientation-btn { padding: 8px; }
 }
 
-.color-field .field-input {
-  padding: 0;
-  height: 56px;
-  width: 100%;
-  border-radius: 20px;
-  border: none;
-}
-
-/* Make the parent label hold a visible swatch while the native color
-   input is overlayed and invisible (keeps native picker functionality) */
-.color-field {
-  position: relative;
-}
-
-.color-field, .solid-field {
-  position: relative;
-}
-
-.color-field .color-swatch,
-.solid-field .color-swatch {
-  display: block;
-  height: 56px;
-  width: 100%;
-  border-radius: 20px;
-  box-sizing: border-box;
-  border: 1px solid var(--settings-input-border);
-  background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.06));
-}
-
-.color-field .field-input[type="color"],
-.solid-field .field-input[type="color"] {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 56px;
-  padding: 0;
-  border-radius: 20px;
-  border: none;
-  opacity: 0;
-  cursor: pointer;
-}
-
-/* Keep solid-field hidden until solid mode is active */
-.solid-field {
-  display: none;
-}
-
-.solid-field {
-  display: none;
-}
-
-.toggle-group {
-  align-items: center;
-  grid-template-columns: auto 80px;
-}
-
-.toggle {
-  width: 64px;
-  height: 36px;
-  -webkit-appearance: none;
-  appearance: none;
-  background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.03));
-  border-radius: 999px;
-  position: relative;
-  cursor: pointer;
-  border: 1px solid rgba(255,255,255,0.08);
-  box-shadow: 0 6px 18px rgba(2,8,23,0.25) inset;
-}
-
-.toggle::after {
-  content: "";
-  position: absolute;
-  top: 4px;
-  left: 4px;
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  background: white;
-  transform: translateX(0);
-  transition: transform 180ms ease, background 180ms ease;
-}
-
-.toggle:checked {
-  background: linear-gradient(90deg, #60a3ff 0%, #88d3ff 100%);
-  border-color: rgba(96,163,255,0.8);
-}
-
-.toggle:checked::after {
-  transform: translateX(28px);
-  background: white;
-}
-
-.range {
-  width: 100%;
-}
-
-/* Ensure range fits inside the block and the output stays visible */
-.field-group { box-sizing: border-box; }
-.field-group .range { box-sizing: border-box; width: 100%; }
-.field-group .range::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 18px; height: 18px; border-radius: 50%; background: #fff; box-shadow: 0 4px 8px rgba(0,0,0,0.2); border: 1px solid rgba(0,0,0,0.08); }
-.field-group .range::-moz-range-thumb { width: 18px; height: 18px; border-radius: 50%; background: #fff; box-shadow: 0 4px 8px rgba(0,0,0,0.2); border: 1px solid rgba(0,0,0,0.08); }
-
-/* Layout the range and its value horizontally to avoid overflow */
-.field-group .range + output {
-  margin-left: 12px;
-  min-width: 54px;
-  color: var(--settings-text);
-  font-weight: 700;
-}
-
-/* Specific layout for the font size control when marked with .range-group */
-label.field-group.range-group { box-sizing: border-box; display: flex; align-items: center; gap: 12px; }
-label.field-group.range-group > .field-label { flex: 1 0 160px; }
-label.field-group.range-group .field-input.range { flex: 1 1 auto; }
-
-/* Toggle knob displays a 'B' and changes color when active */
-.toggle::before {
-  content: "B";
-  position: absolute;
-  top: 4px;
-  left: 4px;
-  width: 28px;
-  height: 28px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 800;
-  font-size: 12px;
-  color: rgba(0,0,0,0.85);
-  pointer-events: none;
-}
-
-.toggle::after {
-  /* keep the circular visual as background for before's letter */
-  content: "";
-  position: absolute;
-  top: 4px;
-  left: 4px;
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  background: white;
-  transition: transform 180ms ease, background 180ms ease;
-}
-
-.toggle:checked {
-  background: linear-gradient(90deg, #60a3ff 0%, #88d3ff 100%);
-  border-color: rgba(96,163,255,0.8);
-}
-
-.toggle:checked::after {
-  transform: translateX(28px);
-  background: white;
-}
-
-.toggle:checked::before {
-  transform: translateX(28px);
-  color: #0b2b66;
-}
-
-#fontSizeValue {
-  margin-top: -6px;
-  color: var(--settings-text);
-  font-weight: 700;
-}
-
 .settings-actions {
   display: flex;
   justify-content: flex-end;
@@ -497,97 +279,6 @@ label.field-group.range-group .field-input.range { flex: 1 1 auto; }
 }
 
 /* Settings sidebar styling is inherited from shared sidebar.css */
-
-.settings-sidebar-panel {
-  padding: 26px;
-  border-radius: 28px;
-  background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
-  border: 1px solid rgba(255,255,255,0.08);
-  backdrop-filter: blur(20px);
-  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.16);
-  display: grid;
-  gap: 18px;
-  box-sizing: border-box;
-  margin-top: 28px;
-}
-
-.settings-sidebar-panel {
-  padding: 26px;
-  border-radius: 28px;
-  background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
-  border: 1px solid rgba(255,255,255,0.08);
-  backdrop-filter: blur(20px);
-  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.16);
-  display: grid;
-  gap: 18px;
-  box-sizing: border-box;
-  margin-top: 28px;
-}
-
-.stats-card {
-  display: grid;
-  gap: 20px;
-}
-
-.stats-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
-}
-
-.stats-label {
-  display: block;
-  color: var(--settings-muted);
-  font-size: 0.85rem;
-  margin-bottom: 10px;
-}
-
-.stats-description {
-  display: block;
-  color: var(--settings-muted);
-  font-size: 0.9rem;
-  line-height: 1.6;
-}
-
-.stats-loading {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 40px 20px;
-  color: var(--settings-muted);
-  font-size: 0.95rem;
-  font-weight: 500;
-  animation: pulse 1.5s ease-in-out infinite;
-}
-
-@keyframes pulse {
-  0%, 100% {
-    opacity: 0.5;
-  }
-  50% {
-    opacity: 1;
-  }
-}
-
-.stats-limit-chip {
-  padding: 8px 12px;
-  border-radius: 999px;
-  background: rgba(255,255,255,0.08);
-  color: var(--settings-text);
-  font-size: 0.82rem;
-  font-weight: 600;
-}
-
-.storage-content {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 24px;
-  padding: 20px 0;
-  min-height: 200px;
-  width: 100%;
-}
 
 .storage-chart {
   position: relative;
@@ -646,16 +337,6 @@ label.field-group.range-group .field-input.range { flex: 1 1 auto; }
   font-weight: 500;
 }
 
-.ai-content {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 24px;
-  padding: 20px 0;
-  min-height: 200px;
-  width: 100%;
-}
-
 .ai-chart {
   position: relative;
   width: 200px;
@@ -695,49 +376,8 @@ label.field-group.range-group .field-input.range { flex: 1 1 auto; }
   font-weight: 500;
 }
 
-.ai-stats {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-  width: 100%;
-}
-
-.ai-usage {
-  font-size: 1.4rem;
-  font-weight: 700;
-  color: var(--settings-text);
-}
-
-.storage-legend {
-  display: grid;
-  gap: 10px;
-  min-width: 200px;
-  flex: 1;
-  width: 100%;
-}
-
-.legend-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  color: var(--settings-text);
-  font-size: 0.95rem;
-}
-
 .legend-text {
   flex: 1;
-}
-
-.legend-dot {
-  width: 12px;
-  height: 12px;
-  border-radius: 999px;
-  display: inline-block;
-}
-
-.legend-dot.files {
-  background: #5e9cff;
 }
 
 @media (max-width: 960px) {
@@ -754,14 +394,6 @@ label.field-group.range-group .field-input.range { flex: 1 1 auto; }
     border-radius: 18px;
   }
 
-  .settings-shell {
-    grid-template-columns: 1fr;
-  }
-
-  .settings-sidebar-panel {
-    margin-top: 0;
-    width: 100%;
-  }
 }
 
 
@@ -815,18 +447,16 @@ label.field-group.range-group .field-input.range { flex: 1 1 auto; }
 }
 
 @media (max-width: 960px) {
-  .settings-shell {
-    grid-template-columns: 1fr;
-  }
-
   .settings-preview {
     justify-self: stretch;
     padding-right: 0;
   }
 
-  .settings-grid {
-    grid-template-columns: 1fr;
-  }
+  /* Rows stack earlier so controls never get cramped on tablets */
+  .set-row { flex-direction: column; align-items: stretch; gap: 10px; }
+  .set-row .bg-toggle, .set-row .orientation-toggle { justify-content: flex-start; }
+  .stat-cell { flex-direction: column; text-align: center; }
+  .stat-cell + .stat-cell { border-left: 0; border-top: 1px solid rgba(255,255,255,.08); }
 }
 
 @media (max-width: 640px) {
@@ -1065,11 +695,13 @@ label.field-group.range-group .field-input.range { flex: 1 1 auto; }
   border: 1px solid rgba(255,255,255,.14);
 }
 .color-field input[type="color"] {
-  width: 42px; height: 30px; padding: 2px;
+  width: 42px; height: 30px; min-height: 0; padding: 2px;
   border: 1px solid var(--settings-input-border);
   border-radius: 8px;
   background: transparent;
   cursor: pointer;
+  -webkit-appearance: auto;
+  appearance: auto;
 }
 .solid-field { padding: 4px 10px; background: transparent; border-color: transparent; }
 
@@ -1088,8 +720,7 @@ label.field-group.range-group .field-input.range { flex: 1 1 auto; }
 .stat-cell .ai-percentage { font-size: 1.05rem; }
 .stat-text { display: flex; flex-direction: column; gap: 4px; }
 .stat-title { font-size: .8rem; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--settings-muted); }
-.stat-text .legend-text,
-.stat-text .stats-description { font-size: .85rem; color: var(--settings-text); }
+.stat-text .legend-text { font-size: .85rem; color: var(--settings-text); }
 
 /* Preview stays compact under the list */
 .settings-preview { max-width: 460px; }
@@ -1111,7 +742,6 @@ label.field-group.range-group .field-input.range { flex: 1 1 auto; }
     background: rgba(8, 9, 18, .55);
     backdrop-filter: blur(18px);
   }
-  .settings-shell { grid-template-columns: 1fr; }
   .set-row { flex-direction: column; align-items: stretch; gap: 10px; }
   .set-row .bg-toggle, .set-row .orientation-toggle { justify-content: flex-start; }
   .stat-cell { flex-direction: column; text-align: center; }
@@ -1200,4 +830,9 @@ label.field-group.range-group .field-input.range { flex: 1 1 auto; }
   .settings-theme-head { gap: 10px; }
   .settings-theme-icon { width: 36px; height: 36px; }
   .settings-theme-desc { margin-left: 0; }
+}
+
+/* ===================== SQUIRCLE CORNERS ===================== */
+.settings-panel, .set-row, .color-field .field-input {
+  corner-shape: squircle;
 }

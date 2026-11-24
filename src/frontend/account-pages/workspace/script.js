@@ -1,6 +1,11 @@
 import { authedFetch, refreshSession, showAuthOverlay } from "/lib/auth.js";
 import { openImportModal } from "./import-lesson.js";
 import { openActivityRunner, setLearningApi } from "./activity-runner.js";
+import {
+  setChapterApi, openCreateChooser, confirmGenerate, openReviewMenu,
+  openFlashcardReview, openSpacedReview, openAskAI, toggleEvaluation, estimateMinutes,
+  openTestSimulation,
+} from "./chapter-tools.js";
 
 // ================= API =================
 async function apiTasks(action, payload = {}) {
@@ -42,6 +47,40 @@ async function apiLearning(action, payload = {}) {
   return resp;
 }
 setLearningApi(apiLearning);
+setChapterApi({
+  apiSubjects,
+  apiLearning,
+  toast,
+  reload: () => loadAll(),
+  onRunTest: (activities, chapter, cfg = {}) => {
+    openActivityRunner(activities, {
+      test: {
+        lessonId: chapter.lesson_id,
+        chapterName: chapter.lesson_name,
+        notation: cfg.notation || 20,
+        maxMinutes: cfg.maxMinutes || null,
+        onDone: (res) => saveTestResult(chapter, res),
+      },
+    });
+  },
+});
+
+// Persist a finished test simulation into chapters.tests_results.
+async function saveTestResult(chapter, res) {
+  try {
+    const prev = parseMaybeJSON(chapter.tests_results);
+    const arr = Array.isArray(prev) ? prev : (Array.isArray(prev?.results) ? prev.results : []);
+    arr.push({
+      date: new Date().toISOString(),
+      notation: res.notation, grade: res.grade, pct: +res.pct.toFixed(1),
+      correct: res.correctCount, total: res.total, answered: res.answeredCount,
+      elapsed_min: +res.elapsedMin.toFixed(1), remark: res.remark || "",
+    });
+    await apiSubjects("update-chapter", { lesson_id: chapter.lesson_id, fields: { tests_results: JSON.stringify(arr) } });
+    toast(`Test saved — ${res.grade}/${res.notation}`);
+    await loadAll();
+  } catch (e) { toast(e.message); }
+}
 
 // ================= State =================
 const ALL_TABLES = ["tasks", "repeat_tasks", "events", "repeat_events", "trash_tasks", "trash_events"];
@@ -88,6 +127,18 @@ const LOOKUP_FIELDS = {
   chapter_id: () => state.chapters.map((c) => ({ value: String(c.lesson_id), label: c.lesson_name || `Lesson ${c.lesson_id}` })),
 };
 
+// Chapter actions a task can be linked to — values match onChapterTool() keys.
+const LINKED_ACTIONS = [
+  { value: "import", label: "📥 Import lesson" },
+  { value: "course", label: "✨ Generate course" },
+  { value: "flashcards", label: "🃏 Flashcards" },
+  { value: "activities", label: "🏃 Activities / tests" },
+  { value: "review", label: "🔁 Review" },
+  { value: "ask", label: "❓ Ask AI" },
+  { value: "edit", label: "✏️ Modify course" },
+  { value: "eval", label: "📝 Evaluation" },
+];
+
 // ================= Field definitions =================
 // type: text | textarea | number | select | checkbox | datetime | lines | mono
 // optionsFrom: key into LOOKUP_FIELDS resolved at render time
@@ -105,6 +156,7 @@ const TASK_SECTIONS = [
       { key: "subject_id", label: "Subject", type: "select", optionsFrom: "subject_id", placeholder: "—" },
       { key: "chapter_id", label: "Chapter", type: "select", optionsFrom: "chapter_id", placeholder: "—" },
       { key: "chapter_part_id", label: "Chapter part", type: "number" },
+      { key: "linked_action", label: "Linked chapter action", type: "select", options: LINKED_ACTIONS, placeholder: "—" },
       { key: "type_id", label: "Type", type: "select", optionsFrom: "type_id", placeholder: "—" },
       { key: "methods_id", label: "Method", type: "select", optionsFrom: "methods_id", placeholder: "—" },
       { key: "priority_id", label: "Priority", type: "select", optionsFrom: "priority_id", placeholder: "—" },
@@ -159,6 +211,7 @@ const SUBJECT_SECTIONS = [
     fields: [
       { key: "comments", label: "Comments", type: "textarea", rows: 3 },
       { key: "tests_comments", label: "Tests comments", type: "textarea", rows: 3 },
+      { key: "teacher_notes", label: "Teacher notes — how she tests & expectations", type: "textarea", rows: 4, placeholder: "Subject-wide expectations: test format, grading style, pet topics…" },
       { key: "ai_comments", label: "AI comments", type: "textarea", rows: 3 },
     ],
   },
@@ -170,8 +223,11 @@ const CHAPTER_SECTIONS = [
     fields: [
       { key: "lesson_name", label: "Name", type: "text", placeholder: "e.g. Chapter 1 — Limits" },
       { key: "lesson_description", label: "Description", type: "textarea", rows: 3 },
+      { key: "teacher_notes", label: "Teacher notes — how she tests & expectations", type: "textarea", rows: 4, placeholder: "e.g. Tests are mostly MCQ on definitions, she expects rigorous proofs…" },
       { key: "subject_id", label: "Subject", type: "select", optionsFrom: "subject_id", placeholder: "—" },
       { key: "tests_date", label: "Next test", type: "text", placeholder: "YYYY-MM-DD" },
+      { key: "session_date", label: "Session date", type: "text", placeholder: "YYYY-MM-DD" },
+      { key: "awaiting_evaluation", label: "Awaiting evaluation", type: "checkbox" },
       { key: "parents_lessons_id", label: "Parent chapters (ids, comma-separated)", type: "text" },
       { key: "childs_lessons_id", label: "Child chapters (ids, comma-separated)", type: "text" },
       { key: "is_method", label: "Is a method/resource", type: "checkbox" },
@@ -683,7 +739,7 @@ function detailConfig() {
       isDone: !!sel.row.is_done,
       isTrash,
       deleteLabel: isTrash ? "Delete forever" : "Move to trash",
-      badges: [sel.table.replace("_", "-"), sel.row.is_done ? "done" : "open", sel.row.frequency ? `↻ ${sel.row.frequency}` : ""].filter(Boolean),
+      badges: [sel.table.replace("_", "-"), sel.row.is_done ? "done" : "open", sel.row.frequency ? `↻ ${sel.row.frequency}` : "", sel.row.linked_action ? `⚡ ${sel.row.linked_action}` : ""].filter(Boolean),
     };
   }
   // chapter
@@ -692,6 +748,7 @@ function detailConfig() {
     c.is_method ? "method" : "", c.is_yearly ? "yearly" : "",
     c.body ? "course ✓" : "no course",
     c.flashcards && c.flashcards !== "[]" ? "flashcards" : "",
+    c.awaiting_evaluation ? "⏳ awaiting eval" : "",
   ].filter(Boolean);
   return {
     titleKey: "lesson_name",
@@ -727,18 +784,15 @@ function renderDetail() {
   }).join("");
 
   if (cfg.tools) {
-    const activities = parseMaybeJSON(row.tests);
-    const actList = Array.isArray(activities?.activities) ? activities.activities : [];
+    const actCount = (() => { const p = parseMaybeJSON(row.tests); return Array.isArray(p?.activities) ? p.activities.length : 0; })();
+    const hasFlash = !!parseMaybeJSON(row.flashcards)?.cards?.length;
     html += `
       <div class="ws-dsec">
         <h3>Import lesson</h3>
         <div class="ws-tools">
-          <button class="ws-btn ws-btn-ghost" type="button" data-tool="pdf">📄 PDF</button>
-          <button class="ws-btn ws-btn-ghost" type="button" data-tool="voice">🎙 Voice</button>
-          <button class="ws-btn ws-btn-ghost" type="button" data-tool="files">📁 Files</button>
-          <button class="ws-btn ws-btn-ghost" type="button" data-tool="photo">📷 Camera + OCR</button>
+          <button class="ws-btn ws-btn-ghost" type="button" data-tool="import">� Import lesson</button>
         </div>
-        <p class="ws-tools-hint">All extraction runs locally in your browser (pdf.js, Web Speech, Tesseract OCR).</p>
+        <p class="ws-tools-hint">PDF, voice, text, link + explanation, files / images (OCR), camera — all extraction runs locally in your browser.</p>
       </div>
       <div class="ws-dsec">
         <h3>AI generation</h3>
@@ -746,15 +800,47 @@ function renderDetail() {
           <button class="ws-btn ws-btn-primary" type="button" data-tool="course">✨ Generate course</button>
           <button class="ws-btn ws-btn-primary" type="button" data-tool="flashcards">✨ Generate flashcards</button>
           <button class="ws-btn ws-btn-primary" type="button" data-tool="activities">✨ Generate activities</button>
-          ${actList.length ? `<button class="ws-btn ws-btn-ghost" type="button" data-tool="run">▶ Run activities (${actList.length})</button>` : ""}
+          ${actCount ? `<button class="ws-btn ws-btn-ghost" type="button" data-tool="run">▶ Run activities (${actCount})</button>` : ""}
         </div>
-        <p class="ws-tools-hint">GPT OSS 120B via Workers AI — the course is built section by section and can be resumed anytime.</p>
+        <p class="ws-tools-hint">GPT OSS 120B via Workers AI — estimated duration is shown before each run; progress is saved and resumable.</p>
+      </div>
+      <div class="ws-dsec">
+        <h3>Review</h3>
+        <div class="ws-tools">
+          <button class="ws-btn ws-btn-ghost" type="button" data-tool="review">🔁 Review</button>
+          <button class="ws-btn ws-btn-ghost" type="button" data-tool="ask">❓ Ask AI</button>
+        </div>
+        <p class="ws-tools-hint">Flashcard flip-through, spaced sessions by week/interval, and questions grounded in the course content.</p>
+      </div>
+      <div class="ws-dsec">
+        <h3>Course</h3>
+        <div class="ws-tools">
+          <button class="ws-btn ws-btn-ghost" type="button" data-tool="edit">✏️ Modify course</button>
+          <button class="ws-btn ws-btn-ghost ${row.awaiting_evaluation ? "is-active" : ""}" type="button" data-tool="eval">${row.awaiting_evaluation ? "⏳ Awaiting evaluation ✓" : "📝 Mark for evaluation"}</button>
+        </div>
+        <p class="ws-tools-hint">Edit the chapter fields, or flag it as awaiting an evaluation (dedicated workflow coming soon).</p>
       </div>`;
     wrap.innerHTML = html;
     wrap.querySelectorAll("[data-tool]").forEach((b) => b.addEventListener("click", () => onChapterTool(b.dataset.tool, sel.row)));
     return;
   }
+  if (sel.kind === "task" && row.chapter_id && row.linked_action) {
+    const ch = state.chapters.find((c) => String(c.lesson_id) === String(row.chapter_id));
+    const act = LINKED_ACTIONS.find((a) => a.value === row.linked_action);
+    html += `
+      <div class="ws-dsec">
+        <h3>Linked action</h3>
+        <div class="ws-tools">
+          <button class="ws-btn ws-btn-primary" type="button" data-linked-action ${ch ? "" : "disabled"}>▶ ${esc(act?.label || row.linked_action)}${ch ? ` — ${esc(ch.lesson_name || "chapter")}` : " (chapter not found)"}</button>
+        </div>
+        <p class="ws-tools-hint">Runs this chapter tool on the linked chapter.</p>
+      </div>`;
+  }
   wrap.innerHTML = html;
+  wrap.querySelector("[data-linked-action]")?.addEventListener("click", () => {
+    const ch = state.chapters.find((c) => String(c.lesson_id) === String(row.chapter_id));
+    if (ch) onChapterTool(row.linked_action, ch);
+  });
 }
 
 function fieldHTML(f, value) {
@@ -856,6 +942,11 @@ function openEntityModal(kind, id = null, existing = null, opts = {}) {
   root.querySelectorAll("[data-close]").forEach((b) => b.addEventListener("click", close));
   root.querySelector(".ws-modal-backdrop").addEventListener("click", (e) => { if (e.target.classList.contains("ws-modal-backdrop")) close(); });
 
+  if (opts.presetTable) {
+    const sel = root.querySelector("#m_kind");
+    if (sel && [...sel.options].some((o) => o.value === opts.presetTable)) sel.value = opts.presetTable;
+  }
+
   const collect = () => collectFields(defs.sections, kind === "task" ? "title" : null, kind === "task" ? root.querySelector("#m_title") : null, root.querySelector(".ws-modal"));
 
   root.querySelector("[data-save-tpl]").addEventListener("click", async () => {
@@ -913,30 +1004,50 @@ function openEntityModal(kind, id = null, existing = null, opts = {}) {
 // ================= Chapter tools: import & AI =================
 function onChapterTool(tool, chapter) {
   const lessonId = chapter.lesson_id;
-  const tabs = { pdf: "pdf", voice: "voice", files: "files", photo: "camera" };
-  if (tabs[tool]) {
-    openImportModal({
-      initialTab: tabs[tool],
-      onImport: async (target, text) => {
+  if (tool === "import") {
+    return openImportModal({
+      onImport: async (target, text, meta = {}) => {
         const cur = chapter[target] || "";
-        await apiSubjects("update-chapter", {
-          lesson_id: lessonId,
-          fields: { [target]: cur ? `${cur}\n\n${text}` : text },
-        });
+        const fields = { [target]: cur ? `${cur}\n\n${text}` : text };
+        if (meta.session_date) fields.session_date = meta.session_date;
+        await apiSubjects("update-chapter", { lesson_id: lessonId, fields });
         toast("Lesson content imported");
         await loadAll();
       },
     });
-    return;
   }
-  if (tool === "course") return runCourseGeneration(lessonId);
-  if (tool === "flashcards") return runFlashcards(lessonId);
-  if (tool === "activities") return runActivities(lessonId);
-  if (tool === "run") {
-    const parsed = parseMaybeJSON(chapter.tests);
-    const list = Array.isArray(parsed?.activities) ? parsed.activities : [];
-    if (list.length) openActivityRunner(list, { onClose: () => {} });
+  if (tool === "course") {
+    return confirmGenerate({
+      title: "Generate course",
+      minutes: estimateMinutes(chapter, "course"),
+      detail: "The course is built section by section with GPT OSS 120B.",
+      confirmLabel: "Generate course",
+      onGo: () => runCourseGeneration(lessonId),
+    });
   }
+  if (tool === "flashcards") {
+    return confirmGenerate({
+      title: "Generate flashcards",
+      minutes: estimateMinutes(chapter, "flashcards"),
+      detail: "Cards are generated from the current course content.",
+      confirmLabel: "Generate flashcards",
+      onGo: () => runFlashcards(lessonId),
+    });
+  }
+  if (tool === "activities") {
+    return confirmGenerate({
+      title: "Generate activities",
+      minutes: estimateMinutes(chapter, "activities"),
+      detail: "Exercises and tests generated from the course.",
+      confirmLabel: "Generate activities",
+      onGo: () => runActivities(lessonId),
+    });
+  }
+  if (tool === "run") return openTestSimulation(chapter);
+  if (tool === "review") return openReviewMenu(chapter);
+  if (tool === "ask") return openAskAI(chapter);
+  if (tool === "edit") return openEntityModal("chapter", lessonId, chapter);
+  if (tool === "eval") return toggleEvaluation(chapter);
 }
 
 // ---------- Course generation (resumable, section by section) ----------
@@ -1131,7 +1242,22 @@ function bindUI() {
   $("#newBtn").addEventListener("click", () => {
     if (state.view === "subjects") return openEntityModal("subject", null, null, { template: state.template });
     if (state.view === "subject") return openEntityModal("chapter", null, state.currentSubject ? { subject_id: state.currentSubject.subject_id } : null, { template: state.template });
-    if (["all", "recurring", "events"].includes(state.view)) return openEntityModal("task", null, null, { template: state.template });
+    if (["all", "recurring", "events"].includes(state.view)) {
+      return openCreateChooser({
+        onPick: (key) => {
+          if (key === "task" || key === "event") {
+            const preset = {
+              all: { task: "tasks", event: "events" },
+              recurring: { task: "repeat_tasks", event: "repeat_events" },
+              events: { task: "events", event: "events" },
+            }[state.view]?.[key];
+            openEntityModal("task", null, null, { template: state.template, presetTable: preset });
+          } else if (key === "chapter") {
+            openEntityModal("chapter", null, null, { template: state.template });
+          }
+        },
+      });
+    }
   });
 
   $("#dClose").addEventListener("click", closeDetail);

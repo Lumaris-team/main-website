@@ -97,3 +97,7 @@
 .card-value[data-tone="accent"] {
   color: var(--accent);
 }
+
+/* ===================== SQUIRCLE CORNERS ===================== */
+/* Apple-style continuous curvature — Chromium 139+, ignored elsewhere */
+.bento-block { corner-shape: squircle; }

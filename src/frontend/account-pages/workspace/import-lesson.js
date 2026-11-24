@@ -120,6 +120,8 @@ export function openImportModal({ onImport, initialTab = "pdf" }) {
       <div class="il-tabs">
         <button class="ws-seg" type="button" data-tab="pdf" data-active="true">📄 PDF</button>
         <button class="ws-seg" type="button" data-tab="voice">🎙 Voice</button>
+        <button class="ws-seg" type="button" data-tab="text">✏️ Text</button>
+        <button class="ws-seg" type="button" data-tab="link">🔗 Link</button>
         <button class="ws-seg" type="button" data-tab="files">📁 Files</button>
         <button class="ws-seg" type="button" data-tab="camera">📷 Camera</button>
       </div>
@@ -131,6 +133,7 @@ export function openImportModal({ onImport, initialTab = "pdf" }) {
             <option value="raw_lessons">Raw lessons</option>
             <option value="raw_recorded_lessons">Recorded lessons</option>
           </select>
+          <label class="il-session">Session date <input type="date" id="ilSession"></label>
         </div>
         <button class="ws-btn ws-btn-ghost" type="button" data-close>Cancel</button>
         <button class="ws-btn ws-btn-primary" type="button" id="ilImport" disabled>Import text</button>
@@ -158,7 +161,9 @@ export function openImportModal({ onImport, initialTab = "pdf" }) {
     importBtn.disabled = true;
     importBtn.textContent = "Importing…";
     try {
-      await onImport(root.querySelector("#ilTarget").value, currentText);
+      await onImport(root.querySelector("#ilTarget").value, currentText, {
+        session_date: root.querySelector("#ilSession")?.value || "",
+      });
       close();
     } catch (e) {
       importBtn.disabled = false;
@@ -168,7 +173,8 @@ export function openImportModal({ onImport, initialTab = "pdf" }) {
   });
 
   const tabs = {
-    pdf: renderPDF, voice: renderVoice, files: renderFiles, camera: renderCamera,
+    pdf: renderPDF, voice: renderVoice, text: renderText, link: renderLink,
+    files: renderFiles, camera: renderCamera,
   };
   function showTab(name) {
     cleanup?.(); cleanup = null;
@@ -277,14 +283,60 @@ function renderVoice(body, setText) {
   return () => { listening = false; try { rec?.stop(); } catch {} };
 }
 
+// ---------- Plain text ----------
+function renderText(body, setText) {
+  const { status, preview } = previewArea(body);
+  body.insertAdjacentHTML("afterbegin", `
+    <div class="il-source">
+      <span class="il-hint">Type or paste the lesson content directly — it stays on your device until you import it.</span>
+    </div>`);
+  preview.placeholder = "Write or paste the lesson text here…";
+  preview.addEventListener("input", () => setText(preview.value));
+  status.textContent = "Ready.";
+}
+
+// ---------- Link + explanation ----------
+function renderLink(body, setText) {
+  body.innerHTML = `
+    <div class="il-source il-link">
+      <input type="url" id="ilUrl" class="il-link-url" placeholder="https://…" autocomplete="off">
+      <textarea id="ilExplain" class="il-link-explain" rows="5" placeholder="Explain what this link is about / what to extract from it…"></textarea>
+      <button class="ws-btn ws-btn-primary" type="button" id="ilLinkGo">Use link + explanation</button>
+      <span class="il-hint">The URL is stored as reference — only your explanation is imported as lesson text.</span>
+    </div>
+    <div class="il-preview-wrap">
+      <div class="il-status" data-status>Ready.</div>
+      <textarea class="il-preview" data-preview rows="8" placeholder="Combined text preview…"></textarea>
+    </div>`;
+  const url = body.querySelector("#ilUrl");
+  const explain = body.querySelector("#ilExplain");
+  const status = body.querySelector("[data-status]");
+  const preview = body.querySelector("[data-preview]");
+  const go = body.querySelector("#ilLinkGo");
+
+  const combine = () => {
+    const u = url.value.trim();
+    const e = explain.value.trim();
+    const text = [u && `Source: ${u}`, e].filter(Boolean).join("\n\n");
+    preview.value = text;
+    setText(text);
+    go.disabled = !text;
+    status.textContent = text ? "Ready to import." : "Enter a URL and/or an explanation.";
+  };
+  url.addEventListener("input", combine);
+  explain.addEventListener("input", combine);
+  preview.addEventListener("input", () => setText(preview.value));
+  combine();
+}
+
 // ---------- Files ----------
 function renderFiles(body, setText) {
   const { status, preview } = previewArea(body);
   body.insertAdjacentHTML("afterbegin", `
     <div class="il-source">
-      <input type="file" id="ilTextFile" accept=".txt,.md,.text,.csv,.json" hidden>
-      <button class="ws-btn ws-btn-primary" type="button" id="ilPickFile">Choose a text file…</button>
-      <span class="il-hint">.txt, .md, .csv, .json — read locally.</span>
+      <input type="file" id="ilTextFile" accept=".txt,.md,.text,.csv,.json,.png,.jpg,.jpeg,.webp,.gif,.bmp" hidden>
+      <button class="ws-btn ws-btn-primary" type="button" id="ilPickFile">Choose a file…</button>
+      <span class="il-hint">Text files are read directly; images go through local OCR (Tesseract).</span>
     </div>`);
   const pick = body.querySelector("#ilPickFile");
   const fileInput = body.querySelector("#ilTextFile");
@@ -292,11 +344,27 @@ function renderFiles(body, setText) {
   fileInput.addEventListener("change", async () => {
     const file = fileInput.files?.[0];
     if (!file) return;
-    const text = await file.text();
-    preview.value = text;
-    setText(text);
-    preview.addEventListener("input", () => setText(preview.value));
-    status.textContent = `Loaded ${file.name} (${(file.size / 1024).toFixed(1)} KB).`;
+    try {
+      if (file.type.startsWith("image/") || /\.(png|jpe?g|webp|gif|bmp)$/i.test(file.name)) {
+        status.textContent = "Loading OCR engine (first run downloads ~10 MB, then cached)…";
+        const T = await ensureTesseract();
+        status.textContent = `Recognizing ${file.name}… this can take ~30 s…`;
+        const { data } = await T.recognize(file);
+        const text = (data.text || "").trim();
+        preview.value = text;
+        setText(text);
+        preview.addEventListener("input", () => setText(preview.value));
+        status.textContent = `OCR done — confidence ${Math.round(data.confidence || 0)}%. Edit then import.`;
+        return;
+      }
+      const text = await file.text();
+      preview.value = text;
+      setText(text);
+      preview.addEventListener("input", () => setText(preview.value));
+      status.textContent = `Loaded ${file.name} (${(file.size / 1024).toFixed(1)} KB).`;
+    } catch (e) {
+      status.textContent = `Error: ${e.message}`;
+    }
   });
 }
 

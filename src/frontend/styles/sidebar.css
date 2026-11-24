@@ -143,3 +143,7 @@
     height: 48px;
   }
 }
+
+/* ===================== SQUIRCLE CORNERS ===================== */
+.ai-nav, .ws-nav, .websites-nav, .tools-nav, .files-nav, .settings-nav { corner-shape: squircle; }
+.ai-sidebar, .ws-sidebar, .websites-sidebar, .tools-sidebar, .files-sidebar, .settings-sidebar { corner-shape: squircle; }

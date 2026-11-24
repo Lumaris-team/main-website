@@ -321,7 +321,8 @@ function fallbackRenderer(a) {
 }
 
 // ---------- Runner ----------
-export function openActivityRunner(activities, { onClose } = {}) {
+// test: { lessonId, notation, maxMinutes, chapterName, onDone(res) } — simulation mode
+export function openActivityRunner(activities, { onClose, test } = {}) {
   const root = document.createElement("div");
   root.className = "ws-modal-root ar-root";
   root.innerHTML = `
@@ -329,6 +330,7 @@ export function openActivityRunner(activities, { onClose } = {}) {
     <div class="ws-modal ar-modal" role="dialog" aria-modal="true">
       <div class="ar-head">
         <div class="ar-progress"><div class="ar-progress-bar" data-bar></div></div>
+        <span class="ar-timer" data-timer hidden>--:--</span>
         <span class="ar-count" data-count></span>
         <button class="ws-icon-btn" type="button" data-close>✕</button>
       </div>
@@ -348,9 +350,33 @@ export function openActivityRunner(activities, { onClose } = {}) {
   let idx = 0, current = null, answered = new Set();
   const stage = root.querySelector("[data-stage]");
   const feedbackEl = root.querySelector("[data-feedback]");
-  const close = () => { root.remove(); onClose?.(); };
+  const timerEl = root.querySelector("[data-timer]");
+  const results = new Array(activities.length).fill(null);
+  const startedAt = Date.now();
+  let finished = false;
+  let timerInt = null;
+
+  const close = () => {
+    if (timerInt) clearInterval(timerInt);
+    root.remove(); onClose?.();
+  };
   root.querySelector("[data-close]").addEventListener("click", close);
   root.querySelector(".ws-modal-backdrop").addEventListener("click", close);
+
+  // ---------- test mode: countdown ----------
+  if (test?.maxMinutes > 0) {
+    const deadline = startedAt + test.maxMinutes * 60000;
+    timerEl.hidden = false;
+    const tick = () => {
+      const left = Math.max(0, deadline - Date.now());
+      const m = Math.floor(left / 60000), s = Math.floor((left % 60000) / 1000);
+      timerEl.textContent = `${m}:${String(s).padStart(2, "0")}`;
+      timerEl.classList.toggle("is-low", left < 60000);
+      if (left <= 0 && !finished) { finished = true; showResults(true); }
+    };
+    tick();
+    timerInt = setInterval(tick, 1000);
+  }
 
   function render() {
     const a = activities[idx];
@@ -380,17 +406,24 @@ export function openActivityRunner(activities, { onClose } = {}) {
         expected: a.answer, answer, context: a.explanation || "",
       });
       answered.add(idx);
+      results[idx] = { score: fb.score ?? (fb.correct ? 100 : 0), correct: !!fb.correct };
       feedbackEl.hidden = false;
-      feedbackEl.className = `ar-feedback ${fb.correct ? "ok" : "ko"}`;
-      feedbackEl.innerHTML = `
-        <div class="ar-fb-head">${fb.correct ? "✓ Correct" : "✗ Not quite"} ${fb.score != null ? `· ${fb.score}/100` : ""}</div>
-        <div class="ar-fb-comment">${esc(fb.comment || "")}</div>
-        ${fb.hint ? `<div class="ar-fb-hint">💡 ${esc(fb.hint)}</div>` : ""}
-        ${a.explanation ? `<div class="ar-fb-expl">${esc(a.explanation)}</div>` : ""}`;
+      if (test) {
+        // Simulation: never reveal correctness mid-test.
+        feedbackEl.className = "ar-feedback";
+        feedbackEl.innerHTML = `<div class="ar-fb-head">Answer recorded ✓</div><div class="ar-fb-comment">Results are revealed at the end of the test.</div>`;
+      } else {
+        feedbackEl.className = `ar-feedback ${fb.correct ? "ok" : "ko"}`;
+        feedbackEl.innerHTML = `
+          <div class="ar-fb-head">${fb.correct ? "✓ Correct" : "✗ Not quite"} ${fb.score != null ? `· ${fb.score}/100` : ""}</div>
+          <div class="ar-fb-comment">${esc(fb.comment || "")}</div>
+          ${fb.hint ? `<div class="ar-fb-hint">💡 ${esc(fb.hint)}</div>` : ""}
+          ${a.explanation ? `<div class="ar-fb-expl">${esc(a.explanation)}</div>` : ""}`;
+      }
       if (idx === activities.length - 1) {
         btn.textContent = "Finish ✓";
         btn.disabled = false;
-        btn.onclick = close;
+        btn.onclick = () => (test ? finishTest() : close());
       } else {
         btn.textContent = "Continue →";
         btn.disabled = false;
@@ -404,6 +437,65 @@ export function openActivityRunner(activities, { onClose } = {}) {
       feedbackEl.textContent = `Feedback error: ${e.message}`;
     }
   });
+
+  // ---------- test mode: results + progression remark ----------
+  function computeResults() {
+    const answeredList = results.filter(Boolean);
+    const totalScore = answeredList.reduce((s, r) => s + (Number(r.score) || 0), 0);
+    // Unanswered exercises count as 0 for the grade.
+    const maxScore = activities.length * 100;
+    const pct = maxScore ? (totalScore / maxScore) * 100 : 0;
+    const notation = Number(test?.notation) || 20;
+    const grade = Math.round((pct / 100) * notation * 10) / 10;
+    const correctCount = answeredList.filter((r) => r.correct).length;
+    const elapsedMin = (Date.now() - startedAt) / 60000;
+    return { pct, grade, notation, correctCount, total: activities.length, answeredCount: answeredList.length, elapsedMin, results: answeredList };
+  }
+
+  async function finishTest() {
+    if (finished) return;
+    finished = true;
+    if (timerInt) clearInterval(timerInt);
+    const res = computeResults();
+    stage.innerHTML = "";
+    feedbackEl.hidden = true;
+    root.querySelector("[data-comp]").textContent = "Results";
+    root.querySelector("[data-title]").textContent = test?.chapterName || "Test";
+    root.querySelector("[data-instr]").textContent = "";
+    root.querySelector("[data-count]").textContent = "";
+    root.querySelector("[data-prev]").disabled = true;
+    root.querySelector("[data-next]").disabled = true;
+    root.querySelector("[data-next]").textContent = "…";
+    stage.innerHTML = `
+      <div class="ar-results">
+        <div class="ar-grade">${res.grade}<span>/${res.notation}</span></div>
+        <div class="ar-grade-sub">${res.pct.toFixed(1)}% — ${res.correctCount}/${res.total} correct, ${res.answeredCount}/${res.total} answered${test?.maxMinutes ? ` — ${res.elapsedMin.toFixed(1)}/${test.maxMinutes} min` : ""}</div>
+        <div class="ar-remark" data-remark><em>Writing progression remark…</em></div>
+      </div>`;
+    try {
+      const report = await apiLearning("test-report", {
+        lesson_id: test.lessonId, pct: res.pct, grade: res.grade, notation: res.notation,
+        max_minutes: test.maxMinutes || null, elapsed_minutes: res.elapsedMin,
+        correct_count: res.correctCount, total_count: res.total, answered_count: res.answeredCount,
+      });
+      res.remark = report.remark || "";
+      stage.querySelector("[data-remark]").innerHTML = `<strong>Progression</strong><p>${esc(report.remark || "")}</p>`;
+    } catch (e) {
+      stage.querySelector("[data-remark]").innerHTML = `<strong>Progression</strong><p class="ar-remark-err">Remark unavailable: ${esc(e.message)}</p>`;
+    }
+    const foot = root.querySelector(".ws-modal-foot");
+    foot.innerHTML = `
+      <button class="ws-btn ws-btn-ghost" type="button" data-close>Close</button>
+      <button class="ws-btn ws-btn-primary" type="button" data-save>Save results</button>`;
+    foot.querySelector("[data-close]").addEventListener("click", close);
+    foot.querySelector("[data-save]").addEventListener("click", async () => {
+      foot.querySelector("[data-save]").disabled = true;
+      try { await test.onDone?.(res); } catch {}
+      close();
+    });
+  }
+
+  function showResults() { finishTest(); }
 
   render();
 }

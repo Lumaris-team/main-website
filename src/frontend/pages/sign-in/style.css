@@ -80,8 +80,17 @@ body.signin-page { margin: 0; min-height: 100vh; background: var(--ink); color: 
   .signin-shell { padding: 84px 20px 28px; min-height: auto; }
 }
 .signin-shell.is-embedded .signin-visual { display: none !important; }
-.signin-shell.is-embedded { padding: 16px; min-height: 0; place-items: center; }
-.signin-shell.is-embedded .signin-card { padding: 26px 24px; border-radius: 14px; }
+.signin-shell.is-embedded { padding: 16px; min-height: 0; height: auto; max-height: 100%; place-items: center; grid-template-columns: minmax(0, 1fr); }
+.signin-shell.is-embedded .signin-card {
+  grid-column: 1 / -1;
+  padding: 26px 24px;
+  border-radius: 14px;
+  justify-self: center;
+  align-self: center;
+  margin: 0;
+  max-height: none;
+  overflow: visible;
+}
 .signin-shell.is-embedded h1 { font-size: 24px; }
 .signin-shell.is-embedded .signin-sub { margin-bottom: 20px; }
 @media (max-height: 560px) {
@@ -106,3 +115,6 @@ body.signin-page { margin: 0; min-height: 100vh; background: var(--ink); color: 
 .signin-shell .social-login-button { padding: 10px 5px; border: 1px solid rgba(255,255,255,.12); border-radius: 9px; background: transparent; color: var(--paper); cursor: pointer; font-size: 10.5px; transition: border-color .15s ease; }
 .signin-shell .social-login-button:hover { border-color: var(--cyan); }
 .signin-shell .turnstile-container { margin: 20px 0; display: flex; justify-content: center; min-height: 65px; }
+
+/* ===================== SQUIRCLE CORNERS ===================== */
+.signin-shell .signin-card { corner-shape: squircle; }
