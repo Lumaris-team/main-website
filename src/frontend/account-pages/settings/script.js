@@ -221,7 +221,7 @@ function wireThemeEvents() {
     saveSettings(settings);
     await saveRemoteSettings(settings);
     fields.saveButton.classList.add("is-saved");
-    fields.saveButton.textContent = "Saved ✓";
+    fields.saveButton.textContent = "Enregistré ✓";
     setTimeout(() => {
       fields.saveButton.classList.remove("is-saved");
       fields.saveButton.textContent = "Save";
@@ -265,7 +265,7 @@ function renderStats(stats) {
   const capEl = $("#storageCap");
   if (capEl) capEl.textContent = `of ${capacityGB}GB`;
   const legendEl = $("#storageLegend");
-  if (legendEl) legendEl.textContent = `Files — ${formatBytesToGB(filesItem.bytes)} GB`;
+  if (legendEl) legendEl.textContent = `Fichiers — ${formatBytesToGB(filesItem.bytes)} Go`;
 
   const circumference = 339.292;
   const filesCircle = $("#ringFiles");
@@ -300,15 +300,15 @@ function renderStats(stats) {
 function renderSession() {
   const { username, jwtExp } = getSessionInfo();
   const userEl = $("#sessionUser");
-  if (userEl) userEl.textContent = username || "unknown";
+  if (userEl) userEl.textContent = username || "inconnu";
   const expEl = $("#sessionExp");
   if (expEl) {
     if (!jwtExp) { expEl.textContent = "—"; return; }
     const date = new Date(jwtExp * 1000);
     const mins = Math.round((jwtExp * 1000 - Date.now()) / 60000);
     expEl.textContent = mins > 0
-      ? `in ${mins} min (${date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })})`
-      : "expired";
+      ? `dans ${mins} min (${date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })})`
+      : "expirée";
     expEl.title = date.toLocaleString();
     expEl.style.color = mins <= 5 ? "#fb7185" : "";
   }
@@ -317,18 +317,18 @@ function renderSession() {
 function wireSession() {
   $("#sessionRefresh")?.addEventListener("click", async () => {
     const btn = $("#sessionRefresh");
-    btn.disabled = true; btn.textContent = "Refreshing…";
+    btn.disabled = true; btn.textContent = "Actualisation…";
     try {
       const ok = await refreshSession();
-      if (!ok) { btn.textContent = "Session expired"; renderSession(); return; }
-      btn.textContent = "Refreshed ✓";
+      if (!ok) { btn.textContent = "Session expirée"; renderSession(); return; }
+      btn.textContent = "Actualisée ✓";
       renderSession();
       const stats = await fetchStatsData();
       renderStats(stats);
     } catch {
-      btn.textContent = "Refresh failed";
+      btn.textContent = "Échec de l'actualisation";
     }
-    setTimeout(() => { btn.disabled = false; btn.textContent = "↻ Refresh session"; }, 1600);
+    setTimeout(() => { btn.disabled = false; btn.textContent = "↻ Actualiser la session"; }, 1600);
   });
 
   $("#sessionLogout")?.addEventListener("click", () => logout());

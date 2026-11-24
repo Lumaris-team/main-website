@@ -1,11 +1,11 @@
 <!doctype html>
-<html lang="en" data-auth-pending>
+<html lang="fr" data-auth-pending>
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="#080912">
-    <title>Workspace - Lumaris-Team Dashboard</title>
-    <meta name="description" content="Workspace - Subjects, chapters, tasks, recurring tasks and events.">
+    <title>Espace de travail - Dashboard Lumaris</title>
+    <meta name="description" content="Espace de travail : matières, chapitres, tâches, tâches récurrentes et événements.">
     <meta name="robots" content="noindex, nofollow">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -30,8 +30,8 @@
       <!-- ===== Header ===== -->
       <header class="ws-header">
         <div class="ws-header-left">
-          <p class="ws-eyebrow" id="todayLabel">Workspace</p>
-          <h1 class="ws-title" id="pageTitle">Tasks</h1>
+          <p class="ws-eyebrow" id="todayLabel">Espace de travail</p>
+          <h1 class="ws-title" id="pageTitle">Tâches</h1>
         </div>
         <div class="ws-stats" id="statsBar"></div>
       </header>
@@ -43,31 +43,31 @@
       <div class="ws-toolbar ws-toolbar-nav">
         <div class="ws-nav-group">
           <div class="ws-segmented ws-section-tabs" role="tablist" id="sectionTabs">
-            <button class="ws-seg" type="button" data-section="tasks" data-active="true">Tasks</button>
-            <button class="ws-seg" type="button" data-section="subjects">Subjects</button>
+            <button class="ws-seg" type="button" data-section="tasks" data-active="true">Tâches</button>
+            <button class="ws-seg" type="button" data-section="subjects">Matières</button>
           </div>
           <div class="ws-segmented ws-subtabs" role="tablist" id="taskTabs" hidden>
-            <button class="ws-seg" type="button" data-view="all" data-active="true">All</button>
-            <button class="ws-seg" type="button" data-view="recurring">Recurring</button>
-            <button class="ws-seg" type="button" data-view="events">Events</button>
-            <button class="ws-seg" type="button" data-view="trash">Trash</button>
+            <button class="ws-seg" type="button" data-view="all" data-active="true">Toutes</button>
+            <button class="ws-seg" type="button" data-view="recurring">Récurrentes</button>
+            <button class="ws-seg" type="button" data-view="events">Événements</button>
+            <button class="ws-seg" type="button" data-view="trash">Corbeille</button>
           </div>
         </div>
         <div class="ws-nav-group ws-nav-right">
           <div class="ws-tpl" id="templateMenu">
-            <button class="ws-template-btn" type="button" id="templateSelect">Templates</button>
+            <button class="ws-template-btn" type="button" id="templateSelect">Modèles</button>
             <div class="ws-tpl-pop" id="templatePop" hidden>
               <div class="ws-tpl-list" id="templateList"></div>
-              <button class="ws-tpl-add" type="button" id="templateAdd">＋ Add template</button>
+              <button class="ws-tpl-add" type="button" id="templateAdd">＋ Ajouter un modèle</button>
             </div>
-            <button class="ws-icon-btn ws-tpl-mini" type="button" id="templateEdit" title="Rename template" hidden>✎</button>
-            <button class="ws-icon-btn ws-tpl-mini" type="button" id="templateDel" title="Delete template" hidden>🗑</button>
+            <button class="ws-icon-btn ws-tpl-mini" type="button" id="templateEdit" title="Renommer le modèle" hidden>✎</button>
+            <button class="ws-icon-btn ws-tpl-mini" type="button" id="templateDel" title="Supprimer le modèle" hidden>🗑</button>
           </div>
           <div class="ws-search">
             <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-            <input type="text" id="searchInput" placeholder="Search…" autocomplete="off" spellcheck="false">
+            <input type="text" id="searchInput" placeholder="Rechercher…" autocomplete="off" spellcheck="false">
           </div>
-          <button class="ws-btn ws-btn-primary" type="button" id="newBtn" title="Open the creation form">＋ New</button>
+          <button class="ws-btn ws-btn-primary" type="button" id="newBtn" title="Ouvrir le formulaire de création">＋ Nouveau</button>
         </div>
       </div>
 
@@ -78,8 +78,8 @@
           <div class="ws-subjects" id="subjectGrid" hidden></div>
           <div class="ws-empty" id="emptyState" hidden>
             <div class="ws-empty-icon">✦</div>
-            <p class="ws-empty-title" id="emptyTitle">Nothing here</p>
-            <p class="ws-empty-sub" id="emptySub">Create your first item.</p>
+            <p class="ws-empty-title" id="emptyTitle">Rien ici</p>
+            <p class="ws-empty-sub" id="emptySub">Créez votre premier élément.</p>
           </div>
         </section>
 
@@ -87,22 +87,22 @@
         <aside class="ws-detail" id="detailPanel" hidden>
           <div class="ws-detail-head">
             <div class="ws-detail-title-wrap">
-              <input class="ws-detail-title" id="dTitle" type="text" placeholder="Untitled" spellcheck="false">
+              <input class="ws-detail-title" id="dTitle" type="text" placeholder="Sans titre" spellcheck="false">
               <span class="ws-detail-badges" id="dBadges"></span>
             </div>
             <div class="ws-detail-actions">
-              <button class="ws-icon-btn" type="button" id="dExpand" title="Open fullscreen editor">⛶</button>
-              <button class="ws-icon-btn" type="button" id="dToggleDone" title="Toggle done">✓</button>
-              <button class="ws-icon-btn" type="button" id="dEdit" title="Edit all fields">✎</button>
-              <button class="ws-icon-btn" type="button" id="dClose" title="Close">✕</button>
+              <button class="ws-icon-btn" type="button" id="dExpand" title="Ouvrir l'éditeur plein écran">⛶</button>
+              <button class="ws-icon-btn" type="button" id="dToggleDone" title="Marquer comme fait">✓</button>
+              <button class="ws-icon-btn" type="button" id="dEdit" title="Modifier tous les champs">✎</button>
+              <button class="ws-icon-btn" type="button" id="dClose" title="Fermer">✕</button>
             </div>
           </div>
 
           <div class="ws-detail-scroll" id="dFields"></div>
 
           <div class="ws-detail-foot">
-            <button class="ws-btn ws-btn-ghost" type="button" id="dDelete">Delete</button>
-            <button class="ws-btn ws-btn-primary" type="button" id="dSave">Save changes</button>
+            <button class="ws-btn ws-btn-ghost" type="button" id="dDelete">Supprimer</button>
+            <button class="ws-btn ws-btn-primary" type="button" id="dSave">Enregistrer</button>
           </div>
         </aside>
       </div>

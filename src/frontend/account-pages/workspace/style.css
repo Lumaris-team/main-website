@@ -703,7 +703,7 @@ body {
 .ws-modal-root {
   position: fixed;
   inset: 0;
-  z-index: 90;
+  z-index: 1300;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -714,10 +714,15 @@ body {
 .ws-modal-backdrop {
   position: absolute;
   inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
   background: rgba(5, 6, 14, .7);
   backdrop-filter: blur(10px);
   animation: fadeIn .18s ease-out;
 }
+.ws-modal-backdrop:has(.ws-modal-full) { padding: 0; }
 @keyframes fadeIn { from { opacity: 0; } }
 
 .ws-modal {

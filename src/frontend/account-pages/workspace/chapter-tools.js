@@ -39,19 +39,19 @@ export function estimateMinutes(ch, kind = "course") {
   return Math.max(1, Math.min(15, Math.round(chars / base) + (kind === "course" ? 2 : 1)));
 }
 
-export function confirmGenerate({ title, minutes, detail = "", confirmLabel = "Generate", onGo }) {
+export function confirmGenerate({ title, minutes, detail = "", confirmLabel = "Générer", onGo }) {
   openModal({
     title,
     body: `
       <div class="ct-estimate">
         <div class="ct-estimate-icon">≈</div>
         <div>
-          <p class="ct-estimate-line"><strong>~${minutes} min</strong> indicative duration</p>
-          <p class="ct-estimate-sub">GPT OSS 120B generates section by section — you can leave and come back, progress is saved.${detail ? ` ${esc(detail)}` : ""}</p>
+          <p class="ct-estimate-line"><strong>~${minutes} min</strong> de durée indicative</p>
+          <p class="ct-estimate-sub">GPT OSS 120B génère section par section — vous pouvez partir et revenir, la progression est sauvegardée.${detail ? ` ${esc(detail)}` : ""}</p>
         </div>
       </div>`,
     foot: `
-      <button class="ws-btn ws-btn-ghost" type="button" data-close>Cancel</button>
+      <button class="ws-btn ws-btn-ghost" type="button" data-close>Annuler</button>
       <button class="ws-btn ws-btn-primary" type="button" data-go>${esc(confirmLabel)}</button>`,
     onMount(m) {
       m.el.querySelector("[data-go]").addEventListener("click", () => { m.close(); onGo?.(); });
@@ -62,13 +62,13 @@ export function confirmGenerate({ title, minutes, detail = "", confirmLabel = "G
 // ---------- creation type chooser ----------
 export function openCreateChooser({ onPick }) {
   const choices = [
-    { key: "task", label: "Task", desc: "A thing to do, with scheduling and metadata" },
-    { key: "event", label: "Event", desc: "A one-off or dated happening" },
-    { key: "chapter", label: "Chapter", desc: "A course chapter with AI tools" },
-    { key: "evaluation", label: "Evaluation", desc: "A test or exam — special workflow (soon)" },
+    { key: "task", label: "Tâche", desc: "Une chose à faire, avec planification et métadonnées" },
+    { key: "event", label: "Événement", desc: "Un événement ponctuel ou daté" },
+    { key: "chapter", label: "Chapitre", desc: "Un chapitre de cours avec outils IA" },
+    { key: "evaluation", label: "Évaluation", desc: "Un test ou examen — workflow spécial (bientôt)" },
   ];
   openModal({
-    title: "Create something",
+    title: "Créer quelque chose",
     wide: true,
     body: `<div class="ct-choice-grid">${choices.map((c) => `
       <button class="ct-choice" type="button" data-pick="${c.key}">
@@ -81,9 +81,9 @@ export function openCreateChooser({ onPick }) {
         m.close();
         if (key === "evaluation") {
           openModal({
-            title: "Evaluation",
-            body: `<p class="ct-note">The evaluation workflow is being built — dedicated form, grading and AI correction are coming soon.</p>`,
-            foot: `<button class="ws-btn ws-btn-primary" type="button" data-close>Got it</button>`,
+            title: "Évaluation",
+            body: `<p class="ct-note">Le workflow d'évaluation est en cours de construction — formulaire dédié, notation et correction IA arrivent bientôt.</p>`,
+            foot: `<button class="ws-btn ws-btn-primary" type="button" data-close>Compris</button>`,
           });
           return;
         }
@@ -109,7 +109,7 @@ async function updateChapter(lessonId, fields) {
 export async function toggleEvaluation(chapter) {
   const next = chapter.awaiting_evaluation ? 0 : 1;
   await updateChapter(chapter.lesson_id, { awaiting_evaluation: next });
-  api.toast?.(next ? "Marked as awaiting evaluation" : "Evaluation flag removed");
+  api.toast?.(next ? "Marqué en attente d'évaluation" : "Marque d'évaluation retirée");
 }
 
 // ---------- review menu (ALL methods) ----------
@@ -118,12 +118,12 @@ export function openReviewMenu(chapter) {
   const hasActs = !!parseJSONField(chapter.tests)?.activities?.length;
   const plan = parseJSONField(chapter.review_plan);
   const methods = [
-    { key: "flashcards", label: "Flashcards", desc: hasFlash ? "Flip through generated cards" : "No flashcards yet — generate them first", disabled: !hasFlash, run: () => openFlashcardReview(chapter) },
-    { key: "activities", label: "Test simulation", desc: hasActs ? "Timed test with grade /x and progression remark" : "No activities yet — generate them first", disabled: !hasActs, run: () => openTestSimulation(chapter) },
-    { key: "spaced", label: "Spaced sessions", desc: plan ? `${(plan.sessions || []).length} sessions planned` : "Plan reviews by week / interval", run: () => openSpacedReview(chapter) },
+    { key: "flashcards", label: "Flashcards", desc: hasFlash ? "Parcourez les cartes générées" : "Pas encore de flashcards — générez-les d'abord", disabled: !hasFlash, run: () => openFlashcardReview(chapter) },
+    { key: "activities", label: "Test simulation", desc: hasActs ? "Test chronométré avec note /x et remarque de progression" : "Pas encore d'activités — générez-les d'abord", disabled: !hasActs, run: () => openTestSimulation(chapter) },
+    { key: "spaced", label: "Séances espacées", desc: plan ? `${(plan.sessions || []).length} séances planifiées` : "Planifiez les révisions par semaine / intervalle", run: () => openSpacedReview(chapter) },
   ];
   openModal({
-    title: `Review — ${chapter.lesson_name || "chapter"}`,
+    title: `Révision — ${chapter.lesson_name || "chapitre"}`,
     wide: true,
     body: `<div class="ct-choice-grid ct-choice-grid-3">${methods.map((m) => `
       <button class="ct-choice ${m.disabled ? "is-disabled" : ""}" type="button" data-pick="${m.key}" ${m.disabled ? "disabled" : ""}>
@@ -143,7 +143,7 @@ export function openReviewMenu(chapter) {
 export function openFlashcardReview(chapter) {
   const parsed = parseJSONField(chapter.flashcards);
   let cards = Array.isArray(parsed?.cards) ? parsed.cards.filter((c) => c?.front) : [];
-  if (!cards.length) { api.toast?.("No flashcards on this chapter"); return; }
+  if (!cards.length) { api.toast?.("Pas de flashcards sur ce chapitre"); return; }
   // shuffle
   cards = cards.map((c) => ({ c, r: Math.random() })).sort((a, b) => a.r - b.r).map((x) => x.c);
 
@@ -159,12 +159,12 @@ export function openFlashcardReview(chapter) {
           </div>
         </div>
         <div class="ct-flash-actions">
-          <button class="ws-btn ws-btn-ghost" type="button" data-again>↺ Again</button>
-          <button class="ws-btn ws-btn-primary" type="button" data-know>I know ✓</button>
+          <button class="ws-btn ws-btn-ghost" type="button" data-again>↺ À revoir</button>
+          <button class="ws-btn ws-btn-primary" type="button" data-know>Je sais ✓</button>
         </div>
         <div class="ct-flash-progress"><div class="ct-flash-bar" data-bar></div></div>
       </div>`,
-    foot: `<button class="ws-btn ws-btn-ghost" type="button" data-close>Close</button>`,
+    foot: `<button class="ws-btn ws-btn-ghost" type="button" data-close>Fermer</button>`,
     wide: true,
     onMount(m) {
       const card = m.el.querySelector("[data-card]");
@@ -193,15 +193,15 @@ export function openFlashcardReview(chapter) {
           // re-queue missed cards once
           if (again.length && again.length < cards.length) {
             cards = again.splice(0); i = 0;
-            api.toast?.(`${again.length || ""} cards to review again`);
+            api.toast?.(`${again.length || ""} cartes à revoir`);
           } else {
             m.el.querySelector(".ws-modal-body").innerHTML = `
               <div class="ct-done">
                 <div class="ct-done-icon">✓</div>
-                <p><strong>${known}/${cards.length}</strong> cards mastered</p>
-                ${again.length ? `<p class="ct-done-sub">${again.length} card(s) flagged for review.</p>` : ""}
+                <p><strong>${known}/${cards.length}</strong> cartes maîtrisées</p>
+                ${again.length ? `<p class="ct-done-sub">${again.length} carte(s) marquée(s) pour révision.</p>` : ""}
               </div>`;
-            title.textContent = "Review complete";
+            title.textContent = "Révision terminée";
             return;
           }
         }
@@ -227,22 +227,22 @@ export function openSpacedReview(chapter) {
   const startDate = chapter.session_date || new Date().toISOString().slice(0, 10);
 
   const modal = openModal({
-    title: `Spaced review — ${chapter.lesson_name || "chapter"}`,
+    title: `Révision espacée — ${chapter.lesson_name || "chapitre"}`,
     wide: true,
     body: `
       <div class="ct-spaced">
         <div class="ct-spaced-form">
-          <label class="ws-field"><span class="ws-field-label">Start date (session date)</span>
+          <label class="ws-field"><span class="ws-field-label">Date de début (date de séance)</span>
             <input type="date" data-start value="${esc(startDate)}"></label>
-          <label class="ws-field"><span class="ws-field-label">Interval between sessions (days)</span>
+          <label class="ws-field"><span class="ws-field-label">Intervalle entre séances (jours)</span>
             <input type="number" data-interval min="1" max="30" value="${plan.interval_days || 3}"></label>
-          <label class="ws-field"><span class="ws-field-label">Number of sessions</span>
+          <label class="ws-field"><span class="ws-field-label">Nombre de séances</span>
             <input type="number" data-count min="1" max="52" value="${(plan.sessions || []).length || 8}"></label>
-          <button class="ws-btn ws-btn-primary" type="button" data-gen>Generate plan</button>
+          <button class="ws-btn ws-btn-primary" type="button" data-gen>Générer le plan</button>
         </div>
         <div class="ct-spaced-list" data-list>${renderSessionList(plan.sessions || [])}</div>
       </div>`,
-    foot: `<button class="ws-btn ws-btn-ghost" type="button" data-close>Close</button>`,
+    foot: `<button class="ws-btn ws-btn-ghost" type="button" data-close>Fermer</button>`,
     onMount(m) {
       const list = m.el.querySelector("[data-list]");
       m.el.querySelector("[data-gen]").addEventListener("click", async () => {
@@ -256,7 +256,7 @@ export function openSpacedReview(chapter) {
         list.innerHTML = renderSessionList(sessions);
         try {
           await updateChapter(chapter.lesson_id, { review_plan: JSON.stringify(plan), session_date: start });
-          api.toast?.(`Review plan saved — ${count} sessions every ${interval}d`);
+          api.toast?.(`Plan de révision enregistré — ${count} séances tous les ${interval} j`);
         } catch (e) { api.toast?.(e.message); }
       });
       list.addEventListener("click", async (e) => {
@@ -276,12 +276,12 @@ export function openSpacedReview(chapter) {
 }
 
 function renderSessionList(sessions) {
-  if (!sessions.length) return `<p class="ct-note">No plan yet — pick an interval and generate one.</p>`;
+  if (!sessions.length) return `<p class="ct-note">Pas encore de plan — choisissez un intervalle et générez-en un.</p>`;
   return sessions.map((s, i) => `
     <div class="ct-sess ${s.done ? "is-done" : ""}" data-sess>
       <span class="ct-sess-n">#${s.n}</span>
       <span class="ct-sess-date">${esc(s.date)}</span>
-      <button class="ws-icon-btn" type="button" data-toggle="${i}" title="Toggle done">${s.done ? "✓" : "○"}</button>
+      <button class="ws-icon-btn" type="button" data-toggle="${i}" title="Marquer comme fait">${s.done ? "✓" : "○"}</button>
     </div>`).join("");
 }
 
@@ -289,22 +289,22 @@ function renderSessionList(sessions) {
 export function openTestSimulation(chapter) {
   const parsed = parseJSONField(chapter.tests);
   const list = Array.isArray(parsed?.activities) ? parsed.activities : [];
-  if (!list.length) { api.toast?.("No activities yet — generate them first"); return; }
+  if (!list.length) { api.toast?.("Pas encore d'activités — générez-les d'abord"); return; }
   openModal({
-    title: `Test simulation — ${chapter.lesson_name || "chapter"}`,
+    title: `Test simulation — ${chapter.lesson_name || "chapitre"}`,
     body: `
       <div class="ct-testcfg">
-        <p class="ct-note">${list.length} exercise(s) will be served like a real test. Set the grading scale and the time limit — a countdown starts when you begin, and a progression remark based on the teacher's expectations is generated at the end.</p>
+        <p class="ct-note">${list.length} exercice(s) seront servis comme un vrai test. Définissez l'échelle de notation et la limite de temps — un compte à rebours démarre au lancement, et une remarque de progression basée sur les attentes de la prof est générée à la fin.</p>
         <div class="ct-testcfg-grid">
           <label class="ws-field"><span class="ws-field-label">Notation (/x)</span>
             <input type="number" data-notation min="1" max="100" step="0.5" value="20"></label>
-          <label class="ws-field"><span class="ws-field-label">Max duration (minutes, empty = none)</span>
-            <input type="number" data-duration min="1" max="600" placeholder="e.g. 60"></label>
+          <label class="ws-field"><span class="ws-field-label">Durée max (minutes, vide = aucune)</span>
+            <input type="number" data-duration min="1" max="600" placeholder="ex. 60"></label>
         </div>
       </div>`,
     foot: `
-      <button class="ws-btn ws-btn-ghost" type="button" data-close>Cancel</button>
-      <button class="ws-btn ws-btn-primary" type="button" data-start>Start test ▶</button>`,
+      <button class="ws-btn ws-btn-ghost" type="button" data-close>Annuler</button>
+      <button class="ws-btn ws-btn-primary" type="button" data-start>Lancer le test ▶</button>`,
     onMount(m) {
       m.el.querySelector("[data-start]").addEventListener("click", () => {
         const notation = Math.max(1, Number(m.el.querySelector("[data-notation]").value) || 20);
@@ -321,19 +321,19 @@ export function openTestSimulation(chapter) {
 export function openAskAI(chapter) {
   const log = [];
   const modal = openModal({
-    title: `Ask AI — ${chapter.lesson_name || "chapter"}`,
+    title: `Poser une question — ${chapter.lesson_name || "chapitre"}`,
     wide: true,
     body: `
       <div class="ct-ask">
         <div class="ct-ask-log" data-log>
-          <p class="ct-note">Ask anything about this chapter's course. Answers use a fast model grounded in the course content.</p>
+          <p class="ct-note">Posez n'importe quelle question sur le cours de ce chapitre. Les réponses utilisent un modèle rapide basé sur le contenu du cours.</p>
         </div>
         <div class="ct-ask-input">
-          <input type="text" data-q placeholder="e.g. Explain the difference between mitosis and meiosis…" autocomplete="off">
-          <button class="ws-btn ws-btn-primary" type="button" data-send>Ask</button>
+          <input type="text" data-q placeholder="ex. Explique la différence entre mitose et méiose…" autocomplete="off">
+          <button class="ws-btn ws-btn-primary" type="button" data-send>Demander</button>
         </div>
       </div>`,
-    foot: `<button class="ws-btn ws-btn-ghost" type="button" data-close>Close</button>`,
+    foot: `<button class="ws-btn ws-btn-ghost" type="button" data-close>Fermer</button>`,
     onMount(m) {
       const logEl = m.el.querySelector("[data-log]");
       const input = m.el.querySelector("[data-q]");
@@ -346,15 +346,15 @@ export function openAskAI(chapter) {
         logEl.insertAdjacentHTML("beforeend", `<div class="ct-msg ct-msg-user">${esc(q)}</div>`);
         const pending = document.createElement("div");
         pending.className = "ct-msg ct-msg-ai ct-msg-loading";
-        pending.textContent = "Thinking…";
+        pending.textContent = "Réflexion…";
         logEl.appendChild(pending);
         logEl.scrollTop = logEl.scrollHeight;
         try {
           const r = await api.apiLearning("ask", { lesson_id: chapter.lesson_id, question: q });
           pending.classList.remove("ct-msg-loading");
-          pending.textContent = r.answer || "No answer.";
+          pending.textContent = r.answer || "Pas de réponse.";
         } catch (e) {
-          pending.textContent = `Error: ${e.message}`;
+          pending.textContent = `Erreur : ${e.message}`;
         }
         send.disabled = false;
         logEl.scrollTop = logEl.scrollHeight;

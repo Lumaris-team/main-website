@@ -4,8 +4,8 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="#080912">
-    <title>Files - Lumaris-Team Dashboard</title>
-    <meta name="description" content="Manage your files - Upload, organize and access your files with a modern file manager interface.">
+    <title>Fichiers - Dashboard Lumaris</title>
+    <meta name="description" content="Gérez vos fichiers : importez, organisez et accédez à vos fichiers avec une interface moderne.">
     <meta name="robots" content="noindex, nofollow">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -32,21 +32,21 @@
     <site-navbar site="client-worker" current="files"></site-navbar>
 
     <div class="files-shell">
-      <aside class="files-sidebar" aria-label="Files actions">
-        <button class="files-nav" type="button" id="upload-btn" aria-label="Upload file">
+      <aside class="files-sidebar" aria-label="Actions fichiers">
+        <button class="files-nav" type="button" id="upload-btn" aria-label="Importer un fichier">
           <span class="files-icon" data-icon="https://shared-assets.lumaris.fr.eu.org/icons/plus.svg"></span>
         </button>
-        <button class="files-nav" type="button" id="download-btn" aria-label="Download file" style="display: none;">
+        <button class="files-nav" type="button" id="download-btn" aria-label="Télécharger le fichier" style="display: none;">
           <span class="files-icon" data-icon="https://shared-assets.lumaris.fr.eu.org/icons/download.svg"></span>
         </button>
-        <button class="files-nav" type="button" id="folder-btn" aria-label="Create folder">
+        <button class="files-nav" type="button" id="folder-btn" aria-label="Créer un dossier">
           <span class="files-icon" data-icon="https://shared-assets.lumaris.fr.eu.org/icons/folder.svg"></span>
         </button>
       </aside>
 
       <main class="files-main">
         <div class="files-header">
-          <h1 class="files-title">My Files</h1>
+          <h1 class="files-title">Mes fichiers</h1>
           <div class="files-path" id="files-path">
             <!-- Breadcrumb navigation will be populated by JS -->
           </div>
@@ -64,15 +64,15 @@
     <div class="modal" id="upload-modal" aria-hidden="true">
       <div class="modal-backdrop"></div>
       <div class="modal-content">
-        <h2 class="modal-title">Upload File</h2>
+        <h2 class="modal-title">Importer un fichier</h2>
         <form id="upload-form">
           <div class="form-group">
-            <label for="file-input">Select File</label>
+            <label for="file-input">Choisir un fichier</label>
             <input type="file" id="file-input" name="file" required>
           </div>
           <div class="modal-actions">
-            <button type="button" class="btn-secondary" id="cancel-upload-btn">Cancel</button>
-            <button type="submit" class="btn-primary">Upload</button>
+            <button type="button" class="btn-secondary" id="cancel-upload-btn">Annuler</button>
+            <button type="submit" class="btn-primary">Importer</button>
           </div>
         </form>
       </div>
@@ -82,11 +82,11 @@
     <div class="modal" id="delete-modal" aria-hidden="true">
       <div class="modal-backdrop"></div>
       <div class="modal-content">
-        <h2 class="modal-title">Delete Item</h2>
-        <p class="modal-message">Are you sure you want to delete this item?</p>
+        <h2 class="modal-title">Supprimer un élément</h2>
+        <p class="modal-message">Êtes-vous sûr de vouloir supprimer cet élément ?</p>
         <div class="modal-actions">
-          <button type="button" class="btn-secondary" id="cancel-delete-btn">No</button>
-          <button type="button" class="btn-danger" id="confirm-delete-btn">Yes</button>
+          <button type="button" class="btn-secondary" id="cancel-delete-btn">Non</button>
+          <button type="button" class="btn-danger" id="confirm-delete-btn">Oui</button>
         </div>
       </div>
     </div>
@@ -95,14 +95,14 @@
     <div class="modal" id="edit-modal" aria-hidden="true">
       <div class="modal-backdrop"></div>
       <div class="modal-content">
-        <h2 class="modal-title">Rename Item</h2>
+        <h2 class="modal-title">Renommer un élément</h2>
         <form id="edit-form">
           <div class="form-group">
-            <label for="edit-name">New Name</label>
+            <label for="edit-name">Nouveau nom</label>
             <input type="text" id="edit-name" name="name" required>
           </div>
           <div class="modal-actions">
-            <button type="button" class="btn-secondary" id="cancel-edit-btn">Cancel</button>
+            <button type="button" class="btn-secondary" id="cancel-edit-btn">Annuler</button>
             <button type="submit" class="btn-primary">Save</button>
           </div>
         </form>
@@ -113,15 +113,15 @@
     <div class="modal" id="folder-modal" aria-hidden="true">
       <div class="modal-backdrop"></div>
       <div class="modal-content">
-        <h2 class="modal-title">Create Folder</h2>
+        <h2 class="modal-title">Créer un dossier</h2>
         <form id="folder-form">
           <div class="form-group">
-            <label for="folder-name">Folder Name</label>
+            <label for="folder-name">Nom du dossier</label>
             <input type="text" id="folder-name" name="name" required>
           </div>
           <div class="modal-actions">
-            <button type="button" class="btn-secondary" id="cancel-folder-btn">Cancel</button>
-            <button type="submit" class="btn-primary">Create</button>
+            <button type="button" class="btn-secondary" id="cancel-folder-btn">Annuler</button>
+            <button type="submit" class="btn-primary">Créer</button>
           </div>
         </form>
       </div>

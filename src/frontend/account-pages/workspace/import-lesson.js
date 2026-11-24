@@ -14,7 +14,7 @@ function loadScript(src) {
     const s = document.createElement("script");
     s.src = src;
     s.onload = resolve;
-    s.onerror = () => reject(new Error(`Failed to load ${src}`));
+    s.onerror = () => reject(new Error(`Échec du chargement de ${src}`));
     document.head.appendChild(s);
   });
 }
@@ -114,7 +114,7 @@ export function openImportModal({ onImport, initialTab = "pdf" }) {
     <div class="ws-modal-backdrop"></div>
     <div class="ws-modal il-modal" role="dialog" aria-modal="true">
       <div class="ws-modal-head">
-        <h2>Import lesson content</h2>
+        <h2>Importer le contenu d'une leçon</h2>
         <button class="ws-icon-btn" type="button" data-close>✕</button>
       </div>
       <div class="il-tabs">
@@ -128,15 +128,15 @@ export function openImportModal({ onImport, initialTab = "pdf" }) {
       <div class="ws-modal-body il-body" id="ilBody"></div>
       <div class="ws-modal-foot">
         <div class="il-target">
-          <span>Save to:</span>
+          <span>Enregistrer dans :</span>
           <select id="ilTarget">
-            <option value="raw_lessons">Raw lessons</option>
-            <option value="raw_recorded_lessons">Recorded lessons</option>
+            <option value="raw_lessons">Leçons brutes</option>
+            <option value="raw_recorded_lessons">Leçons enregistrées</option>
           </select>
-          <label class="il-session">Session date <input type="date" id="ilSession"></label>
+          <label class="il-session">Date de séance <input type="date" id="ilSession"></label>
         </div>
-        <button class="ws-btn ws-btn-ghost" type="button" data-close>Cancel</button>
-        <button class="ws-btn ws-btn-primary" type="button" id="ilImport" disabled>Import text</button>
+        <button class="ws-btn ws-btn-ghost" type="button" data-close>Annuler</button>
+        <button class="ws-btn ws-btn-primary" type="button" id="ilImport" disabled>Importer le texte</button>
       </div>
     </div>`;
   document.body.appendChild(root);
@@ -159,7 +159,7 @@ export function openImportModal({ onImport, initialTab = "pdf" }) {
   importBtn.addEventListener("click", async () => {
     if (!currentText.trim()) return;
     importBtn.disabled = true;
-    importBtn.textContent = "Importing…";
+    importBtn.textContent = "Importation…";
     try {
       await onImport(root.querySelector("#ilTarget").value, currentText, {
         session_date: root.querySelector("#ilSession")?.value || "",
@@ -167,8 +167,8 @@ export function openImportModal({ onImport, initialTab = "pdf" }) {
       close();
     } catch (e) {
       importBtn.disabled = false;
-      importBtn.textContent = "Import text";
-      alert(e.message || "Import failed");
+      importBtn.textContent = "Importer le texte";
+      alert(e.message || "Échec de l'import");
     }
   });
 
@@ -190,8 +190,8 @@ export function openImportModal({ onImport, initialTab = "pdf" }) {
 function previewArea(body) {
   body.innerHTML = `
     <div class="il-preview-wrap">
-      <div class="il-status" data-status>Ready.</div>
-      <textarea class="il-preview" data-preview rows="12" placeholder="Extracted text will appear here — you can edit it before importing."></textarea>
+      <div class="il-status" data-status>Prêt.</div>
+      <textarea class="il-preview" data-preview rows="12" placeholder="Le texte extrait apparaîtra ici — vous pouvez le modifier avant l'import."></textarea>
     </div>`;
   return { status: body.querySelector("[data-status]"), preview: body.querySelector("[data-preview]") };
 }
@@ -202,8 +202,8 @@ async function renderPDF(body, setText) {
   body.insertAdjacentHTML("afterbegin", `
     <div class="il-source">
       <input type="file" id="ilPdfFile" accept="application/pdf" hidden>
-      <button class="ws-btn ws-btn-primary" type="button" id="ilPickPdf">Choose a PDF…</button>
-      <span class="il-hint">Text is extracted locally in your browser — the file never leaves your device.</span>
+      <button class="ws-btn ws-btn-primary" type="button" id="ilPickPdf">Choisir un PDF…</button>
+      <span class="il-hint">Le texte est extrait localement dans votre navigateur — le fichier ne quitte jamais votre appareil.</span>
     </div>`);
   const pick = body.querySelector("#ilPickPdf");
   const fileInput = body.querySelector("#ilPdfFile");
@@ -212,13 +212,13 @@ async function renderPDF(body, setText) {
     const file = fileInput.files?.[0];
     if (!file) return;
     try {
-      status.textContent = "Loading PDF…";
+      status.textContent = "Chargement du PDF…";
       const pdfjs = await ensurePDF();
       const buf = await file.arrayBuffer();
       const pdf = await pdfjs.getDocument({ data: buf }).promise;
       let out = "";
       for (let p = 1; p <= pdf.numPages; p++) {
-        status.textContent = `Extracting page ${p}/${pdf.numPages}…`;
+        status.textContent = `Extraction de la page ${p}/${pdf.numPages}…`;
         const page = await pdf.getPage(p);
         const tc = await page.getTextContent();
         const line = tc.items.map((it) => it.str).join(" ");
@@ -227,9 +227,9 @@ async function renderPDF(body, setText) {
       preview.value = out.trim();
       setText(out);
       preview.addEventListener("input", () => setText(preview.value));
-      status.textContent = `Done — ${pdf.numPages} page(s). Edit the text if needed, then import.`;
+      status.textContent = `Terminé — ${pdf.numPages} page(s). Modifiez le texte si besoin, puis importez.`;
     } catch (e) {
-      status.textContent = `Error: ${e.message}`;
+      status.textContent = `Erreur : ${e.message}`;
     }
   });
 }
@@ -238,17 +238,17 @@ async function renderPDF(body, setText) {
 function renderVoice(body, setText) {
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SR) {
-    body.innerHTML = `<div class="il-status">Speech recognition is not supported by this browser. Use Chrome or Edge.</div>`;
+    body.innerHTML = `<div class="il-status">La reconnaissance vocale n'est pas prise en charge par ce navigateur. Utilisez Chrome ou Edge.</div>`;
     return;
   }
   body.innerHTML = `
     <div class="il-source">
-      <button class="ws-btn ws-btn-primary" type="button" id="ilRec">● Start recording</button>
-      <span class="il-hint">Recognition runs locally on your device — no audio is sent anywhere.</span>
+      <button class="ws-btn ws-btn-primary" type="button" id="ilRec">● Commencer l'enregistrement</button>
+      <span class="il-hint">La reconnaissance s'effectue localement sur votre appareil — aucun audio n'est envoyé.</span>
     </div>
     <div class="il-preview-wrap">
-      <div class="il-status" data-status>Idle.</div>
-      <textarea class="il-preview" data-preview rows="12" placeholder="Your transcription will appear here…"></textarea>
+      <div class="il-status" data-status>En attente.</div>
+      <textarea class="il-preview" data-preview rows="12" placeholder="Votre transcription apparaîtra ici…"></textarea>
     </div>`;
   const btn = body.querySelector("#ilRec");
   const status = body.querySelector("[data-status]");
@@ -271,12 +271,12 @@ function renderVoice(body, setText) {
       preview.value = (finalText + interim).trim();
       setText(preview.value);
     };
-    rec.onend = () => { listening = false; btn.innerHTML = "● Start recording"; status.textContent = "Stopped."; };
-    rec.onerror = (e) => { status.textContent = `Error: ${e.error}`; };
+    rec.onend = () => { listening = false; btn.innerHTML = "● Commencer l'enregistrement"; status.textContent = "Arrêté."; };
+    rec.onerror = (e) => { status.textContent = `Erreur : ${e.error}`; };
     rec.start();
     listening = true;
-    btn.innerHTML = "■ Stop";
-    status.textContent = "Listening… speak now.";
+    btn.innerHTML = "■ Arrêter";
+    status.textContent = "Écoute… parlez maintenant.";
     preview.addEventListener("input", () => { finalText = preview.value; setText(preview.value); });
   });
 
@@ -288,11 +288,11 @@ function renderText(body, setText) {
   const { status, preview } = previewArea(body);
   body.insertAdjacentHTML("afterbegin", `
     <div class="il-source">
-      <span class="il-hint">Type or paste the lesson content directly — it stays on your device until you import it.</span>
+      <span class="il-hint">Tapez ou collez directement le contenu de la leçon — il reste sur votre appareil jusqu'à l'import.</span>
     </div>`);
-  preview.placeholder = "Write or paste the lesson text here…";
+  preview.placeholder = "Écrivez ou collez le texte de la leçon ici…";
   preview.addEventListener("input", () => setText(preview.value));
-  status.textContent = "Ready.";
+  status.textContent = "Prêt.";
 }
 
 // ---------- Link + explanation ----------
@@ -300,13 +300,13 @@ function renderLink(body, setText) {
   body.innerHTML = `
     <div class="il-source il-link">
       <input type="url" id="ilUrl" class="il-link-url" placeholder="https://…" autocomplete="off">
-      <textarea id="ilExplain" class="il-link-explain" rows="5" placeholder="Explain what this link is about / what to extract from it…"></textarea>
-      <button class="ws-btn ws-btn-primary" type="button" id="ilLinkGo">Use link + explanation</button>
-      <span class="il-hint">The URL is stored as reference — only your explanation is imported as lesson text.</span>
+      <textarea id="ilExplain" class="il-link-explain" rows="5" placeholder="Expliquez le sujet du lien / ce qu'il faut en extraire…"></textarea>
+      <button class="ws-btn ws-btn-primary" type="button" id="ilLinkGo">Utiliser le lien + l'explication</button>
+      <span class="il-hint">L'URL est conservée comme référence — seule votre explication est importée comme texte de leçon.</span>
     </div>
     <div class="il-preview-wrap">
-      <div class="il-status" data-status>Ready.</div>
-      <textarea class="il-preview" data-preview rows="8" placeholder="Combined text preview…"></textarea>
+      <div class="il-status" data-status>Prêt.</div>
+      <textarea class="il-preview" data-preview rows="8" placeholder="Aperçu du texte combiné…"></textarea>
     </div>`;
   const url = body.querySelector("#ilUrl");
   const explain = body.querySelector("#ilExplain");
@@ -317,11 +317,11 @@ function renderLink(body, setText) {
   const combine = () => {
     const u = url.value.trim();
     const e = explain.value.trim();
-    const text = [u && `Source: ${u}`, e].filter(Boolean).join("\n\n");
+    const text = [u && `Source : ${u}`, e].filter(Boolean).join("\n\n");
     preview.value = text;
     setText(text);
     go.disabled = !text;
-    status.textContent = text ? "Ready to import." : "Enter a URL and/or an explanation.";
+    status.textContent = text ? "Prêt à importer." : "Saisissez une URL et/ou une explication.";
   };
   url.addEventListener("input", combine);
   explain.addEventListener("input", combine);
@@ -335,8 +335,8 @@ function renderFiles(body, setText) {
   body.insertAdjacentHTML("afterbegin", `
     <div class="il-source">
       <input type="file" id="ilTextFile" accept=".txt,.md,.text,.csv,.json,.png,.jpg,.jpeg,.webp,.gif,.bmp" hidden>
-      <button class="ws-btn ws-btn-primary" type="button" id="ilPickFile">Choose a file…</button>
-      <span class="il-hint">Text files are read directly; images go through local OCR (Tesseract).</span>
+      <button class="ws-btn ws-btn-primary" type="button" id="ilPickFile">Choisir un fichier…</button>
+      <span class="il-hint">Les fichiers texte sont lus directement ; les images passent par l'OCR local (Tesseract).</span>
     </div>`);
   const pick = body.querySelector("#ilPickFile");
   const fileInput = body.querySelector("#ilTextFile");
@@ -346,24 +346,24 @@ function renderFiles(body, setText) {
     if (!file) return;
     try {
       if (file.type.startsWith("image/") || /\.(png|jpe?g|webp|gif|bmp)$/i.test(file.name)) {
-        status.textContent = "Loading OCR engine (first run downloads ~10 MB, then cached)…";
+        status.textContent = "Chargement du moteur OCR (le premier lancement télécharge ~10 Mo, puis mis en cache)…";
         const T = await ensureTesseract();
-        status.textContent = `Recognizing ${file.name}… this can take ~30 s…`;
+        status.textContent = `Reconnaissance de ${file.name}… cela peut prendre ~30 s…`;
         const { data } = await T.recognize(file);
         const text = (data.text || "").trim();
         preview.value = text;
         setText(text);
         preview.addEventListener("input", () => setText(preview.value));
-        status.textContent = `OCR done — confidence ${Math.round(data.confidence || 0)}%. Edit then import.`;
+        status.textContent = `OCR terminé — confiance ${Math.round(data.confidence || 0)} %. Modifiez puis importez.`;
         return;
       }
       const text = await file.text();
       preview.value = text;
       setText(text);
       preview.addEventListener("input", () => setText(preview.value));
-      status.textContent = `Loaded ${file.name} (${(file.size / 1024).toFixed(1)} KB).`;
+      status.textContent = `${file.name} chargé (${(file.size / 1024).toFixed(1)} Ko).`;
     } catch (e) {
-      status.textContent = `Error: ${e.message}`;
+      status.textContent = `Erreur : ${e.message}`;
     }
   });
 }
@@ -372,8 +372,8 @@ function renderFiles(body, setText) {
 function renderCamera(body, setText) {
   body.innerHTML = `
     <div class="il-source">
-      <button class="ws-btn ws-btn-primary" type="button" id="ilCam">Open camera</button>
-      <span class="il-hint">Capture → drag the 4 corners to straighten → OCR runs locally (Tesseract.js).</span>
+      <button class="ws-btn ws-btn-primary" type="button" id="ilCam">Ouvrir la caméra</button>
+      <span class="il-hint">Capture → faites glisser les 4 coins pour redresser → l'OCR s'exécute localement (Tesseract.js).</span>
     </div>
     <div class="il-cam-stage" data-stage hidden>
       <video data-video autoplay playsinline muted></video>
@@ -386,15 +386,15 @@ function renderCamera(body, setText) {
         <svg class="il-corner-lines" data-lines><polygon data-poly fill="rgba(140,236,255,.08)" stroke="#8cecff" stroke-width="1.5"/></svg>
       </div>
       <div class="il-cam-controls">
-        <button class="ws-btn ws-btn-primary" type="button" data-act="capture" hidden>Capture</button>
-        <button class="ws-btn ws-btn-ghost" type="button" data-act="apply" hidden>✓ Apply crop</button>
-        <button class="ws-btn ws-btn-ghost" type="button" data-act="retake" hidden>↺ Retake</button>
+        <button class="ws-btn ws-btn-primary" type="button" data-act="capture" hidden>Capturer</button>
+        <button class="ws-btn ws-btn-ghost" type="button" data-act="apply" hidden>✓ Appliquer le recadrage</button>
+        <button class="ws-btn ws-btn-ghost" type="button" data-act="retake" hidden>↺ Reprendre</button>
         <button class="ws-btn ws-btn-primary" type="button" data-act="ocr" hidden>OCR</button>
-        <button class="ws-btn ws-btn-ghost" type="button" data-act="stop" hidden>Stop</button>
+        <button class="ws-btn ws-btn-ghost" type="button" data-act="stop" hidden>Arrêter</button>
       </div>
     </div>
     <div class="il-preview-wrap" data-result hidden>
-      <div class="il-status" data-status>Ready.</div>
+      <div class="il-status" data-status>Prêt.</div>
       <textarea class="il-preview" data-preview rows="10" placeholder="OCR result…"></textarea>
     </div>`;
 
@@ -420,7 +420,7 @@ function renderCamera(body, setText) {
       show("capture");
       body.querySelector("#ilCam").style.display = "none";
     } catch (e) {
-      status.textContent = `Camera error: ${e.message}`;
+      status.textContent = `Erreur caméra : ${e.message}`;
       result.hidden = false;
     }
   }
@@ -483,7 +483,7 @@ function renderCamera(body, setText) {
   async function applyCrop() {
     if (!capturedImg || applying) return;
     applying = true;
-    status.textContent = "Straightening…";
+    status.textContent = "Redressement…";
     result.hidden = false;
     const w = capturedImg.width, h = capturedImg.height;
     // Output size ≈ average quad edge lengths
@@ -496,24 +496,24 @@ function renderCamera(body, setText) {
     // swap: now corners describe full rect
     corners = [{ x: 0, y: 0 }, { x: 1, y: 0 }, { x: 1, y: 1 }, { x: 0, y: 1 }];
     updateHandles();
-    status.textContent = "Crop applied. Run OCR or retake.";
+    status.textContent = "Recadrage appliqué. Lancez l'OCR ou reprenez.";
     show("ocr");
     acts.forEach((b) => { if (b.dataset.act === "retake") b.hidden = false; if (b.dataset.act === "stop") b.hidden = false; });
     applying = false;
   }
 
   async function runOCR() {
-    status.textContent = "Loading OCR engine (first run downloads ~10 MB, then cached)…";
+    status.textContent = "Chargement du moteur OCR (le premier lancement télécharge ~10 Mo, puis mis en cache)…";
     try {
       const T = await ensureTesseract();
-      status.textContent = "Recognizing text… this can take ~30 s…";
+      status.textContent = "Reconnaissance du texte… cela peut prendre ~30 s…";
       const { data } = await T.recognize(shot);
       preview.value = data.text.trim();
       setText(preview.value);
       preview.addEventListener("input", () => setText(preview.value));
-      status.textContent = `OCR done — confidence ${Math.round((data.confidence || 0))}%. Edit then import.`;
+      status.textContent = `OCR terminé — confiance ${Math.round((data.confidence || 0))} %. Modifiez puis importez.`;
     } catch (e) {
-      status.textContent = `OCR error: ${e.message}`;
+      status.textContent = `Erreur OCR : ${e.message}`;
     }
   }
 

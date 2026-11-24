@@ -363,7 +363,7 @@ async function loadCalculatorHistory() {
 
 function renderCalculatorHistory(history) {
   if (!history || history.length === 0) {
-    calculatorHistoryContainer.innerHTML = '<p class="history-empty">No calculations yet</p>';
+    calculatorHistoryContainer.innerHTML = '<p class="history-empty">Aucun calcul pour le moment</p>';
     return;
   }
   
@@ -760,11 +760,11 @@ async function handleConversion() {
     } else {
       const errorData = await response.json();
       console.error('Conversion failed:', errorData);
-      converterResultDisplay.textContent = errorData.error || 'Conversion failed';
+      converterResultDisplay.textContent = errorData.error || 'Échec de la conversion';
     }
   } catch (error) {
     console.error('Conversion error:', error);
-    converterResultDisplay.textContent = 'Error converting units';
+    converterResultDisplay.textContent = 'Erreur lors de la conversion';
   }
 }
 
@@ -824,11 +824,11 @@ async function runCode() {
   const code = codeInput.value;
   
   if (!code.trim()) {
-    codeOutputContent.textContent = 'Please enter some code';
+    codeOutputContent.textContent = 'Veuillez saisir du code';
     return;
   }
   
-  codeOutputContent.textContent = 'Running...';
+  codeOutputContent.textContent = 'Exécution...';
   codeRunBtn.disabled = true;
   
   try {
@@ -857,9 +857,9 @@ async function runCode() {
         fn(customConsole);
         
         const output = logs.join('\n');
-        codeOutputContent.textContent = output || 'Code executed successfully (no output)';
+        codeOutputContent.textContent = output || 'Code exécuté avec succès (aucune sortie)';
       } catch (evalError) {
-        codeOutputContent.textContent = 'Error: ' + evalError.message;
+        codeOutputContent.textContent = 'Erreur : ' + evalError.message;
       }
     } else {
       // For other languages, use backend API
@@ -879,16 +879,16 @@ async function runCode() {
         } else if (data.error) {
           codeOutputContent.textContent = data.error;
         } else {
-          codeOutputContent.textContent = 'Code executed successfully (no output)';
+          codeOutputContent.textContent = 'Code exécuté avec succès (aucune sortie)';
         }
       } else {
         const errorData = await response.json();
-        codeOutputContent.textContent = errorData.error || errorData.message || 'Execution failed';
+        codeOutputContent.textContent = errorData.error || errorData.message || 'Échec de l'exécution';
       }
     }
   } catch (error) {
     console.error('Code execution error:', error);
-    codeOutputContent.textContent = error.message || 'Error executing code';
+    codeOutputContent.textContent = error.message || 'Erreur lors de l'exécution du code';
   } finally {
     codeRunBtn.disabled = false;
   }

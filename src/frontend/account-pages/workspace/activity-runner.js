@@ -14,11 +14,11 @@ function shuffle(arr, seed = Math.random) {
 // Each renderer returns { node, getAnswer() }
 const RENDERERS = {
   ShortTextInput(a) {
-    const node = el(`<div class="ar-input"><input type="text" placeholder="${esc(a.payload?.placeholder || "Your answer…")}"></div>`);
+    const node = el(`<div class="ar-input"><input type="text" placeholder="${esc(a.payload?.placeholder || "Votre réponse…")}"></div>`);
     return { node, getAnswer: () => ({ text: node.querySelector("input").value }) };
   },
   LongTextInput(a) {
-    const node = el(`<div class="ar-input"><textarea rows="5" placeholder="${esc(a.payload?.placeholder || "Write your answer…")}"></textarea></div>`);
+    const node = el(`<div class="ar-input"><textarea rows="5" placeholder="${esc(a.payload?.placeholder || "Écrivez votre réponse…")}"></textarea></div>`);
     return { node, getAnswer: () => ({ text: node.querySelector("textarea").value }) };
   },
   NumberInput(a) {
@@ -26,11 +26,11 @@ const RENDERERS = {
     return { node, getAnswer: () => ({ number: node.querySelector("input").value === "" ? null : Number(node.querySelector("input").value) }) };
   },
   MathInput(a) {
-    const node = el(`<div class="ar-input ar-math"><span class="ar-math-tag">f(x)=</span><input type="text" placeholder="e.g. x^2 + 2x + 1"></div>`);
+    const node = el(`<div class="ar-input ar-math"><span class="ar-math-tag">f(x)=</span><input type="text" placeholder="ex. x^2 + 2x + 1"></div>`);
     return { node, getAnswer: () => ({ expression: node.querySelector("input").value }) };
   },
   CodeInput(a) {
-    const node = el(`<div class="ar-input"><textarea class="mono" rows="6" spellcheck="false" placeholder="${esc(a.payload?.placeholder || "// your code…")}"></textarea></div>`);
+    const node = el(`<div class="ar-input"><textarea class="mono" rows="6" spellcheck="false" placeholder="${esc(a.payload?.placeholder || "// votre code…")}"></textarea></div>`);
     return { node, getAnswer: () => ({ code: node.querySelector("textarea").value }) };
   },
   SingleChoice(a) {
@@ -57,8 +57,8 @@ const RENDERERS = {
   },
   TrueFalse(a) {
     const node = el(`<div class="ar-choices ar-tf">
-      <button class="ar-choice ar-tf-true" type="button">✓ True</button>
-      <button class="ar-choice ar-tf-false" type="button">✗ False</button>
+      <button class="ar-choice ar-tf-true" type="button">✓ Vrai</button>
+      <button class="ar-choice ar-tf-false" type="button">✗ Faux</button>
     </div>`);
     let val = null;
     node.querySelector(".ar-tf-true").addEventListener("click", () => { val = true; node.querySelectorAll(".ar-choice").forEach((x) => x.classList.remove("sel")); node.querySelector(".ar-tf-true").classList.add("sel"); });
@@ -108,7 +108,7 @@ const RENDERERS = {
   OrderingBase(a, label) {
     const items = [...(a.payload?.items || [])];
     const idx = items.map((_, i) => i);
-    const node = el(`<div class="ar-order"><p class="ar-hint-sm">${esc(label || "Put the items in the correct order.")}</p><div class="ar-order-list"></div></div>`);
+    const node = el(`<div class="ar-order"><p class="ar-hint-sm">${esc(label || "Remettez les éléments dans le bon ordre.")}</p><div class="ar-order-list"></div></div>`);
     const list = node.querySelector(".ar-order-list");
     function render() {
       list.innerHTML = "";
@@ -126,15 +126,15 @@ const RENDERERS = {
     render();
     return { node, getAnswer: () => ({ order: [...idx] }) };
   },
-  DragSort(a) { return RENDERERS.OrderingBase(a, "Drag or use arrows to sort."); },
-  OrderingExercise(a) { return RENDERERS.OrderingBase(a, "Put the items in the correct order."); },
+  DragSort(a) { return RENDERERS.OrderingBase(a, "Glissez-déposez ou utilisez les flèches pour trier."); },
+  OrderingExercise(a) { return RENDERERS.OrderingBase(a, "Remettez les éléments dans le bon ordre."); },
   TimelineBuilder(a) {
     const events = a.payload?.events || [];
     const node = el(`<div class="ar-timeline"></div>`);
     events.forEach((ev) => {
       node.appendChild(el(`<div class="ar-tl-item"><span class="ar-tl-date">${esc(ev.date || "…")}</span><span>${esc(ev.label || "")}</span></div>`));
     });
-    const order = RENDERERS.OrderingBase({ payload: { items: events.map((e) => `${e.date || ""} — ${e.label || ""}`) } }, "Order the events chronologically.");
+    const order = RENDERERS.OrderingBase({ payload: { items: events.map((e) => `${e.date || ""} — ${e.label || ""}`) } }, "Remettez les événements par ordre chronologique.");
     const wrap = el(`<div></div>`);
     wrap.appendChild(node);
     wrap.appendChild(order.node);
@@ -160,7 +160,7 @@ const RENDERERS = {
     const list = node.querySelector(".ar-imglabel-list");
     const regions = labels.map(() => "");
     labels.forEach((l, i) => {
-      const row = el(`<div class="ar-cat-row"><span class="ar-cat-item">${esc(l)}</span><input type="text" placeholder="Describe the region…"></div>`);
+      const row = el(`<div class="ar-cat-row"><span class="ar-cat-item">${esc(l)}</span><input type="text" placeholder="Décrivez la région…"></div>`);
       row.querySelector("input").addEventListener("input", (e) => { regions[i] = e.target.value; });
       list.appendChild(row);
     });
@@ -189,7 +189,7 @@ const RENDERERS = {
     return { node, getAnswer: () => ({ selected: [...picked].sort((x, y) => x - y) }) };
   },
   GraphPlotter(a) {
-    const node = el(`<div class="ar-graph"><canvas width="480" height="300"></canvas><p class="ar-hint-sm">Click to place points (they're normalized 0–1).</p></div>`);
+    const node = el(`<div class="ar-graph"><canvas width="480" height="300"></canvas><p class="ar-hint-sm">Cliquez pour placer des points (coordonnées normalisées 0–1).</p></div>`);
     const cv = node.querySelector("canvas"), ctx = cv.getContext("2d");
     const pts = [];
     function draw() {
@@ -211,7 +211,7 @@ const RENDERERS = {
     const nodes = a.payload?.nodes || [];
     const node = el(`<div class="ar-diagram"><div class="ar-diagram-nodes">${nodes.map((n) => `<span class="ar-chip">${esc(n)}</span>`).join("")}</div>
       <div class="ar-diagram-edges"></div>
-      <button class="ws-btn ws-btn-ghost" type="button" data-add>+ Add link</button></div>`);
+      <button class="ws-btn ws-btn-ghost" type="button" data-add>+ Ajouter un lien</button></div>`);
     const list = node.querySelector(".ar-diagram-edges");
     const edges = [];
     function addRow(f = 0, t = 1) {
@@ -250,12 +250,12 @@ const RENDERERS = {
   },
   ErrorCorrection(a) {
     const node = el(`<div class="ar-err"><p class="ar-err-text">${esc(a.payload?.text || "")}</p>
-      <textarea rows="4" placeholder="Rewrite the corrected text…"></textarea></div>`);
+      <textarea rows="4" placeholder="Réécrivez le texte corrigé…"></textarea></div>`);
     return { node, getAnswer: () => ({ text: node.querySelector("textarea").value }) };
   },
   AudioRecorder(a) {
-    const node = el(`<div class="ar-audio"><p class="ar-hint-sm">${esc(a.payload?.prompt || "Record your answer.")}</p>
-      <div class="ar-audio-btns"><button class="ws-btn ws-btn-primary" type="button" data-rec>● Record</button><audio controls hidden></audio></div></div>`);
+    const node = el(`<div class="ar-audio"><p class="ar-hint-sm">${esc(a.payload?.prompt || "Enregistrez votre réponse.")}</p>
+      <div class="ar-audio-btns"><button class="ws-btn ws-btn-primary" type="button" data-rec>● Enregistrer</button><audio controls hidden></audio></div></div>`);
     const btn = node.querySelector("[data-rec]"), audio = node.querySelector("audio");
     let rec = null, chunks = [], url = null;
     btn.addEventListener("click", async () => {
@@ -269,25 +269,25 @@ const RENDERERS = {
           stream.getTracks().forEach((t) => t.stop());
           url = URL.createObjectURL(new Blob(chunks));
           audio.src = url; audio.hidden = false;
-          btn.textContent = "● Record again";
+          btn.textContent = "● Enregistrer à nouveau";
         };
         rec.start();
-        btn.textContent = "■ Stop";
-      } catch (e) { alert("Microphone unavailable: " + e.message); }
+        btn.textContent = "■ Arrêter";
+      } catch (e) { alert("Microphone indisponible : " + e.message); }
     });
     return { node, getAnswer: () => ({ recorded: !!url, audio: url || null }) };
   },
   AudioPlayer(a) {
     const src = a.payload?.audio;
-    const node = el(`<div class="ar-audio"><p class="ar-hint-sm">${esc(a.payload?.question || a.instruction || "Listen then answer.")}</p>
+    const node = el(`<div class="ar-audio"><p class="ar-hint-sm">${esc(a.payload?.question || a.instruction || "Écoutez puis répondez.")}</p>
       ${src ? `<audio controls src="${esc(src)}"></audio>` : `<div class="ar-img-ph">🔊 audio</div>`}
-      <input type="text" placeholder="Your answer…"></div>`);
+      <input type="text" placeholder="Votre réponse…"></div>`);
     return { node, getAnswer: () => ({ text: node.querySelector("input").value }) };
   },
   DrawingBoard(a) {
-    const node = el(`<div class="ar-draw"><p class="ar-hint-sm">${esc(a.payload?.prompt || a.instruction || "Draw your answer.")}</p>
+    const node = el(`<div class="ar-draw"><p class="ar-hint-sm">${esc(a.payload?.prompt || a.instruction || "Dessinez votre réponse.")}</p>
       <canvas width="640" height="360" class="ar-draw-cv"></canvas>
-      <div class="ar-audio-btns"><button class="ws-btn ws-btn-ghost" type="button" data-clear>Clear</button></div></div>`);
+      <div class="ar-audio-btns"><button class="ws-btn ws-btn-ghost" type="button" data-clear>Effacer</button></div></div>`);
     const cv = node.querySelector("canvas"), ctx = cv.getContext("2d");
     ctx.strokeStyle = "#e8e6f0"; ctx.lineWidth = 2; ctx.lineCap = "round";
     let drawing = false;
@@ -300,8 +300,8 @@ const RENDERERS = {
   },
   Flashcard(a) {
     const node = el(`<div class="ar-flash"><div class="ar-flash-card" data-card><div class="ar-flash-face ar-flash-front">${esc(a.payload?.front || "?")}</div><div class="ar-flash-face ar-flash-back" hidden>${esc(a.payload?.back || "")}</div></div>
-      <div class="ar-audio-btns"><button class="ws-btn ws-btn-ghost" type="button" data-flip>Flip</button>
-      <button class="ar-choice ar-tf-true" type="button">✓ I knew it</button><button class="ar-choice ar-tf-false" type="button">✗ Review</button></div></div>`);
+      <div class="ar-audio-btns"><button class="ws-btn ws-btn-ghost" type="button" data-flip>Retourner</button>
+      <button class="ar-choice ar-tf-true" type="button">✓ Je savais</button><button class="ar-choice ar-tf-false" type="button">✗ À revoir</button></div></div>`);
     let grade = null;
     node.querySelector("[data-flip]").addEventListener("click", () => {
       const f = node.querySelector(".ar-flash-front"), b = node.querySelector(".ar-flash-back");
@@ -313,10 +313,10 @@ const RENDERERS = {
   },
 };
 
-RENDERERS.ProofBuilder = (a) => RENDERERS.OrderingBase({ payload: { items: a.payload?.steps || a.payload?.items || [] } }, "Order the proof steps.");
+RENDERERS.ProofBuilder = (a) => RENDERERS.OrderingBase({ payload: { items: a.payload?.steps || a.payload?.items || [] } }, "Remettez les étapes de la démonstration dans l'ordre.");
 
 function fallbackRenderer(a) {
-  const node = el(`<div class="ar-input"><textarea rows="4" placeholder="${esc(a.instruction || "Your answer…")}"></textarea></div>`);
+  const node = el(`<div class="ar-input"><textarea rows="4" placeholder="${esc(a.instruction || "Votre réponse…")}"></textarea></div>`);
   return { node, getAnswer: () => ({ text: node.querySelector("textarea").value }) };
 }
 
@@ -341,8 +341,8 @@ export function openActivityRunner(activities, { onClose, test } = {}) {
         <div class="ar-feedback" data-feedback hidden></div>
       </div>
       <div class="ws-modal-foot">
-        <button class="ws-btn ws-btn-ghost" type="button" data-prev>← Prev</button>
-        <button class="ws-btn ws-btn-primary" type="button" data-next>Submit & continue →</button>
+        <button class="ws-btn ws-btn-ghost" type="button" data-prev>← Préc.</button>
+        <button class="ws-btn ws-btn-primary" type="button" data-next>Valider et continuer →</button>
       </div>
     </div>`;
   document.body.appendChild(root);
@@ -382,7 +382,7 @@ export function openActivityRunner(activities, { onClose, test } = {}) {
     const a = activities[idx];
     stage.innerHTML = "";
     feedbackEl.hidden = true; feedbackEl.innerHTML = "";
-    root.querySelector("[data-comp]").textContent = a.component || "Exercise";
+    root.querySelector("[data-comp]").textContent = a.component || "Exercice";
     root.querySelector("[data-title]").textContent = a.title || "";
     root.querySelector("[data-instr]").textContent = a.instruction || "";
     root.querySelector("[data-count]").textContent = `${idx + 1} / ${activities.length}`;
@@ -391,7 +391,7 @@ export function openActivityRunner(activities, { onClose, test } = {}) {
     const r = (RENDERERS[a.component] || fallbackRenderer)(a);
     current = r;
     stage.appendChild(r.node);
-    root.querySelector("[data-next]").textContent = idx === activities.length - 1 ? "Finish ✓" : "Submit & continue →";
+    root.querySelector("[data-next]").textContent = idx === activities.length - 1 ? "Terminer ✓" : "Valider et continuer →";
   }
 
   root.querySelector("[data-prev]").addEventListener("click", () => { if (idx > 0) { idx--; render(); } });
@@ -399,7 +399,7 @@ export function openActivityRunner(activities, { onClose, test } = {}) {
     const a = activities[idx];
     const answer = current?.getAnswer ? current.getAnswer() : {};
     const btn = root.querySelector("[data-next]");
-    btn.disabled = true; btn.textContent = "Checking…";
+    btn.disabled = true; btn.textContent = "Vérification…";
     try {
       const fb = await apiLearning("feedback", {
         component: a.component, instruction: a.instruction,
@@ -411,30 +411,30 @@ export function openActivityRunner(activities, { onClose, test } = {}) {
       if (test) {
         // Simulation: never reveal correctness mid-test.
         feedbackEl.className = "ar-feedback";
-        feedbackEl.innerHTML = `<div class="ar-fb-head">Answer recorded ✓</div><div class="ar-fb-comment">Results are revealed at the end of the test.</div>`;
+        feedbackEl.innerHTML = `<div class="ar-fb-head">Réponse enregistrée ✓</div><div class="ar-fb-comment">Les résultats sont révélés à la fin du test.</div>`;
       } else {
         feedbackEl.className = `ar-feedback ${fb.correct ? "ok" : "ko"}`;
         feedbackEl.innerHTML = `
-          <div class="ar-fb-head">${fb.correct ? "✓ Correct" : "✗ Not quite"} ${fb.score != null ? `· ${fb.score}/100` : ""}</div>
+          <div class="ar-fb-head">${fb.correct ? "✓ Correct" : "✗ Pas tout à fait"} ${fb.score != null ? `· ${fb.score}/100` : ""}</div>
           <div class="ar-fb-comment">${esc(fb.comment || "")}</div>
           ${fb.hint ? `<div class="ar-fb-hint">💡 ${esc(fb.hint)}</div>` : ""}
           ${a.explanation ? `<div class="ar-fb-expl">${esc(a.explanation)}</div>` : ""}`;
       }
       if (idx === activities.length - 1) {
-        btn.textContent = "Finish ✓";
+        btn.textContent = "Terminer ✓";
         btn.disabled = false;
         btn.onclick = () => (test ? finishTest() : close());
       } else {
-        btn.textContent = "Continue →";
+        btn.textContent = "Continuer →";
         btn.disabled = false;
         btn.onclick = () => { idx++; render(); };
       }
     } catch (e) {
       btn.disabled = false;
-      btn.textContent = "Retry";
+      btn.textContent = "Réessayer";
       feedbackEl.hidden = false;
       feedbackEl.className = "ar-feedback ko";
-      feedbackEl.textContent = `Feedback error: ${e.message}`;
+      feedbackEl.textContent = `Erreur de feedback : ${e.message}`;
     }
   });
 
@@ -459,7 +459,7 @@ export function openActivityRunner(activities, { onClose, test } = {}) {
     const res = computeResults();
     stage.innerHTML = "";
     feedbackEl.hidden = true;
-    root.querySelector("[data-comp]").textContent = "Results";
+    root.querySelector("[data-comp]").textContent = "Résultats";
     root.querySelector("[data-title]").textContent = test?.chapterName || "Test";
     root.querySelector("[data-instr]").textContent = "";
     root.querySelector("[data-count]").textContent = "";
@@ -469,8 +469,8 @@ export function openActivityRunner(activities, { onClose, test } = {}) {
     stage.innerHTML = `
       <div class="ar-results">
         <div class="ar-grade">${res.grade}<span>/${res.notation}</span></div>
-        <div class="ar-grade-sub">${res.pct.toFixed(1)}% — ${res.correctCount}/${res.total} correct, ${res.answeredCount}/${res.total} answered${test?.maxMinutes ? ` — ${res.elapsedMin.toFixed(1)}/${test.maxMinutes} min` : ""}</div>
-        <div class="ar-remark" data-remark><em>Writing progression remark…</em></div>
+        <div class="ar-grade-sub">${res.pct.toFixed(1)}% — ${res.correctCount}/${res.total} correctes, ${res.answeredCount}/${res.total} répondues${test?.maxMinutes ? ` — ${res.elapsedMin.toFixed(1)}/${test.maxMinutes} min` : ""}</div>
+        <div class="ar-remark" data-remark><em>Rédaction de la remarque de progression…</em></div>
       </div>`;
     try {
       const report = await apiLearning("test-report", {
@@ -481,12 +481,12 @@ export function openActivityRunner(activities, { onClose, test } = {}) {
       res.remark = report.remark || "";
       stage.querySelector("[data-remark]").innerHTML = `<strong>Progression</strong><p>${esc(report.remark || "")}</p>`;
     } catch (e) {
-      stage.querySelector("[data-remark]").innerHTML = `<strong>Progression</strong><p class="ar-remark-err">Remark unavailable: ${esc(e.message)}</p>`;
+      stage.querySelector("[data-remark]").innerHTML = `<strong>Progression</strong><p class="ar-remark-err">Remarque indisponible : ${esc(e.message)}</p>`;
     }
     const foot = root.querySelector(".ws-modal-foot");
     foot.innerHTML = `
-      <button class="ws-btn ws-btn-ghost" type="button" data-close>Close</button>
-      <button class="ws-btn ws-btn-primary" type="button" data-save>Save results</button>`;
+      <button class="ws-btn ws-btn-ghost" type="button" data-close>Fermer</button>
+      <button class="ws-btn ws-btn-primary" type="button" data-save>Enregistrer les résultats</button>`;
     foot.querySelector("[data-close]").addEventListener("click", close);
     foot.querySelector("[data-save]").addEventListener("click", async () => {
       foot.querySelector("[data-save]").disabled = true;

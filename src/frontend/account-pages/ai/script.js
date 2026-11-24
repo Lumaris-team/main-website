@@ -42,7 +42,7 @@ async function aiGet(sub, customName = null) {
   try {
     json = JSON.parse(text);
   } catch {
-    throw new Error("Invalid API response");
+    throw new Error("Réponse API invalide");
   }
   if (json && json.error) {
     throw new Error(json.error);
@@ -90,7 +90,7 @@ async function loadModels() {
     }
   } catch (error) {
     console.error("Failed to load models:", error);
-    showError("Failed to load available models");
+    showError("Échec du chargement des modèles");
   }
 }
 
@@ -212,11 +212,11 @@ function populateCompanies() {
   console.log("Category models:", categoryModels);
   
   if (categoryModels.length === 0) {
-    trigger.textContent = "No models available";
+    trigger.textContent = "Aucun modèle disponible";
     return;
   }
   
-  const companies = [...new Set(categoryModels.map(model => model.brand || "Unknown"))].sort();
+  const companies = [...new Set(categoryModels.map(model => model.brand || "Inconnu"))].sort();
   console.log("Available companies:", companies);
   
   companies.forEach(company => {
@@ -262,11 +262,11 @@ function populateModels() {
   console.log("Populating models for category:", state.selectedCategory, "company:", state.selectedCompany);
   const categoryModels = state.categorizedModels[state.selectedCategory] || [];
   console.log("Category models:", categoryModels);
-  const companyModels = categoryModels.filter(model => (model.brand || "Unknown") === state.selectedCompany);
+  const companyModels = categoryModels.filter(model => (model.brand || "Inconnu") === state.selectedCompany);
   console.log("Company models:", companyModels);
   
   if (companyModels.length === 0) {
-    trigger.textContent = "No models for this company";
+    trigger.textContent = "Aucun modèle pour cette entreprise";
     return;
   }
   
@@ -465,7 +465,7 @@ async function sendMessage(message) {
       }
     } else {
       console.error("Invalid response structure:", response);
-      const errorMsg = response?.error || "This model is not capable of handling this request";
+      const errorMsg = response?.error || "Ce modèle ne peut pas traiter cette demande";
       showError(errorMsg);
     }
   } catch (error) {
@@ -478,11 +478,11 @@ async function sendMessage(message) {
     }
     
     // Determine error type and show appropriate message
-    let errorMsg = "Network problem - please try again";
+    let errorMsg = "Problème réseau - veuillez réessayer";
     if (error.message && error.message.includes("fetch")) {
-      errorMsg = "Network problem - please check your connection";
+      errorMsg = "Problème réseau - vérifiez votre connexion";
     } else if (error.message && error.message.includes("timeout")) {
-      errorMsg = "Request timed out - please try again";
+      errorMsg = "Délai d'attente dépassé - veuillez réessayer";
     } else if (error.message) {
       errorMsg = error.message;
     }
@@ -498,7 +498,7 @@ function displayAIMessage(content) {
   // Check if content is a base64 image
   let messageContent;
   if (content && content.startsWith('data:image/')) {
-    messageContent = `<img src="${content}" alt="Generated image" style="max-width: 100%; border-radius: 8px;">`;
+    messageContent = `<img src="${content}" alt="Image générée" style="max-width: 100%; border-radius: 8px;">`;
   } else {
     messageContent = formatMessage(content);
   }
@@ -686,7 +686,7 @@ async function showConversations(offset = 0) {
     state.conversationsOffset = 0;
     chatContainer.innerHTML = `
       <div class="chat-message ai">
-        <div class="chat-bubble">Loading conversations...</div>
+        <div class="chat-bubble">Chargement des conversations...</div>
       </div>
     `;
   }
@@ -706,7 +706,7 @@ async function showConversations(offset = 0) {
   if (error) {
     chatContainer.innerHTML = `
       <div class="chat-message ai">
-        <div class="chat-bubble" style="color: #ff6b6b;">Error loading conversations: ${escapeHtml(error)}</div>
+        <div class="chat-bubble" style="color: #ff6b6b;">Erreur lors du chargement des conversations : ${escapeHtml(error)}</div>
       </div>
     `;
     return;
@@ -715,7 +715,7 @@ async function showConversations(offset = 0) {
   if (!conversations || conversations.length === 0) {
     if (offset === 0) {
       chatContainer.innerHTML = `
-        <p class="state-msg">No conversations found.</p>
+        <p class="state-msg">Aucune conversation trouvée.</p>
       `;
     }
     return;
@@ -725,7 +725,7 @@ async function showConversations(offset = 0) {
   const conversationsHtml = conversations.map(conv => `
     <div class="conversation-row">
       <div class="conversation-info">
-        <strong class="conversation-title">${escapeHtml(conv.name || "Untitled")}</strong>
+        <strong class="conversation-title">${escapeHtml(conv.name || "Sans titre")}</strong>
         <span class="conversation-date">${new Date(conv.lastPromptDate).toLocaleDateString()}</span>
       </div>
       <div class="conversation-actions">
@@ -733,13 +733,13 @@ async function showConversations(offset = 0) {
           class="conversation-btn load-btn"
           data-load-conv="${conv.id}"
         >
-          Load
+          Charger
         </button>
         <button 
           class="conversation-btn delete-btn"
           data-delete-conv="${conv.id}"
         >
-          Delete
+          Supprimer
         </button>
       </div>
     </div>
@@ -796,7 +796,7 @@ async function loadConversation(conversationId, offset = 0, limit = 100) {
 
     if (data && data.messages) {
       state.conversationId = conversationId;
-      state.conversationName = data.conversationName || "Untitled";
+      state.conversationName = data.conversationName || "Sans titre";
       state.isNewConversation = false;
       state.messagesOffset = offset;
 
@@ -824,7 +824,7 @@ async function loadConversation(conversationId, offset = 0, limit = 100) {
           // Check if content is a base64 image
           let messageContent;
           if (msg.content && msg.content.startsWith('data:image/')) {
-            messageContent = `<img src="${msg.content}" alt="Generated image" style="max-width: 100%; border-radius: 8px;">`;
+            messageContent = `<img src="${msg.content}" alt="Image générée" style="max-width: 100%; border-radius: 8px;">`;
           } else {
             messageContent = formatMessage(msg.content);
           }
@@ -881,7 +881,7 @@ async function loadConversation(conversationId, offset = 0, limit = 100) {
         if (!loadMoreBtn) {
           const loadMoreHtml = `
             <button id="load-more-messages" style="margin: 8px auto; display: block; padding: 8px 16px; background: var(--accent); border: none; border-radius: 6px; color: #1a1a1a; cursor: pointer; font-size: 0.85rem;">
-              Load more messages
+              Charger plus de messages
             </button>
           `;
           chatContainer.insertAdjacentHTML("afterbegin", loadMoreHtml);
@@ -910,12 +910,12 @@ async function loadConversation(conversationId, offset = 0, limit = 100) {
     }
   } catch (error) {
     console.error("Failed to load conversation:", error);
-    showError("Failed to load conversation");
+    showError("Échec du chargement de la conversation");
   }
 }
 
 async function deleteConversation(conversationId) {
-  if (!confirm("Are you sure you want to delete this conversation?")) {
+  if (!confirm("Êtes-vous sûr de vouloir supprimer cette conversation ?")) {
     return;
   }
 
@@ -933,11 +933,11 @@ async function deleteConversation(conversationId) {
       // Refresh the conversations list
       showConversations(0);
     } else {
-      showError("Failed to delete conversation");
+      showError("Échec de la suppression de la conversation");
     }
   } catch (error) {
     console.error("Failed to delete conversation:", error);
-    showError("Failed to delete conversation");
+    showError("Échec de la suppression de la conversation");
   }
 }
 
@@ -964,7 +964,7 @@ async function showLimits() {
   // Clear current chat and show loading
   chatContainer.innerHTML = `
     <div class="chat-message ai">
-      <div class="chat-bubble">Loading limits...</div>
+      <div class="chat-bubble">Chargement des limites...</div>
     </div>
   `;
 
@@ -977,7 +977,7 @@ async function showLimits() {
   if (!limits) {
     chatContainer.innerHTML = `
       <div class="chat-message ai">
-        <div class="chat-bubble">Failed to load limits information.</div>
+        <div class="chat-bubble">Échec du chargement des limites.</div>
       </div>
     `;
     return;
@@ -988,22 +988,22 @@ async function showLimits() {
   const limitsHtml = `
     <div class="bento-grid">
       <article class="bento-block limit-item" style="grid-column: span 4;">
-        <p class="block-eyebrow">Daily Usage</p>
+        <p class="block-eyebrow">Utilisation quotidienne</p>
         <strong class="card-value">${limits.daily?.used || 0}</strong>
         <p class="card-desc">${unit} used today</p>
       </article>
       <article class="bento-block limit-item" style="grid-column: span 4;">
-        <p class="block-eyebrow">Limit</p>
+        <p class="block-eyebrow">Limite</p>
         <strong class="card-value">${limits.daily?.limit || 10000}</strong>
-        <p class="card-desc">Daily ${unit} limit</p>
+        <p class="card-desc">Limite quotidienne (${unit})</p>
       </article>
       <article class="bento-block limit-item" style="grid-column: span 4;">
-        <p class="block-eyebrow">Percentage</p>
+        <p class="block-eyebrow">Pourcentage</p>
         <strong class="card-value" data-tone="accent">${limits.daily?.percentage || 0}%</strong>
-        <p class="card-desc">Usage percentage</p>
+        <p class="card-desc">Pourcentage d'utilisation</p>
       </article>
     </div>
-    <p class="block-eyebrow" style="margin-top: 16px;">Model Consumption</p>
+    <p class="block-eyebrow" style="margin-top: 16px;">Consommation par modèle</p>
     <div class="models-info">
       ${(limits.models || []).filter(m => m.consumption > 0).map(model => `
         <article class="bento-block model-item" style="grid-column: span 12; display: flex; justify-content: space-between; align-items: center; padding: 16px;">
@@ -1011,7 +1011,7 @@ async function showLimits() {
           <span class="model-consumption" style="font-weight: 600;">${model.consumption.toLocaleString()} ${unit}</span>
         </article>
       `).join("")}
-      ${(limits.models || []).filter(m => m.consumption > 0).length === 0 ? '<p style="color: var(--muted);">No models used today.</p>' : ''}
+      ${(limits.models || []).filter(m => m.consumption > 0).length === 0 ? '<p style="color: var(--muted);">Aucun modèle utilisé aujourd'hui.</p>' : ''}
     </div>
   `;
 

@@ -152,7 +152,7 @@ async function renderWebsites() {
   if (websites.length === 0) {
     console.log('No websites to display, showing empty state');
     grid.classList.add('empty');
-    grid.innerHTML = '<div class="empty-state">No websites yet. Click the + button to add your first website.</div>';
+    grid.innerHTML = '<div class="empty-state">Aucun site pour le moment. Cliquez sur + pour ajouter votre premier site.</div>';
     return;
   }
 
@@ -227,7 +227,7 @@ function createWebsiteBlock(website) {
   const editBtn = document.createElement('button');
   editBtn.className = 'website-action-btn edit';
   editBtn.type = 'button';
-  editBtn.ariaLabel = 'Edit website';
+  editBtn.ariaLabel = 'Modifier le site';
   editBtn.innerHTML = '<span data-icon="https://shared-assets.lumaris.fr.eu.org/icons/edit.svg"></span>';
   editBtn.addEventListener('click', (e) => {
     e.stopPropagation();
@@ -237,7 +237,7 @@ function createWebsiteBlock(website) {
   const deleteBtn = document.createElement('button');
   deleteBtn.className = 'website-action-btn delete';
   deleteBtn.type = 'button';
-  deleteBtn.ariaLabel = 'Delete website';
+  deleteBtn.ariaLabel = 'Supprimer le site';
   deleteBtn.innerHTML = '<span data-icon="https://shared-assets.lumaris.fr.eu.org/icons/delete.svg"></span>';
   deleteBtn.addEventListener('click', (e) => {
     e.stopPropagation();
@@ -272,7 +272,7 @@ const urlInput = document.getElementById('website-url');
 
 function openAddModal() {
   editingWebsite = null;
-  modalTitle.textContent = 'Add Website';
+  modalTitle.textContent = 'Ajouter un site';
   nameInput.value = '';
   urlInput.value = '';
   websiteModal.setAttribute('aria-hidden', 'false');
@@ -282,7 +282,7 @@ function openAddModal() {
 function openEditModal(website) {
   console.log('Opening edit modal for website:', website);
   editingWebsite = website;
-  modalTitle.textContent = 'Edit Website';
+  modalTitle.textContent = 'Modifier le site';
   nameInput.value = website.name;
   urlInput.value = website.url;
   websiteModal.setAttribute('aria-hidden', 'false');
@@ -331,7 +331,7 @@ document.getElementById('confirm-delete-btn').addEventListener('click', async ()
       closeDeleteModal();
     } catch (error) {
       console.error('Error deleting website:', error);
-      alert(`Failed to delete website: ${error.message}`);
+      alert(`Échec de la suppression du site : ${error.message}`);
     } finally {
       btn.disabled = false;
       btn.style.opacity = '1';
@@ -351,7 +351,7 @@ websiteForm.addEventListener('submit', async (e) => {
   console.log('Form submitted:', { name, url, editingWebsite });
 
   if (!name || !url) {
-    alert('Please fill in all fields');
+    alert('Veuillez remplir tous les champs');
     return;
   }
 
@@ -379,7 +379,7 @@ websiteForm.addEventListener('submit', async (e) => {
     closeWebsiteModal();
   } catch (error) {
     console.error('Error saving website:', error);
-    alert(`Failed to save website: ${error.message}`);
+    alert(`Échec de l'enregistrement du site : ${error.message}`);
   } finally {
     submitBtn.disabled = false;
     submitBtn.style.opacity = '1';
@@ -419,7 +419,7 @@ async function init() {
     // Show error message to user
     const grid = document.getElementById('websites-grid');
     if (grid) {
-      grid.innerHTML = `<p style="color: var(--text); padding: 20px;">Error loading websites: ${error.message}. Please try again.</p>`;
+      grid.innerHTML = `<p style="color: var(--text); padding: 20px;">Erreur lors du chargement des sites : ${error.message}. Veuillez réessayer.</p>`;
     }
   }
 }

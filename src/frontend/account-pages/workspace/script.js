@@ -77,7 +77,7 @@ async function saveTestResult(chapter, res) {
       elapsed_min: +res.elapsedMin.toFixed(1), remark: res.remark || "",
     });
     await apiSubjects("update-chapter", { lesson_id: chapter.lesson_id, fields: { tests_results: JSON.stringify(arr) } });
-    toast(`Test saved — ${res.grade}/${res.notation}`);
+    toast(`Test enregistré — ${res.grade}/${res.notation}`);
     await loadAll();
   } catch (e) { toast(e.message); }
 }
@@ -85,10 +85,10 @@ async function saveTestResult(chapter, res) {
 // ================= State =================
 const ALL_TABLES = ["tasks", "repeat_tasks", "events", "repeat_events", "trash_tasks", "trash_events"];
 const TASK_VIEWS = {
-  all: { tables: ["tasks", "events", "repeat_tasks", "repeat_events"], title: "All", empty: ["Nothing here", "Create your first task or event."] },
-  recurring: { tables: ["repeat_tasks", "repeat_events"], title: "Recurring", empty: ["No recurring items", "Recurring tasks and events will appear here."] },
-  events: { tables: ["events", "repeat_events"], title: "Events", empty: ["No events", "Events will appear here."] },
-  trash: { tables: ["trash_tasks", "trash_events"], title: "Trash", empty: ["Trash is empty", "Deleted items land here."] },
+  all: { tables: ["tasks", "events", "repeat_tasks", "repeat_events"], title: "Toutes", empty: ["Rien ici", "Créez votre première tâche ou événement."] },
+  recurring: { tables: ["repeat_tasks", "repeat_events"], title: "Récurrentes", empty: ["Aucun élément récurrent", "Les tâches et événements récurrents apparaîtront ici."] },
+  events: { tables: ["events", "repeat_events"], title: "Événements", empty: ["Aucun événement", "Les événements apparaîtront ici."] },
+  trash: { tables: ["trash_tasks", "trash_events"], title: "Corbeille", empty: ["Corbeille vide", "Les éléments supprimés arrivent ici."] },
 };
 const SUBJECT_VIEWS = ["subjects", "subject"];
 
@@ -129,14 +129,14 @@ const LOOKUP_FIELDS = {
 
 // Chapter actions a task can be linked to — values match onChapterTool() keys.
 const LINKED_ACTIONS = [
-  { value: "import", label: "Import lesson" },
-  { value: "course", label: "Generate course" },
+  { value: "import", label: "Importer une leçon" },
+  { value: "course", label: "Générer le cours" },
   { value: "flashcards", label: "Flashcards" },
-  { value: "activities", label: "Activities / tests" },
-  { value: "review", label: "Review" },
-  { value: "ask", label: "Ask AI" },
-  { value: "edit", label: "Modify course" },
-  { value: "eval", label: "Evaluation" },
+  { value: "activities", label: "Activités / tests" },
+  { value: "review", label: "Révision" },
+  { value: "ask", label: "Poser une question IA" },
+  { value: "edit", label: "Modifier le cours" },
+  { value: "eval", label: "Évaluation" },
 ];
 
 // ================= Field definitions =================
@@ -144,126 +144,126 @@ const LINKED_ACTIONS = [
 // optionsFrom: key into LOOKUP_FIELDS resolved at render time
 const TASK_SECTIONS = [
   {
-    title: "Content",
+    title: "Contenu",
     fields: [
-      { key: "text_body", label: "Body", type: "textarea", rows: 5, placeholder: "Details, instructions…" },
-      { key: "steps", label: "Steps", type: "textarea", rows: 3, placeholder: "One step per line, or JSON" },
+      { key: "text_body", label: "Corps", type: "textarea", rows: 5, placeholder: "Détails, instructions…" },
+      { key: "steps", label: "Étapes", type: "textarea", rows: 3, placeholder: "Une étape par ligne, ou JSON" },
     ],
   },
   {
-    title: "Organization",
+    title: "Organisation",
     fields: [
-      { key: "subject_id", label: "Subject", type: "select", optionsFrom: "subject_id", placeholder: "—" },
-      { key: "chapter_id", label: "Chapter", type: "select", optionsFrom: "chapter_id", placeholder: "—" },
-      { key: "chapter_part_id", label: "Chapter part", type: "number" },
-      { key: "linked_action", label: "Linked chapter action", type: "select", options: LINKED_ACTIONS, placeholder: "—" },
+      { key: "subject_id", label: "Matière", type: "select", optionsFrom: "subject_id", placeholder: "—" },
+      { key: "chapter_id", label: "Chapitre", type: "select", optionsFrom: "chapter_id", placeholder: "—" },
+      { key: "chapter_part_id", label: "Partie du chapitre", type: "number" },
+      { key: "linked_action", label: "Action chapitre liée", type: "select", options: LINKED_ACTIONS, placeholder: "—" },
       { key: "type_id", label: "Type", type: "select", optionsFrom: "type_id", placeholder: "—" },
-      { key: "methods_id", label: "Method", type: "select", optionsFrom: "methods_id", placeholder: "—" },
-      { key: "priority_id", label: "Priority", type: "select", optionsFrom: "priority_id", placeholder: "—" },
+      { key: "methods_id", label: "Méthode", type: "select", optionsFrom: "methods_id", placeholder: "—" },
+      { key: "priority_id", label: "Priorité", type: "select", optionsFrom: "priority_id", placeholder: "—" },
       { key: "attention_level_id", label: "Attention", type: "select", optionsFrom: "attention_level_id", placeholder: "—" },
-      { key: "flags_id", label: "Flag", type: "select", optionsFrom: "flags_id", placeholder: "—" },
-      { key: "labels_id", label: "Label", type: "select", optionsFrom: "labels_id", placeholder: "—" },
-      { key: "path", label: "Folder", type: "select", optionsFrom: "path", placeholder: "/" },
+      { key: "flags_id", label: "Drapeau", type: "select", optionsFrom: "flags_id", placeholder: "—" },
+      { key: "labels_id", label: "Étiquette", type: "select", optionsFrom: "labels_id", placeholder: "—" },
+      { key: "path", label: "Dossier", type: "select", optionsFrom: "path", placeholder: "/" },
     ],
   },
   {
-    title: "Schedule",
+    title: "Planification",
     fields: [
-      { key: "remind", label: "Reminder", type: "checkbox" },
-      { key: "remind_date", label: "Reminder date", type: "datetime" },
-      { key: "periods", label: "Periods", type: "textarea", rows: 2, placeholder: "JSON array or free text" },
-      { key: "frequency", label: "Frequency", type: "text", placeholder: "e.g. daily, weekly" },
-      { key: "excludes_periods", label: "Excluded periods", type: "textarea", rows: 2 },
+      { key: "remind", label: "Rappel", type: "checkbox" },
+      { key: "remind_date", label: "Date du rappel", type: "datetime" },
+      { key: "periods", label: "Périodes", type: "textarea", rows: 2, placeholder: "Tableau JSON ou texte libre" },
+      { key: "frequency", label: "Fréquence", type: "text", placeholder: "ex. quotidien, hebdomadaire" },
+      { key: "excludes_periods", label: "Périodes exclues", type: "textarea", rows: 2 },
     ],
   },
   {
-    title: "Resources",
+    title: "Ressources",
     fields: [
-      { key: "is_homework", label: "Homework", type: "checkbox" },
-      { key: "homeworks_id", label: "Homework ref", type: "text" },
-      { key: "urls", label: "URLs", type: "lines", placeholder: "One URL per line" },
-      { key: "attachements_id", label: "Attachments", type: "textarea", rows: 2, placeholder: "JSON or free text" },
-      { key: "push_tasks", label: "Push notifications", type: "checkbox" },
+      { key: "is_homework", label: "Devoir", type: "checkbox" },
+      { key: "homeworks_id", label: "Réf. devoir", type: "text" },
+      { key: "urls", label: "URLs", type: "lines", placeholder: "Une URL par ligne" },
+      { key: "attachements_id", label: "Pièces jointes", type: "textarea", rows: 2, placeholder: "JSON ou texte libre" },
+      { key: "push_tasks", label: "Notifications push", type: "checkbox" },
     ],
   },
   {
     title: "Notes",
     fields: [
-      { key: "comments", label: "Comments", type: "textarea", rows: 3 },
-      { key: "ai_comments", label: "AI comments", type: "textarea", rows: 3 },
+      { key: "comments", label: "Commentaires", type: "textarea", rows: 3 },
+      { key: "ai_comments", label: "Commentaires IA", type: "textarea", rows: 3 },
     ],
   },
 ];
 
 const SUBJECT_SECTIONS = [
   {
-    title: "Subject",
+    title: "Matière",
     fields: [
-      { key: "subject_name", label: "Name", type: "text", placeholder: "e.g. Mathematics" },
-      { key: "ed_subject_id", label: "ED subject id", type: "number" },
-      { key: "ed_subject_code", label: "ED code", type: "text", placeholder: "e.g. MATH" },
-      { key: "ed_subject_name", label: "ED name", type: "text" },
-      { key: "methods", label: "Methods (JSON ids)", type: "textarea", rows: 2, mono: true },
+      { key: "subject_name", label: "Nom", type: "text", placeholder: "ex. Mathématiques" },
+      { key: "ed_subject_id", label: "ID matière ED", type: "number" },
+      { key: "ed_subject_code", label: "Code ED", type: "text", placeholder: "ex. MATH" },
+      { key: "ed_subject_name", label: "Nom ED", type: "text" },
+      { key: "methods", label: "Méthodes (IDs JSON)", type: "textarea", rows: 2, mono: true },
     ],
   },
   {
     title: "Notes",
     fields: [
-      { key: "comments", label: "Comments", type: "textarea", rows: 3 },
-      { key: "tests_comments", label: "Tests comments", type: "textarea", rows: 3 },
-      { key: "teacher_notes", label: "Teacher notes — how she tests & expectations", type: "textarea", rows: 4, placeholder: "Subject-wide expectations: test format, grading style, pet topics…" },
-      { key: "ai_comments", label: "AI comments", type: "textarea", rows: 3 },
+      { key: "comments", label: "Commentaires", type: "textarea", rows: 3 },
+      { key: "tests_comments", label: "Commentaires tests", type: "textarea", rows: 3 },
+      { key: "teacher_notes", label: "Notes de la prof — comment elle teste & attentes", type: "textarea", rows: 4, placeholder: "Attentes de la matière : format des tests, style de notation, sujets favoris…" },
+      { key: "ai_comments", label: "Commentaires IA", type: "textarea", rows: 3 },
     ],
   },
 ];
 
 const CHAPTER_SECTIONS = [
   {
-    title: "Chapter",
+    title: "Chapitre",
     fields: [
-      { key: "lesson_name", label: "Name", type: "text", placeholder: "e.g. Chapter 1 — Limits" },
+      { key: "lesson_name", label: "Nom", type: "text", placeholder: "ex. Chapitre 1 — Limites" },
       { key: "lesson_description", label: "Description", type: "textarea", rows: 3 },
-      { key: "teacher_notes", label: "Teacher notes — how she tests & expectations", type: "textarea", rows: 4, placeholder: "e.g. Tests are mostly MCQ on definitions, she expects rigorous proofs…" },
-      { key: "subject_id", label: "Subject", type: "select", optionsFrom: "subject_id", placeholder: "—" },
-      { key: "tests_date", label: "Next test", type: "text", placeholder: "YYYY-MM-DD" },
-      { key: "session_date", label: "Session date", type: "text", placeholder: "YYYY-MM-DD" },
-      { key: "awaiting_evaluation", label: "Awaiting evaluation", type: "checkbox" },
-      { key: "parents_lessons_id", label: "Parent chapters (ids, comma-separated)", type: "text" },
-      { key: "childs_lessons_id", label: "Child chapters (ids, comma-separated)", type: "text" },
-      { key: "is_method", label: "Is a method/resource", type: "checkbox" },
-      { key: "is_yearly", label: "Yearly", type: "checkbox" },
-      { key: "methods", label: "Methods (JSON ids)", type: "textarea", rows: 2, mono: true },
+      { key: "teacher_notes", label: "Notes de la prof — comment elle teste & attentes", type: "textarea", rows: 4, placeholder: "ex. Tests surtout en QCM sur les définitions, elle attend des démonstrations rigoureuses…" },
+      { key: "subject_id", label: "Matière", type: "select", optionsFrom: "subject_id", placeholder: "—" },
+      { key: "tests_date", label: "Prochain test", type: "text", placeholder: "AAAA-MM-JJ" },
+      { key: "session_date", label: "Date de séance", type: "text", placeholder: "AAAA-MM-JJ" },
+      { key: "awaiting_evaluation", label: "En attente d'évaluation", type: "checkbox" },
+      { key: "parents_lessons_id", label: "Chapitres parents (IDs séparés par des virgules)", type: "text" },
+      { key: "childs_lessons_id", label: "Chapitres enfants (IDs séparés par des virgules)", type: "text" },
+      { key: "is_method", label: "Est une méthode/ressource", type: "checkbox" },
+      { key: "is_yearly", label: "Annuel", type: "checkbox" },
+      { key: "methods", label: "Méthodes (IDs JSON)", type: "textarea", rows: 2, mono: true },
     ],
   },
   {
-    title: "Course content",
+    title: "Contenu du cours",
     fields: [
-      { key: "body", label: "Course body", type: "textarea", rows: 10, placeholder: "The generated / written course…" },
-      { key: "raw_lessons", label: "Raw lessons", type: "textarea", rows: 6, mono: true },
-      { key: "raw_recorded_lessons", label: "Raw recorded lessons", type: "textarea", rows: 4, mono: true },
+      { key: "body", label: "Corps du cours", type: "textarea", rows: 10, placeholder: "Le cours généré / rédigé…" },
+      { key: "raw_lessons", label: "Leçons brutes", type: "textarea", rows: 6, mono: true },
+      { key: "raw_recorded_lessons", label: "Leçons enregistrées brutes", type: "textarea", rows: 4, mono: true },
     ],
   },
   {
-    title: "AI & tests",
+    title: "IA & tests",
     fields: [
       { key: "flashcards", label: "Flashcards (JSON)", type: "textarea", rows: 4, mono: true },
       { key: "tests", label: "Tests (JSON)", type: "textarea", rows: 4, mono: true },
-      { key: "tests_results", label: "Test results (JSON)", type: "textarea", rows: 3, mono: true },
+      { key: "tests_results", label: "Résultats des tests (JSON)", type: "textarea", rows: 3, mono: true },
     ],
   },
   {
-    title: "Links",
+    title: "Liens",
     fields: [
-      { key: "linked_files", label: "Linked files", type: "lines", placeholder: "One per line" },
-      { key: "linked_quizlets", label: "Linked Quizlets", type: "lines", placeholder: "One URL per line" },
-      { key: "linked_websites", label: "Linked websites", type: "lines", placeholder: "One URL per line" },
+      { key: "linked_files", label: "Fichiers liés", type: "lines", placeholder: "Un par ligne" },
+      { key: "linked_quizlets", label: "Quizlets liés", type: "lines", placeholder: "Une URL par ligne" },
+      { key: "linked_websites", label: "Sites liés", type: "lines", placeholder: "Une URL par ligne" },
     ],
   },
   {
     title: "Notes",
     fields: [
-      { key: "comments", label: "Comments", type: "textarea", rows: 3 },
-      { key: "ai_comments", label: "AI comments", type: "textarea", rows: 3 },
+      { key: "comments", label: "Commentaires", type: "textarea", rows: 3 },
+      { key: "ai_comments", label: "Commentaires IA", type: "textarea", rows: 3 },
     ],
   },
 ];
@@ -318,8 +318,8 @@ function dueBucket(iso) {
 }
 
 const GROUP_DEFS = [
-  ["overdue", "Overdue"], ["today", "Today"], ["week", "This week"],
-  ["later", "Later"], ["nodate", "No date"], ["done", "Completed"],
+  ["overdue", "En retard"], ["today", "Aujourd'hui"], ["week", "Cette semaine"],
+  ["later", "Plus tard"], ["nodate", "Sans date"], ["done", "Terminées"],
 ];
 
 function fmtDate(iso) {
@@ -329,8 +329,8 @@ function fmtDate(iso) {
   const now = new Date();
   const tomorrow = new Date(now); tomorrow.setDate(tomorrow.getDate() + 1);
   const time = d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-  if (d.toDateString() === now.toDateString()) return `Today · ${time}`;
-  if (d.toDateString() === tomorrow.toDateString()) return `Tomorrow · ${time}`;
+  if (d.toDateString() === now.toDateString()) return `Aujourd'hui · ${time}`;
+  if (d.toDateString() === tomorrow.toDateString()) return `Demain · ${time}`;
   return d.toLocaleDateString([], { day: "numeric", month: "short" }) + ` · ${time}`;
 }
 
@@ -370,7 +370,7 @@ async function loadAll() {
       renderChrome();
     }).catch(() => {});
   } catch (e) {
-    toast(e.message || "Failed to load data");
+    toast(e.message || "Échec du chargement des données");
   }
 }
 
@@ -382,10 +382,10 @@ function renderAll() {
 
 function renderChrome() {
   const titles = {
-    subjects: "Subjects", subject: state.currentSubject?.subject_name || "Subject",
-    all: "All", recurring: "Recurring", events: "Events", trash: "Trash",
+    subjects: "Matières", subject: state.currentSubject?.subject_name || "Matière",
+    all: "Toutes", recurring: "Récurrentes", events: "Événements", trash: "Corbeille",
   };
-  $("#pageTitle").textContent = titles[state.view] || "Workspace";
+  $("#pageTitle").textContent = titles[state.view] || "Espace de travail";
 
   // Top-level section tabs (Tasks | Subjects)
   document.querySelectorAll("#sectionTabs .ws-seg").forEach((b) => {
@@ -407,7 +407,7 @@ function renderChrome() {
   const cur = state.template ? tplList.find((t) => t.template_id === state.template.template_id) : null;
   if (state.template && !cur) state.template = null; // stale selection from another kind/view
   const tplBtn = $("#templateSelect");
-  tplBtn.textContent = cur ? cur.name : "Templates";
+  tplBtn.textContent = cur ? cur.name : "Modèles";
   tplBtn.classList.toggle("has-sel", !!cur);
   $("#templateEdit").hidden = !cur;
   $("#templateDel").hidden = !cur;
@@ -416,18 +416,18 @@ function renderChrome() {
     ? tplList.map((t) => `
       <button class="ws-tpl-item ${cur && cur.template_id === t.template_id ? "sel" : ""}" type="button" data-tpl="${t.template_id}">
         <span class="ws-tpl-item-name">${esc(t.name)}</span>
-        <span class="ws-tpl-item-kind">${esc(t.kind)}</span>
+        <span class="ws-tpl-item-kind">${esc(t.kind === "task" ? "tâche" : t.kind === "subject" ? "matière" : "chapitre")}</span>
       </button>`).join("")
-    : `<div class="ws-tpl-empty">No ${esc(kind)} templates yet</div>`;
+    : `<div class="ws-tpl-empty">Pas encore de modèles ${esc(kind === "task" ? "de tâches" : kind === "subject" ? "de matières" : "de chapitres")}</div>`;
 
   // Breadcrumb for subject/chapter drill-down
   const bc = $("#breadcrumb");
   if (state.view === "subject" && state.currentSubject) {
     bc.hidden = false;
     bc.innerHTML = `
-      <button class="ws-crumb" type="button" data-nav="subjects">Subjects</button>
+      <button class="ws-crumb" type="button" data-nav="subjects">Matières</button>
       <span class="ws-crumb-sep">/</span>
-      <span class="ws-crumb-current">${esc(state.currentSubject.subject_name || "Subject")}</span>`;
+      <span class="ws-crumb-current">${esc(state.currentSubject.subject_name || "Matière")}</span>`;
     bc.querySelector('[data-nav="subjects"]').addEventListener("click", () => {
       state.view = "subjects"; state.currentSubject = null; closeDetail(); renderAll();
     });
@@ -436,7 +436,7 @@ function renderChrome() {
   }
 
   // Contextual primary actions visibility
-  $("#newBtn").textContent = state.view === "subject" ? "＋ Chapter" : state.view === "subjects" ? "＋ Subject" : "＋ New";
+  $("#newBtn").textContent = state.view === "subject" ? "＋ Chapitre" : state.view === "subjects" ? "＋ Matière" : "＋ Nouveau";
   $("#newBtn").style.display = state.view === "trash" ? "none" : "";
 }
 
@@ -450,13 +450,13 @@ function renderStats() {
   let html;
   if (state.view === "subjects") {
     const chapters = state.chapters.length;
-    html = [[state.subjects.length, "subjects"], [chapters, "chapters"]];
+    html = [[state.subjects.length, "matières"], [chapters, "chapitres"]];
   } else if (state.view === "subject" && state.currentSubject) {
     const chs = chaptersOf(state.currentSubject.subject_id);
-    html = [[chs.length, "chapters"], [chs.filter((c) => c.body).length, "with course"]];
+    html = [[chs.length, "chapitres"], [chs.filter((c) => c.body).length, "avec cours"]];
   } else {
     const repeat = (state.tables.repeat_tasks || []).length + (state.tables.repeat_events || []).length;
-    html = [[pending.length, "open"], [today, "today"], [overdue, "overdue"], [repeat, "recurring"], [trash, "trash"]];
+    html = [[pending.length, "à faire"], [today, "aujourd'hui"], [overdue, "en retard"], [repeat, "récurrentes"], [trash, "corbeille"]];
   }
   $("#statsBar").innerHTML = html.map(([n, l]) => `<span class="ws-stat"><b>${n}</b>${l}</span>`).join("");
 }
@@ -484,7 +484,7 @@ function chaptersOf(subjectId) {
 function renderSubjects() {
   const grid = $("#subjectGrid");
   const list = state.subjects.filter((s) => matchesQText(s.subject_name, s.ed_subject_code, s.ed_subject_name));
-  if (!list.length) return showEmpty("No subjects", "Create your first subject with “+ Subject”.");
+  if (!list.length) return showEmpty("Aucune matière", "Créez votre première matière avec « + Matière ».");
   grid.innerHTML = list.map((s) => {
     const chs = chaptersOf(s.subject_id);
     const withBody = chs.filter((c) => c.body).length;
@@ -493,15 +493,15 @@ function renderSubjects() {
         <div class="ws-subject-top">
           <span class="ws-subject-initial">${esc((s.subject_name || "?").trim().charAt(0).toUpperCase())}</span>
           <div class="ws-subject-head">
-            <span class="ws-subject-name">${esc(s.subject_name || "Untitled")}</span>
+            <span class="ws-subject-name">${esc(s.subject_name || "Sans titre")}</span>
             ${s.ed_subject_code ? `<span class="ws-chip ws-chip-subject">${esc(s.ed_subject_code)}</span>` : ""}
           </div>
-          <span class="ws-icon-btn ws-subject-edit" title="Edit subject">✎</span>
+          <span class="ws-icon-btn ws-subject-edit" title="Modifier la matière">✎</span>
         </div>
         ${s.ed_subject_name ? `<div class="ws-subject-ed">ED · ${esc(s.ed_subject_name)}</div>` : ""}
         <div class="ws-subject-foot">
-          <span class="ws-chip">${chs.length} chapter${chs.length > 1 ? "s" : ""}</span>
-          <span class="ws-chip">${withBody} course${withBody > 1 ? "s" : ""}</span>
+          <span class="ws-chip">${chs.length} chapitre${chs.length > 1 ? "s" : ""}</span>
+          <span class="ws-chip">${withBody} cours${withBody > 1 ? "s" : ""}</span>
         </div>
       </button>`;
   }).join("");
@@ -530,11 +530,11 @@ function renderSubjectDetail() {
   const s = state.currentSubject;
   const chs = chaptersOf(s.subject_id).filter((c) => matchesQText(c.lesson_name, c.lesson_description));
   const host = $("#taskGroups");
-  if (!chs.length) return showEmpty("No chapters", "Add your first chapter with “+ Chapter”.");
+  if (!chs.length) return showEmpty("Aucun chapitre", "Ajoutez votre premier chapitre avec « + Chapitre ».");
 
   host.innerHTML = `
     <div class="ws-group">
-      <div class="ws-group-head"><span>Chapters</span><span class="ws-group-count">${chs.length}</span></div>
+      <div class="ws-group-head"><span>Chapitres</span><span class="ws-group-count">${chs.length}</span></div>
       <div class="ws-group-items">
         ${chs.map((c) => chapterRowHTML(c)).join("")}
       </div>
@@ -550,7 +550,7 @@ function renderSubjectDetail() {
       e.stopPropagation();
       try {
         await apiSubjects("delete-chapter", { lesson_id: Number(el.dataset.id) });
-        toast("Chapter deleted");
+        toast("Chapitre supprimé");
         await loadAll();
       } catch (err) { toast(err.message); }
     });
@@ -561,20 +561,20 @@ function chapterRowHTML(c) {
   const hasBody = !!(c.body && String(c.body).trim());
   const hasFlash = !!(c.flashcards && String(c.flashcards).trim() && c.flashcards !== "[]");
   const chips = [
-    c.is_method ? `<span class="ws-chip ws-chip-method">method</span>` : "",
-    c.is_yearly ? `<span class="ws-chip">yearly</span>` : "",
+    c.is_method ? `<span class="ws-chip ws-chip-method">méthode</span>` : "",
+    c.is_yearly ? `<span class="ws-chip">annuel</span>` : "",
     c.tests_date ? `<span class="ws-chip ws-chip-due">test ${esc(c.tests_date)}</span>` : "",
-    hasBody ? `<span class="ws-chip ws-chip-course">course ✓</span>` : `<span class="ws-chip">no course</span>`,
+    hasBody ? `<span class="ws-chip ws-chip-course">cours ✓</span>` : `<span class="ws-chip">pas de cours</span>`,
     hasFlash ? `<span class="ws-chip ws-chip-flash">flashcards</span>` : "",
   ].join("");
   return `
     <div class="ws-task ws-chapter" data-id="${c.lesson_id}">
       <div class="ws-task-main">
-        <div class="ws-task-title">${esc(c.lesson_name || "Untitled")}</div>
+        <div class="ws-task-title">${esc(c.lesson_name || "Sans titre")}</div>
         ${c.lesson_description ? `<div class="ws-task-sub">${esc(String(c.lesson_description).slice(0, 110))}${String(c.lesson_description).length > 110 ? "…" : ""}</div>` : ""}
         <div class="ws-task-meta">${chips}</div>
       </div>
-      <button class="ws-icon-btn ws-task-del" type="button" title="Delete chapter">🗑</button>
+      <button class="ws-icon-btn ws-task-del" type="button" title="Supprimer le chapitre">🗑</button>
     </div>`;
 }
 
@@ -597,7 +597,7 @@ function renderTaskGroups() {
   const rows = rowsForView();
   if (!rows.length) {
     const [t, s] = TASK_VIEWS[state.view].empty;
-    return showEmpty(state.q ? "No results" : t, state.q ? `Nothing matches “${state.q}”.` : s);
+    return showEmpty(state.q ? "Aucun résultat" : t, state.q ? `Rien ne correspond à « ${state.q} ». ` : s);
   }
 
   const groups = new Map();
@@ -619,8 +619,8 @@ function renderTaskGroups() {
   groupsEl.innerHTML = order.filter((k) => groups.has(k)).map((k) => {
     const items = groups.get(k);
     const label = state.view === "recurring"
-      ? `${k.startsWith("event:") ? "Events" : "Tasks"} · ${k.split(":")[1]}`
-      : state.view === "trash" ? "Recently deleted" : (GROUP_DEFS.find(([g]) => g === k)?.[1] || k);
+      ? `${k.startsWith("event:") ? "Événements" : "Tâches"} · ${k.split(":")[1]}`
+      : state.view === "trash" ? "Supprimés récemment" : (GROUP_DEFS.find(([g]) => g === k)?.[1] || k);
     return `
       <div class="ws-group">
         <div class="ws-group-head"><span>${esc(label)}</span><span class="ws-group-count">${items.length}</span></div>
@@ -649,7 +649,7 @@ function renderTaskGroups() {
       try {
         if (table.startsWith("trash_")) await apiTasks("purge", { table, task_id: Number(id) });
         else await apiTasks("delete", { table, task_id: Number(id) });
-        toast(table.startsWith("trash_") ? "Deleted forever" : "Moved to trash");
+        toast(table.startsWith("trash_") ? "Supprimé définitivement" : "Déplacé à la corbeille");
         if (state.selected?.kind === "task" && state.selected.table === table && String(state.selected.row.task_id) === id) closeDetail();
         await loadAll();
       } catch (err) { toast(err.message); }
@@ -675,26 +675,26 @@ function taskRowHTML({ table, row }) {
   const showKind = ["all", "recurring", "trash"].includes(state.view);
 
   const chips = [
-    showKind ? `<span class="ws-chip ws-chip-kind ${isEvent ? "is-event" : ""}">${isEvent ? "event" : "task"}</span>` : "",
+    showKind ? `<span class="ws-chip ws-chip-kind ${isEvent ? "is-event" : ""}">${isEvent ? "événement" : "tâche"}</span>` : "",
     subName ? `<span class="ws-chip ws-chip-subject">${esc(subName)}</span>` : "",
     due && !isTrash ? `<span class="ws-chip ws-chip-due ${bucket}">${esc(due)}</span>` : "",
-    row.is_homework ? `<span class="ws-chip ws-chip-homework">HW</span>` : "",
+    row.is_homework ? `<span class="ws-chip ws-chip-homework">DM</span>` : "",
   ].join("");
 
   return `
     <div class="ws-task ${done ? "is-done" : ""} ${isTrash ? "is-trash" : ""}" data-table="${table}" data-id="${row.task_id}" ${priColor ? `style="--pri:${priColor}"` : ""}>
-      <button class="ws-task-check ${done ? "is-done" : ""}" type="button" title="${done ? "Mark as todo" : "Mark as done"}">${done ? "✓" : ""}</button>
+      <button class="ws-task-check ${done ? "is-done" : ""}" type="button" title="${done ? "Marquer à faire" : "Marquer comme fait"}">${done ? "✓" : ""}</button>
       <div class="ws-task-main">
-        <div class="ws-task-title">${esc(row.title || "Untitled")}</div>
+        <div class="ws-task-title">${esc(row.title || "Sans titre")}</div>
         ${row.text_body ? `<div class="ws-task-sub">${esc(String(row.text_body).slice(0, 90))}${String(row.text_body).length > 90 ? "…" : ""}</div>` : ""}
         <div class="ws-task-meta">
-          ${priColor ? `<span class="ws-pri-dot" style="background:${priColor}" title="Priority"></span>` : ""}
+          ${priColor ? `<span class="ws-pri-dot" style="background:${priColor}" title="Priorité"></span>` : ""}
           ${chips}
-          ${isRepeat ? `<span class="ws-chip ws-chip-repeat" title="Recurring${row.frequency ? ` · ${esc(row.frequency)}` : ""}">↻</span>` : ""}
+          ${isRepeat ? `<span class="ws-chip ws-chip-repeat" title="Récurrent${row.frequency ? ` · ${esc(row.frequency)}` : ""}">↻</span>` : ""}
           ${urlCount ? `<span class="ws-chip ws-chip-link">🔗 ${urlCount}</span>` : ""}
         </div>
       </div>
-      <button class="ws-icon-btn ws-task-del" type="button" title="${isTrash ? "Delete forever" : "Delete"}">${isTrash ? "🗑" : "⌫"}</button>
+      <button class="ws-icon-btn ws-task-del" type="button" title="${isTrash ? "Supprimer définitivement" : "Supprimer"}">${isTrash ? "🗑" : "⌫"}</button>
     </div>`;
 }
 
@@ -738,17 +738,17 @@ function detailConfig() {
       sections: TASK_SECTIONS,
       isDone: !!sel.row.is_done,
       isTrash,
-      deleteLabel: isTrash ? "Delete forever" : "Move to trash",
-      badges: [sel.table.replace("_", "-"), sel.row.is_done ? "done" : "open", sel.row.frequency ? `↻ ${sel.row.frequency}` : "", sel.row.linked_action ? `→ ${sel.row.linked_action}` : ""].filter(Boolean),
+      deleteLabel: isTrash ? "Supprimer définitivement" : "Mettre à la corbeille",
+      badges: [sel.table.replace("_", "-"), sel.row.is_done ? "fait" : "à faire", sel.row.frequency ? `↻ ${sel.row.frequency}` : "", sel.row.linked_action ? `→ ${sel.row.linked_action}` : ""].filter(Boolean),
     };
   }
   // chapter
   const c = sel.row;
   const badges = [
-    c.is_method ? "method" : "", c.is_yearly ? "yearly" : "",
-    c.body ? "course ✓" : "no course",
+    c.is_method ? "méthode" : "", c.is_yearly ? "annuel" : "",
+    c.body ? "cours ✓" : "pas de cours",
     c.flashcards && c.flashcards !== "[]" ? "flashcards" : "",
-    c.awaiting_evaluation ? "awaiting eval" : "",
+    c.awaiting_evaluation ? "éval. en attente" : "",
   ].filter(Boolean);
   return {
     titleKey: "lesson_name",
@@ -757,7 +757,7 @@ function detailConfig() {
     isDone: false,
     isTrash: false,
     showDoneToggle: false,
-    deleteLabel: "Delete chapter",
+    deleteLabel: "Supprimer le chapitre",
     badges,
     tools: true,
   };
@@ -788,37 +788,37 @@ function renderDetail() {
     const hasFlash = !!parseMaybeJSON(row.flashcards)?.cards?.length;
     html += `
       <div class="ws-dsec">
-        <h3>Import lesson</h3>
+        <h3>Importer une leçon</h3>
         <div class="ws-tools">
-          <button class="ws-btn ws-btn-ghost" type="button" data-tool="import">Import lesson</button>
+          <button class="ws-btn ws-btn-ghost" type="button" data-tool="import">Importer une leçon</button>
         </div>
-        <p class="ws-tools-hint">PDF, voice, text, link + explanation, files / images (OCR), camera — all extraction runs locally in your browser.</p>
+        <p class="ws-tools-hint">PDF, vocal, texte, lien + explication, fichiers / images (OCR), caméra — toute l'extraction se fait localement dans votre navigateur.</p>
       </div>
       <div class="ws-dsec">
-        <h3>AI generation</h3>
+        <h3>Génération IA</h3>
         <div class="ws-tools">
-          <button class="ws-btn ws-btn-primary" type="button" data-tool="course">Generate course</button>
-          <button class="ws-btn ws-btn-primary" type="button" data-tool="flashcards">Generate flashcards</button>
-          <button class="ws-btn ws-btn-primary" type="button" data-tool="activities">Generate activities</button>
-          ${actCount ? `<button class="ws-btn ws-btn-ghost" type="button" data-tool="run">Run test (${actCount})</button>` : ""}
+          <button class="ws-btn ws-btn-primary" type="button" data-tool="course">Générer le cours</button>
+          <button class="ws-btn ws-btn-primary" type="button" data-tool="flashcards">Générer les flashcards</button>
+          <button class="ws-btn ws-btn-primary" type="button" data-tool="activities">Générer les activités</button>
+          ${actCount ? `<button class="ws-btn ws-btn-ghost" type="button" data-tool="run">Lancer le test (${actCount})</button>` : ""}
         </div>
-        <p class="ws-tools-hint">GPT OSS 120B via Workers AI — estimated duration is shown before each run; progress is saved and resumable.</p>
+        <p class="ws-tools-hint">GPT OSS 120B via Workers AI — la durée estimée est affichée avant chaque lancement ; la progression est sauvegardée et reprenable.</p>
       </div>
       <div class="ws-dsec">
-        <h3>Review</h3>
+        <h3>Révision</h3>
         <div class="ws-tools">
-          <button class="ws-btn ws-btn-ghost" type="button" data-tool="review">Review</button>
-          <button class="ws-btn ws-btn-ghost" type="button" data-tool="ask">Ask AI</button>
+          <button class="ws-btn ws-btn-ghost" type="button" data-tool="review">Réviser</button>
+          <button class="ws-btn ws-btn-ghost" type="button" data-tool="ask">Poser une question</button>
         </div>
-        <p class="ws-tools-hint">Flashcard flip-through, spaced sessions by week/interval, and questions grounded in the course content.</p>
+        <p class="ws-tools-hint">Retour des flashcards, séances espacées par semaine/intervalle, et questions basées sur le contenu du cours.</p>
       </div>
       <div class="ws-dsec">
-        <h3>Course</h3>
+        <h3>Cours</h3>
         <div class="ws-tools">
-          <button class="ws-btn ws-btn-ghost" type="button" data-tool="edit">Modify course</button>
-          <button class="ws-btn ws-btn-ghost ${row.awaiting_evaluation ? "is-active" : ""}" type="button" data-tool="eval">${row.awaiting_evaluation ? "Awaiting evaluation" : "Mark for evaluation"}</button>
+          <button class="ws-btn ws-btn-ghost" type="button" data-tool="edit">Modifier le cours</button>
+          <button class="ws-btn ws-btn-ghost ${row.awaiting_evaluation ? "is-active" : ""}" type="button" data-tool="eval">${row.awaiting_evaluation ? "Évaluation en attente" : "Marquer pour évaluation"}</button>
         </div>
-        <p class="ws-tools-hint">Edit the chapter fields, or flag it as awaiting an evaluation (dedicated workflow coming soon).</p>
+        <p class="ws-tools-hint">Modifiez les champs du chapitre, ou marquez-le en attente d'évaluation (workflow dédié bientôt disponible).</p>
       </div>`;
     wrap.innerHTML = html;
     wrap.querySelectorAll("[data-tool]").forEach((b) => b.addEventListener("click", () => onChapterTool(b.dataset.tool, sel.row)));
@@ -829,11 +829,11 @@ function renderDetail() {
     const act = LINKED_ACTIONS.find((a) => a.value === row.linked_action);
     html += `
       <div class="ws-dsec">
-        <h3>Linked action</h3>
+        <h3>Action liée</h3>
         <div class="ws-tools">
-          <button class="ws-btn ws-btn-primary" type="button" data-linked-action ${ch ? "" : "disabled"}>${esc(act?.label || row.linked_action)}${ch ? ` — ${esc(ch.lesson_name || "chapter")}` : " (chapter not found)"}</button>
+          <button class="ws-btn ws-btn-primary" type="button" data-linked-action ${ch ? "" : "disabled"}>${esc(act?.label || row.linked_action)}${ch ? ` — ${esc(ch.lesson_name || "chapter")}` : " (chapitre introuvable)"}</button>
         </div>
-        <p class="ws-tools-hint">Runs this chapter tool on the linked chapter.</p>
+        <p class="ws-tools-hint">Exécute cet outil chapitre sur le chapitre lié.</p>
       </div>`;
   }
   wrap.innerHTML = html;
@@ -890,9 +890,9 @@ function collectFields(sections, titleKey, titleEl, root = document) {
 // opts: { fullscreen, table (task), template }
 function openEntityModal(kind, id = null, existing = null, opts = {}) {
   const defs = {
-    task: { title: id ? "Edit task" : "New task", sections: TASK_SECTIONS, titleKey: "title", submit: "Create task" },
-    subject: { title: id ? "Edit subject" : "New subject", sections: SUBJECT_SECTIONS, titleKey: null, submit: "Create subject" },
-    chapter: { title: id ? "Edit chapter" : "New chapter", sections: CHAPTER_SECTIONS, titleKey: null, submit: "Create chapter" },
+    task: { title: id ? "Modifier la tâche" : "Nouvelle tâche", sections: TASK_SECTIONS, titleKey: "title", submit: "Créer la tâche" },
+    subject: { title: id ? "Modifier la matière" : "Nouvelle matière", sections: SUBJECT_SECTIONS, titleKey: null, submit: "Créer la matière" },
+    chapter: { title: id ? "Modifier le chapitre" : "Nouveau chapitre", sections: CHAPTER_SECTIONS, titleKey: null, submit: "Créer le chapitre" },
   }[kind];
   if (!defs) return;
 
@@ -918,21 +918,21 @@ function openEntityModal(kind, id = null, existing = null, opts = {}) {
           <button class="ws-icon-btn" type="button" data-close>✕</button>
         </div>
         <div class="ws-modal-body">
-          ${kind === "task" ? `<label class="ws-field ws-field-wide"><span class="ws-field-label">Title</span><input type="text" id="m_title" value="${esc(values.title || "")}" placeholder="Task title"></label>` : ""}
+          ${kind === "task" ? `<label class="ws-field ws-field-wide"><span class="ws-field-label">Titre</span><input type="text" id="m_title" value="${esc(values.title || "")}" placeholder="Titre de la tâche"></label>` : ""}
           ${kind === "task" && !id && ["all", "recurring", "events"].includes(state.view) ? `
           <label class="ws-field ws-field-wide"><span class="ws-field-label">Kind</span>
             <select id="m_kind">
-              ${state.view === "all" ? `<option value="tasks">Task</option><option value="events">Event</option>` : ""}
-              ${state.view === "recurring" ? `<option value="repeat_tasks">Recurring task</option><option value="repeat_events">Recurring event</option>` : ""}
-              ${state.view === "events" ? `<option value="events">Event</option><option value="repeat_events">Recurring event</option>` : ""}
+              ${state.view === "all" ? `<option value="tasks">Tâche</option><option value="events">Événement</option>` : ""}
+              ${state.view === "recurring" ? `<option value="repeat_tasks">Tâche récurrente</option><option value="repeat_events">Événement récurrent</option>` : ""}
+              ${state.view === "events" ? `<option value="events">Événement</option><option value="repeat_events">Événement récurrent</option>` : ""}
             </select>
           </label>` : ""}
           ${bodyHtml}
         </div>
         <div class="ws-modal-foot">
-          <button class="ws-btn ws-btn-ghost" type="button" data-save-tpl title="Save current values as a reusable template">⬒ Save as template</button>
+          <button class="ws-btn ws-btn-ghost" type="button" data-save-tpl title="Enregistrer les valeurs actuelles comme modèle réutilisable">⬒ Enregistrer comme modèle</button>
           <span class="ws-modal-foot-spacer"></span>
-          <button class="ws-btn ws-btn-ghost" type="button" data-close>Cancel</button>
+          <button class="ws-btn ws-btn-ghost" type="button" data-close>Annuler</button>
           <button class="ws-btn ws-btn-primary" type="button" data-submit>${defs.submit}</button>
         </div>
       </div>
@@ -951,18 +951,18 @@ function openEntityModal(kind, id = null, existing = null, opts = {}) {
 
   root.querySelector("[data-save-tpl]").addEventListener("click", async () => {
     const fields = collect();
-    const name = prompt("Template name:", kind === "task" ? (fields.title || "Task template") : `${kind} template`);
+    const name = prompt("Nom du modèle :", kind === "task" ? (fields.title || "Modèle de tâche") : `Modèle ${kind === "subject" ? "de matière" : "de chapitre"}`);
     if (!name?.trim()) return;
     try {
       await apiTasks("template-save", { kind, name: name.trim(), payload: fields });
-      toast("Template saved");
+      toast("Modèle enregistré");
       await loadAll();
     } catch (e) { toast(e.message); }
   });
 
   root.querySelector("[data-submit]").addEventListener("click", async () => {
     const btn = root.querySelector("[data-submit]");
-    btn.disabled = true; btn.textContent = "Saving…";
+    btn.disabled = true; btn.textContent = "Enregistrement…";
     try {
       const fields = collect();
       if (kind === "task") {
@@ -991,7 +991,7 @@ function openEntityModal(kind, id = null, existing = null, opts = {}) {
         else await apiSubjects("create-chapter", { fields });
       }
       state.template = null;
-      toast(id ? "Saved" : "Created");
+      toast(id ? "Enregistré" : "Créé");
       close();
       await loadAll();
     } catch (e) {
@@ -1011,35 +1011,35 @@ function onChapterTool(tool, chapter) {
         const fields = { [target]: cur ? `${cur}\n\n${text}` : text };
         if (meta.session_date) fields.session_date = meta.session_date;
         await apiSubjects("update-chapter", { lesson_id: lessonId, fields });
-        toast("Lesson content imported");
+        toast("Contenu de la leçon importé");
         await loadAll();
       },
     });
   }
   if (tool === "course") {
     return confirmGenerate({
-      title: "Generate course",
+      title: "Générer le cours",
       minutes: estimateMinutes(chapter, "course"),
-      detail: "The course is built section by section with GPT OSS 120B.",
-      confirmLabel: "Generate course",
+      detail: "Le cours est construit section par section avec GPT OSS 120B.",
+      confirmLabel: "Générer le cours",
       onGo: () => runCourseGeneration(lessonId),
     });
   }
   if (tool === "flashcards") {
     return confirmGenerate({
-      title: "Generate flashcards",
+      title: "Générer les flashcards",
       minutes: estimateMinutes(chapter, "flashcards"),
-      detail: "Cards are generated from the current course content.",
-      confirmLabel: "Generate flashcards",
+      detail: "Les cartes sont générées à partir du contenu actuel du cours.",
+      confirmLabel: "Générer les flashcards",
       onGo: () => runFlashcards(lessonId),
     });
   }
   if (tool === "activities") {
     return confirmGenerate({
-      title: "Generate activities",
+      title: "Générer les activités",
       minutes: estimateMinutes(chapter, "activities"),
-      detail: "Exercises and tests generated from the course.",
-      confirmLabel: "Generate activities",
+      detail: "Exercices et tests générés à partir du cours.",
+      confirmLabel: "Générer les activités",
       onGo: () => runActivities(lessonId),
     });
   }
@@ -1059,7 +1059,7 @@ function openGenModal(title) {
       <div class="ws-modal ws-gen-modal" role="dialog" aria-modal="true">
         <div class="ws-modal-head"><h2>${esc(title)}</h2></div>
         <div class="ws-modal-body"><div class="ws-gen-list" data-list></div><div class="ws-gen-status" data-status></div></div>
-        <div class="ws-modal-foot"><button class="ws-btn ws-btn-ghost" type="button" data-close>Close</button></div>
+        <div class="ws-modal-foot"><button class="ws-btn ws-btn-ghost" type="button" data-close>Fermer</button></div>
       </div>
     </div>`;
   const close = () => { root.hidden = true; root.innerHTML = ""; };
@@ -1087,7 +1087,7 @@ function openGenModal(title) {
 }
 
 async function runCourseGeneration(lessonId) {
-  const modal = openGenModal("Generating course…");
+  const modal = openGenModal("Génération du cours…");
   try {
     // Resume an unfinished job if one exists
     let jobId, outline, done;
@@ -1096,9 +1096,9 @@ async function runCourseGeneration(lessonId) {
       jobId = st.job.job_id;
       const p = typeof st.job.payload === "string" ? JSON.parse(st.job.payload) : st.job.payload;
       outline = p.outline; done = p.done || outline.map(() => false);
-      modal.setStatus("Resuming previous generation…");
+      modal.setStatus("Reprise de la génération précédente…");
     } else {
-      modal.setStatus("Planning the course outline…");
+      modal.setStatus("Planification du plan du cours…");
       const plan = await apiLearning("course-plan", { lesson_id: lessonId });
       jobId = plan.job_id; outline = plan.outline; done = outline.map(() => false);
     }
@@ -1115,33 +1115,33 @@ async function runCourseGeneration(lessonId) {
         if (r.status === "done") break;
       } catch (e) {
         modal.setItem(i, "error");
-        modal.setStatus(`Section ${i + 1} failed: ${e.message} — reopen this panel to retry.`);
+        modal.setStatus(`Échec de la section ${i + 1} : ${e.message} — rouvrez ce panneau pour réessayer.`);
         return;
       }
     }
-    modal.setStatus("Course complete — body updated.");
-    toast("Course generated");
+    modal.setStatus("Cours terminé — corps mis à jour.");
+    toast("Cours généré");
     await loadAll();
   } catch (e) {
-    modal.setStatus(`Error: ${e.message}`);
+    modal.setStatus(`Erreur : ${e.message}`);
     toast(e.message);
   }
 }
 
 async function runFlashcards(lessonId) {
-  toast("Generating flashcards… this may take a minute");
+  toast("Génération des flashcards… cela peut prendre une minute");
   try {
     const r = await apiLearning("flashcards", { lesson_id: lessonId });
-    toast(`${r.count} flashcards generated`);
+    toast(`${r.count} flashcards générées`);
     await loadAll();
   } catch (e) { toast(e.message); }
 }
 
 async function runActivities(lessonId) {
-  toast("Generating activities… this may take a minute");
+  toast("Génération des activités… cela peut prendre une minute");
   try {
     const r = await apiLearning("activities", { lesson_id: lessonId, count: 10 });
-    toast(`${r.count} activities generated (${(r.components || []).join(", ")})`);
+    toast(`${r.count} activités générées (${(r.components || []).join(", ")})`);
     await loadAll();
   } catch (e) { toast(e.message); }
 }
@@ -1185,16 +1185,16 @@ function bindUI() {
       state.template = t || null;
       tplClose(0);
       renderAll();
-      toast(t ? `Template “${t.name}” selected` : "Template cleared");
+      toast(t ? `Modèle « ${t.name} » sélectionné` : "Modèle effacé");
       return;
     }
     if (e.target.closest("#templateAdd")) {
-      const name = prompt("Template name:");
+      const name = prompt("Nom du modèle :");
       if (!name?.trim()) return;
       const kind = templateKind();
       apiTasks("template-save", { kind, name: name.trim(), payload: {} })
         .then(loadAll)
-        .then(() => toast("Template added"))
+        .then(() => toast("Modèle ajouté"))
         .catch((err) => toast(err.message));
     }
   });
@@ -1202,23 +1202,23 @@ function bindUI() {
   $("#templateEdit").addEventListener("click", async () => {
     const t = state.template;
     if (!t) return;
-    const name = prompt("Template name:", t.name);
+    const name = prompt("Nom du modèle :", t.name);
     if (!name?.trim() || name.trim() === t.name) return;
     try {
       await apiTasks("template-save", { kind: t.kind, name: name.trim(), payload: t.payload || {}, template_id: t.template_id });
       await loadAll();
-      toast("Template renamed");
+      toast("Modèle renommé");
     } catch (e) { toast(e.message); }
   });
 
   $("#templateDel").addEventListener("click", async () => {
     const t = state.template;
     if (!t) return;
-    if (!confirm(`Delete template “${t.name}”? Tasks and events created from it will be moved to trash.`)) return;
+    if (!confirm(`Supprimer le modèle « ${t.name} » ? Les tâches et événements créés à partir de celui-ci seront déplacés à la corbeille.`)) return;
     try {
       await apiTasks("template-delete", { template_id: t.template_id });
       state.template = null;
-      toast("Template deleted — linked items moved to trash");
+      toast("Modèle supprimé — les éléments liés sont passés à la corbeille");
       await loadAll();
     } catch (e) { toast(e.message); }
   });
@@ -1286,16 +1286,16 @@ function bindUI() {
     const sel = state.selected;
     if (!sel) return;
     const btn = $("#dSave");
-    btn.disabled = true; btn.textContent = "Saving…";
+    btn.disabled = true; btn.textContent = "Enregistrement…";
     try {
       const cfg = detailConfig();
       const fields = collectFields(cfg.sections, cfg.titleKey, document.getElementById("dTitle"), document.getElementById("detailPanel"));
       if (sel.kind === "task") await apiTasks("update", { table: sel.table, task_id: sel.row.task_id, fields });
       else await apiSubjects("update-chapter", { lesson_id: sel.row.lesson_id, fields });
-      toast("Saved");
+      toast("Enregistré");
       await loadAll();
     } catch (e) { toast(e.message); }
-    btn.disabled = false; btn.textContent = "Save changes";
+    btn.disabled = false; btn.textContent = "Enregistrer";
   });
 
   $("#dToggleDone").addEventListener("click", async () => {
@@ -1311,12 +1311,12 @@ function bindUI() {
     try {
       if (sel.kind === "chapter") {
         await apiSubjects("delete-chapter", { lesson_id: sel.row.lesson_id });
-        toast("Chapter deleted");
+        toast("Chapitre supprimé");
       } else {
         const isTrash = sel.table.startsWith("trash_");
         if (isTrash) await apiTasks("purge", { table: sel.table, task_id: sel.row.task_id });
         else await apiTasks("delete", { table: sel.table, task_id: sel.row.task_id });
-        toast(isTrash ? "Deleted forever" : "Moved to trash");
+        toast(isTrash ? "Supprimé définitivement" : "Déplacé à la corbeille");
       }
       closeDetail();
       await loadAll();

@@ -1,31 +1,31 @@
 const STEPS = [
   {
-    n: "01", icon: "https://shared-assets.lumaris.fr.eu.org/icons/homework.svg",
-    title: "Connecter ÉcoleDirecte",
-    text: "Liez votre compte scolaire une seule fois. Notes, moyennes, devoirs et emploi du temps se synchronisent via des routes dédiées.",
-    points: ["Notes + moyennes + détection des nouvelles notes", "Liste des devoirs avec suivi fait / à faire", "Emploi du temps + informations scolaires"],
-    route: "GET /api/ed/grades - /api/ed/homeworks - /api/ed/timetable"
+    n: "01", icon: "https://shared-assets.lumaris.fr.eu.org/icons/user.svg",
+    title: "Créer votre espace",
+    text: "Un compte Lumaris protégé par une session JWT renouvelée automatiquement. Chaque route /api/* vérifie le jeton — sans session valide, rien ne passe.",
+    points: ["Connexion unique, JWT renouvelé en continu", "Chaque appel API authentifié par Bearer", "Lien avec votre compte scolaire pour les données ÉcoleDirecte"],
+    route: "POST /api/auth/* - garde JWT sur /api/*"
   },
   {
-    n: "02", icon: "https://shared-assets.lumaris.fr.eu.org/icons/sparkles.svg",
+    n: "02", icon: "https://shared-assets.lumaris.fr.eu.org/icons/grid.svg",
+    title: "Organiser avec le Workspace",
+    text: "Tâches, événements, éléments récurrents, matières et chapitres : le cœur de Lumaris. Importez vos leçons par PDF, vocal, texte, lien, fichiers avec OCR ou caméra, et notez comment la prof teste et ce qu'elle attend.",
+    points: ["Six méthodes d'import de leçon, dont OCR local et caméra", "Chapitres avec dates de séance et notes de la prof", "Vues Toutes / Récurrentes / Événements / Corbeille + modèles"],
+    route: "/api/tasks/* - /api/subjects/* - /api/learning/*"
+  },
+  {
+    n: "03", icon: "https://shared-assets.lumaris.fr.eu.org/icons/sparkles.svg",
     title: "Apprendre avec l'IA",
-    text: "Posez des questions, raisonnez, cherchez sur le web, générez des images, recevez des remarques sur vos notes. Cinq catégories Workers AI.",
-    points: ["Chat tuteur avec historique des conversations", "Réponses enrichies du web + modèles visuels", "Limites d'usage affichées par modèle"],
-    route: "POST /api/ai/ask - GET /api/ai/limits"
+    text: "GPT OSS 120B génère le cours, les flashcards et les activités à partir de vos leçons importées — avec une durée estimée avant chaque lancement. Révisez ensuite par flashcards, test simulation chronométré ou séances espacées.",
+    points: ["Génération de cours, flashcards et activités avec estimation", "Test simulation : note /x, minuteur, remarque de progression", "Répétition espacée par intervalle + questions à l'IA sur le cours"],
+    route: "POST /api/learning/* - page Intelligence /api/ai/*"
   },
   {
-    n: "03", icon: "https://shared-assets.lumaris.fr.eu.org/icons/database.svg",
-    title: "Tout organiser",
-    text: "Notes d'étude, fichiers sur MEGA.nz, sites enregistrés, sessions pomodoro, convertisseurs et calculatrices.",
-    points: ["Éditeur de notes riche + gestionnaire de fichiers", "Minuteur Pomodoro + historique des calculs", "Convertisseur d'unités + favoris web"],
-    route: "/api/files/* - /api/tools/*"
-  },
-  {
-    n: "04", icon: "https://shared-assets.lumaris.fr.eu.org/icons/send.svg",
-    title: "Rester prévenu",
-    text: "Un cron déclenche le workflow de vérification des notes toutes les 4 heures. Nouvelle note ? Vous recevez un e-mail automatiquement.",
-    points: ["Surveillance automatique des notes", "Alertes e-mail, sans actualisation manuelle", "Personnalisation synchronisée en D1"],
-    route: "scheduled() - CHECK_GRADES - sendMail()"
+    n: "04", icon: "https://shared-assets.lumaris.fr.eu.org/icons/database.svg",
+    title: "Tout garder ensemble",
+    text: "Fichiers sur MEGA, sites favoris en grille, calculatrice, convertisseur et exécuteur de code — plus les réglages et les statistiques en direct. Et une surveillance des notes qui vous écrit toutes les 4 heures.",
+    points: ["Fichiers centralisés avec dossiers et quota suivi", "Outils : calculatrice, convertisseur d'unités, exécuteur JS", "Alerte e-mail automatique à chaque nouvelle note"],
+    route: "/api/files/* - /api/tools/* - scheduled()"
   }
 ];
 

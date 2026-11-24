@@ -4,42 +4,42 @@ import { authedFetch } from "/lib/auth.js";
 // (labels, flags, types, methods, priorities, attention levels, folders).
 
 const ENTITIES = [
-  { key: "labels", label: "Labels", fields: [
-    { key: "name", label: "Name", type: "text", required: true },
-    { key: "color", label: "Color", type: "color" },
+  { key: "labels", label: "Étiquettes", fields: [
+    { key: "name", label: "Nom", type: "text", required: true },
+    { key: "color", label: "Couleur", type: "color" },
     { key: "description", label: "Description", type: "text" },
   ]},
-  { key: "flags", label: "Flags", fields: [
-    { key: "name", label: "Name", type: "text", required: true },
-    { key: "color", label: "Color", type: "color" },
-    { key: "icon", label: "Icon", type: "text", placeholder: "emoji or name" },
+  { key: "flags", label: "Drapeaux", fields: [
+    { key: "name", label: "Nom", type: "text", required: true },
+    { key: "color", label: "Couleur", type: "color" },
+    { key: "icon", label: "Icône", type: "text", placeholder: "emoji ou nom" },
     { key: "description", label: "Description", type: "text" },
   ]},
   { key: "types", label: "Types", fields: [
-    { key: "name", label: "Name", type: "text", required: true },
-    { key: "color", label: "Color", type: "color" },
+    { key: "name", label: "Nom", type: "text", required: true },
+    { key: "color", label: "Couleur", type: "color" },
     { key: "description", label: "Description", type: "text" },
   ]},
-  { key: "methods", label: "Methods", fields: [
-    { key: "name", label: "Name", type: "text", required: true },
+  { key: "methods", label: "Méthodes", fields: [
+    { key: "name", label: "Nom", type: "text", required: true },
     { key: "description", label: "Description", type: "text" },
   ]},
-  { key: "priorities", label: "Priorities", fields: [
-    { key: "name", label: "Name", type: "text", required: true },
-    { key: "color", label: "Color", type: "color" },
-    { key: "level", label: "Level", type: "number" },
+  { key: "priorities", label: "Priorités", fields: [
+    { key: "name", label: "Nom", type: "text", required: true },
+    { key: "color", label: "Couleur", type: "color" },
+    { key: "level", label: "Niveau", type: "number" },
   ]},
   { key: "attention", label: "Attention", fields: [
-    { key: "name", label: "Name", type: "text", required: true },
-    { key: "color", label: "Color", type: "color" },
-    { key: "level", label: "Level", type: "number" },
+    { key: "name", label: "Nom", type: "text", required: true },
+    { key: "color", label: "Couleur", type: "color" },
+    { key: "level", label: "Niveau", type: "number" },
   ]},
-  { key: "folders", label: "Folders", fields: [
-    { key: "name", label: "Name", type: "text", required: true },
-    { key: "path", label: "Path", type: "text", required: true, placeholder: "/" },
-    { key: "color", label: "Color", type: "color" },
-    { key: "icon", label: "Icon", type: "text", placeholder: "emoji or name" },
-    { key: "parent_id", label: "Parent id", type: "number" },
+  { key: "folders", label: "Dossiers", fields: [
+    { key: "name", label: "Nom", type: "text", required: true },
+    { key: "path", label: "Chemin", type: "text", required: true, placeholder: "/" },
+    { key: "color", label: "Couleur", type: "color" },
+    { key: "icon", label: "Icône", type: "text", placeholder: "emoji ou nom" },
+    { key: "parent_id", label: "ID parent", type: "number" },
   ]},
 ];
 
@@ -92,7 +92,7 @@ async function load() {
     state.meta = resp?.meta || {};
     renderPanel();
   } catch (e) {
-    rootEl.querySelector("#wsadminBody").innerHTML = `<p class="state-msg">Failed to load: ${esc(e.message)}</p>`;
+    rootEl.querySelector("#wsadminBody").innerHTML = `<p class="state-msg">Échec du chargement : ${esc(e.message)}</p>`;
   }
 }
 
@@ -119,19 +119,19 @@ function renderPanel() {
           <span class="wsadmin-row-chips">${chips}</span>
         </div>
         <div class="wsadmin-row-actions">
-          <button class="ws-icon-btn" type="button" data-edit title="Edit">✎</button>
-          <button class="ws-icon-btn" type="button" data-del title="Delete">✕</button>
+          <button class="ws-icon-btn" type="button" data-edit title="Modifier">✎</button>
+          <button class="ws-icon-btn" type="button" data-del title="Supprimer">✕</button>
         </div>
       </div>`;
-  }).join("") : `<p class="state-msg">No ${esc(ent.label.toLowerCase())} yet — add one below.</p>`;
+  }).join("") : `<p class="state-msg">Aucun(e) ${esc(ent.label.toLowerCase())} pour l'instant — ajoutez-en un ci-dessous.</p>`;
 
   body.innerHTML = `
     <form class="wsadmin-form" id="wsadminForm">
       ${formFields}
       <div class="wsadmin-form-actions">
-        <span class="wsadmin-form-mode" id="wsadminMode">New</span>
-        <button class="button primary" type="submit">${state.editingId ? "Update" : "Add"}</button>
-        ${state.editingId ? `<button class="button secondary" type="button" id="wsadminCancel">Cancel</button>` : ""}
+        <span class="wsadmin-form-mode" id="wsadminMode">Nouveau</span>
+        <button class="button primary" type="submit">${state.editingId ? "Mettre à jour" : "Ajouter"}</button>
+        ${state.editingId ? `<button class="button secondary" type="button" id="wsadminCancel">Annuler</button>` : ""}
       </div>
     </form>
     <div class="wsadmin-list">${list}</div>`;
@@ -167,7 +167,7 @@ async function onSubmit(e) {
     if (f.type === "number") v = v === "" ? null : Number(v);
     else if (f.type === "color") v = v || null;
     else v = v === "" ? null : v;
-    if (f.required && (v === null || v === "")) { alert(`${f.label} is required`); return; }
+    if (f.required && (v === null || v === "")) { alert(`${f.label} est requis`); return; }
     fields[f.key] = v;
   }
   try {
@@ -186,7 +186,7 @@ async function onSubmit(e) {
 async function onDelete(id) {
   const ent = entity();
   const row = rows().find((r) => Number(r[idCol()]) === id);
-  if (!confirm(`Delete "${row?.name || id}"?`)) return;
+  if (!confirm(`Supprimer « ${row?.name || id} » ?`)) return;
   try {
     await api("lookup", { entity: state.entity, op: "delete", id });
     if (state.editingId === id) state.editingId = null;

@@ -222,13 +222,13 @@ function renderBreadcrumb() {
 
   if (!currentPath) {
     breadcrumb.innerHTML = `
-      <span class="path-segment">Root</span>
+      <span class="path-segment">Racine</span>
     `;
     return;
   }
 
   const segments = currentPath.split('/');
-  let html = '<span class="path-segment" data-path="">Root</span>';
+  let html = '<span class="path-segment" data-path="">Racine</span>';
 
   segments.forEach((segment, index) => {
     const path = segments.slice(0, index + 1).join('/');
@@ -255,8 +255,8 @@ function renderFiles() {
     filesList.innerHTML = `
       <div class="empty-state">
         <div class="empty-state-icon" data-icon="https://shared-assets.lumaris.fr.eu.org/icons/folder.svg"></div>
-        <p class="empty-state-text">This folder is empty</p>
-        <p class="empty-state-subtext">Upload files or create a folder to get started</p>
+        <p class="empty-state-text">Ce dossier est vide</p>
+        <p class="empty-state-subtext">Importez des fichiers ou créez un dossier pour commencer</p>
       </div>
     `;
     loadIconsLocal(filesList);
@@ -300,7 +300,7 @@ function createFolderBlock(folder) {
   const meta = document.createElement('div');
   meta.className = 'file-meta';
   meta.innerHTML = `
-    <span class="file-date">${folder.modified || 'No date'}</span>
+    <span class="file-date">${folder.modified || 'Sans date'}</span>
   `;
 
   info.appendChild(name);
@@ -312,7 +312,7 @@ function createFolderBlock(folder) {
   const editBtn = document.createElement('button');
   editBtn.className = 'file-action-btn edit';
   editBtn.type = 'button';
-  editBtn.ariaLabel = 'Rename folder';
+  editBtn.ariaLabel = 'Renommer le dossier';
   editBtn.innerHTML = `<span data-icon="https://shared-assets.lumaris.fr.eu.org/icons/edit.svg"></span>`;
   editBtn.addEventListener('click', (e) => {
     e.stopPropagation();
@@ -322,7 +322,7 @@ function createFolderBlock(folder) {
   const deleteBtn = document.createElement('button');
   deleteBtn.className = 'file-action-btn delete';
   deleteBtn.type = 'button';
-  deleteBtn.ariaLabel = 'Delete folder';
+  deleteBtn.ariaLabel = 'Supprimer le dossier';
   deleteBtn.innerHTML = `<span data-icon="https://shared-assets.lumaris.fr.eu.org/icons/delete.svg"></span>`;
   deleteBtn.addEventListener('click', (e) => {
     e.stopPropagation();
@@ -368,7 +368,7 @@ function createFileBlock(file) {
   meta.innerHTML = `
     <span class="file-extension">${file.extension || 'FILE'}</span>
     <span class="file-size">${formatFileSize(file.size)}</span>
-    <span class="file-date">${file.modified || 'No date'}</span>
+    <span class="file-date">${file.modified || 'Sans date'}</span>
   `;
 
   info.appendChild(name);
@@ -380,7 +380,7 @@ function createFileBlock(file) {
   const editBtn = document.createElement('button');
   editBtn.className = 'file-action-btn edit';
   editBtn.type = 'button';
-  editBtn.ariaLabel = 'Rename file';
+  editBtn.ariaLabel = 'Renommer le fichier';
   editBtn.innerHTML = `<span data-icon="https://shared-assets.lumaris.fr.eu.org/icons/edit.svg"></span>`;
   editBtn.addEventListener('click', (e) => {
     e.stopPropagation();
@@ -390,7 +390,7 @@ function createFileBlock(file) {
   const deleteBtn = document.createElement('button');
   deleteBtn.className = 'file-action-btn delete';
   deleteBtn.type = 'button';
-  deleteBtn.ariaLabel = 'Delete file';
+  deleteBtn.ariaLabel = 'Supprimer le fichier';
   deleteBtn.innerHTML = `<span data-icon="https://shared-assets.lumaris.fr.eu.org/icons/delete.svg"></span>`;
   deleteBtn.addEventListener('click', (e) => {
     e.stopPropagation();
@@ -446,7 +446,7 @@ async function navigateTo(path) {
     
   } catch (error) {
     console.error('Error navigating to path:', error);
-    alert(`Failed to load folder: ${error.message}`);
+    alert(`Échec du chargement du dossier : ${error.message}`);
   }
 }
 
@@ -492,7 +492,7 @@ async function openFile(file) {
   // 1. Download the file content
   // 2. Create a Blob URL
   // 3. Open it in a new tab or use a file preview library
-  alert(`Opening file: ${file.name}\n\nFile preview functionality would be implemented here.\n\nThe file would be opened using the device's default preview for ${file.extension} files.`);
+  alert(`Ouverture du fichier : ${file.name}\n\nL'aperçu des fichiers sera implémenté ici.\n\nLe fichier s'ouvrirait avec l'aperçu par défaut de l'appareil pour les fichiers ${file.extension}.`);
 }
 
 // ===================== MODAL FUNCTIONS =====================
@@ -579,7 +579,7 @@ editForm.addEventListener('submit', async (e) => {
 
   const newName = editNameInput.value.trim();
   if (!newName) {
-    alert('Please enter a new name');
+    alert('Veuillez saisir un nouveau nom');
     return;
   }
 
@@ -594,7 +594,7 @@ editForm.addEventListener('submit', async (e) => {
     await navigateTo(currentPath);
   } catch (error) {
     console.error('Error renaming item:', error);
-    alert(`Failed to rename item: ${error.message}`);
+    alert(`Échec du renommage : ${error.message}`);
   } finally {
     submitBtn.disabled = false;
     submitBtn.style.opacity = '1';
@@ -607,7 +607,7 @@ folderForm.addEventListener('submit', async (e) => {
   
   const name = folderNameInput.value.trim();
   if (!name) {
-    alert('Please enter a folder name');
+    alert('Veuillez saisir un nom de dossier');
     return;
   }
 
@@ -623,7 +623,7 @@ folderForm.addEventListener('submit', async (e) => {
     await navigateTo(currentPath);
   } catch (error) {
     console.error('Error creating folder:', error);
-    alert(`Failed to create folder: ${error.message}`);
+    alert(`Échec de la création du dossier : ${error.message}`);
   } finally {
     submitBtn.disabled = false;
     submitBtn.style.opacity = '1';
@@ -644,7 +644,7 @@ document.getElementById('confirm-delete-btn').addEventListener('click', async ()
       closeDeleteModal();
     } catch (error) {
       console.error('Error deleting item:', error);
-      alert(`Failed to delete item: ${error.message}`);
+      alert(`Échec de la suppression : ${error.message}`);
     } finally {
       btn.disabled = false;
       btn.style.opacity = '1';
@@ -658,7 +658,7 @@ uploadForm.addEventListener('submit', async (e) => {
   
   const file = fileInput.files[0];
   if (!file) {
-    alert('Please select a file');
+    alert('Veuillez sélectionner un fichier');
     return;
   }
 
@@ -703,7 +703,7 @@ uploadForm.addEventListener('submit', async (e) => {
     // Show error message
     const errorMsg = document.createElement('div');
     errorMsg.className = 'upload-error-message';
-    errorMsg.textContent = 'Upload failed';
+    errorMsg.textContent = 'Échec de l\'import';
     errorMsg.style.cssText = `
       position: fixed;
       top: 20px;
@@ -772,7 +772,7 @@ async function init() {
     console.error('Error initializing files page:', error);
     const filesList = document.getElementById('files-list');
     if (filesList) {
-      filesList.innerHTML = `<p style="color: var(--text); padding: 20px;">Error loading files: ${error.message}. Please try again.</p>`;
+      filesList.innerHTML = `<p style="color: var(--text); padding: 20px;">Erreur lors du chargement des fichiers : ${error.message}. Veuillez réessayer.</p>`;
     }
   }
 }

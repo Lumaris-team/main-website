@@ -1,11 +1,11 @@
 <!doctype html>
-<html lang="en" data-auth-pending>
+<html lang="fr" data-auth-pending>
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="#080912">
-    <title>Settings - Lumaris-Team Dashboard</title>
-    <meta name="description" content="Adjust the theme and fonts of your Dashboard.">
+    <title>Paramètres - Lumaris-Team Dashboard</title>
+    <meta name="description" content="Ajustez le thème et les polices de votre Dashboard.">
     <meta name="robots" content="noindex, nofollow">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -27,26 +27,26 @@
     <site-navbar site="client-worker" current="settings"></site-navbar>
 
     <div class="settings-shell">
-      <aside class="settings-sidebar" aria-label="Settings sections">
-        <button class="settings-nav" type="button" data-target="sec-appearance" aria-label="Appearance" data-active="true">
+      <aside class="settings-sidebar" aria-label="Sections des paramètres">
+        <button class="settings-nav" type="button" data-target="sec-appearance" aria-label="Apparence" data-active="true">
           <span class="settings-icon" data-icon="https://shared-assets.lumaris.fr.eu.org/icons/personalization.svg"></span>
         </button>
-        <button class="settings-nav" type="button" data-target="sec-statistics" aria-label="Statistics">
+        <button class="settings-nav" type="button" data-target="sec-statistics" aria-label="Statistiques">
           <span class="settings-icon" data-icon="https://shared-assets.lumaris.fr.eu.org/icons/statistics.svg"></span>
         </button>
         <button class="settings-nav" type="button" data-target="sec-workspace" aria-label="Workspace">
-          <span class="settings-icon" data-icon="https://shared-assets.lumaris.fr.eu.org/icons/database.svg"></span>
+          <span class="settings-icon" data-icon="https://shared-assets.lumaris.fr.eu.org/icons/grid.svg"></span>
         </button>
         <button class="settings-nav" type="button" data-target="sec-session" aria-label="Session">
-          <span class="settings-icon" data-icon="https://shared-assets.lumaris.fr.eu.org/icons/key.svg"></span>
+          <span class="settings-icon" data-icon="https://shared-assets.lumaris.fr.eu.org/icons/user.svg"></span>
         </button>
       </aside>
 
       <main class="settings-main" id="settingsMain">
         <div class="settings-hero-copy bento-block">
-          <span class="block-eyebrow">Settings</span>
-          <h1>Customize your experience</h1>
-          <p>Every setting is a single line, grouped by theme. Changes apply immediately.</p>
+          <span class="block-eyebrow">Paramètres</span>
+          <h1>Personnalisez votre expérience</h1>
+          <p>Chaque paramètre tient sur une ligne, regroupé par thème. Les changements s'appliquent immédiatement.</p>
         </div>
 
         <!-- ===== Theme : Appearance ===== -->
@@ -54,28 +54,28 @@
           <div class="settings-theme-head">
             <span class="settings-theme-icon" data-icon="https://shared-assets.lumaris.fr.eu.org/icons/personalization.svg"></span>
             <div>
-              <span class="block-eyebrow">Theme</span>
-              <h2>Appearance</h2>
+              <span class="block-eyebrow">Thème</span>
+              <h2>Apparence</h2>
             </div>
           </div>
-          <p class="settings-theme-desc">Background, typography and overall look. Changes apply instantly across the whole dashboard.</p>
+          <p class="settings-theme-desc">Arrière-plan, typographie et apparence générale. Les changements s'appliquent instantanément sur tout le dashboard.</p>
 
           <div class="settings-list bento-block">
             <div class="set-row">
-              <span class="set-label">Background type</span>
+              <span class="set-label">Type d'arrière-plan</span>
               <input type="hidden" id="backgroundType" value="gradient">
               <div class="bg-toggle">
-                <button id="bgGradient" type="button" class="bg-toggle-btn" data-value="gradient">Gradient</button>
-                <button id="bgSolid" type="button" class="bg-toggle-btn" data-value="solid">Solid color</button>
+                <button id="bgGradient" type="button" class="bg-toggle-btn" data-value="gradient">Dégradé</button>
+                <button id="bgSolid" type="button" class="bg-toggle-btn" data-value="solid">Couleur unie</button>
               </div>
             </div>
 
             <div class="set-row" data-setting="gradientStyle">
-              <span class="set-label">Gradient style</span>
+              <span class="set-label">Style de dégradé</span>
               <input type="hidden" id="gradientStyle" value="linear">
               <div class="bg-toggle gradient-toggle">
-                <button id="gradientLinear" type="button" class="bg-toggle-btn" data-value="linear">Linear</button>
-                <button id="gradientRadial" type="button" class="bg-toggle-btn" data-value="radial">Radial</button>
+                <button id="gradientLinear" type="button" class="bg-toggle-btn" data-value="linear">Linéaire</button>
+                <button id="gradientRadial" type="button" class="bg-toggle-btn" data-value="radial">Radiale</button>
               </div>
             </div>
 
@@ -89,25 +89,25 @@
                 <button id="orient45" type="button" class="orientation-btn" data-value="45deg" aria-label="Top-left to bottom-right" style="--orient-rot:45deg">
                   <img src="https://shared-assets.lumaris.fr.eu.org/icons/arrow.svg" alt="">
                 </button>
-                <button id="orient90" type="button" class="orientation-btn" data-value="90deg" aria-label="Left to right" style="--orient-rot:90deg">
+                <button id="orient90" type="button" class="orientation-btn" data-value="90deg" aria-label="De gauche à droite" style="--orient-rot:90deg">
                   <img src="https://shared-assets.lumaris.fr.eu.org/icons/arrow.svg" alt="">
                 </button>
-                <button id="orient135" type="button" class="orientation-btn" data-value="135deg" aria-label="Bottom-left to top-right" style="--orient-rot:135deg">
+                <button id="orient135" type="button" class="orientation-btn" data-value="135deg" aria-label="Bas-gauche vers haut-droite" style="--orient-rot:135deg">
                   <img src="https://shared-assets.lumaris.fr.eu.org/icons/arrow.svg" alt="">
                 </button>
               </div>
             </div>
 
             <div class="set-row set-row-col" data-setting="colors">
-              <span class="set-label">Colors</span>
+              <span class="set-label">Couleurs</span>
               <div class="color-row">
                 <label class="color-field">
-                  <span class="color-name">Color 1</span>
+                  <span class="color-name">Couleur 1</span>
                   <div class="color-swatch" aria-hidden="true"></div>
                   <input id="color1" class="field-input" type="color" value="#0b3f91">
                 </label>
                 <label class="color-field">
-                  <span class="color-name">Color 2</span>
+                  <span class="color-name">Couleur 2</span>
                   <div class="color-swatch" aria-hidden="true"></div>
                   <input id="color2" class="field-input" type="color" value="#1c8cff">
                 </label>
@@ -115,7 +115,7 @@
             </div>
 
             <div class="set-row" data-setting="solid">
-              <span class="set-label">Solid color</span>
+              <span class="set-label">Couleur unie</span>
               <label class="color-field solid-field">
                 <div class="color-swatch" aria-hidden="true"></div>
                 <input id="solidColor" class="field-input" type="color" value="#080912">
@@ -123,42 +123,42 @@
             </div>
 
             <div class="set-row">
-              <span class="set-label">Font</span>
+              <span class="set-label">Police</span>
               <select id="fontFamily" class="field-input set-input">
                 <option value="Inter, ui-sans-serif, system-ui, sans-serif">Inter</option>
                 <option value="'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif">IBM Plex Sans</option>
                 <option value="'Poppins', ui-sans-serif, system-ui, sans-serif">Poppins</option>
                 <option value="'JetBrains Mono', ui-monospace, monospace">JetBrains Mono</option>
                 <option value="'Lora', Georgia, serif">Lora</option>
-                <option value="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif">Systeme</option>
+                <option value="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif">Système</option>
               </select>
             </div>
 
             <div class="set-row">
-              <span class="set-label">Weight</span>
+              <span class="set-label">Graisse</span>
               <input type="hidden" id="fontWeight" value="normal">
               <div class="bg-toggle">
-                <button id="boldNormal" type="button" class="bg-toggle-btn" data-value="normal">Normal</button>
-                <button id="boldBold" type="button" class="bg-toggle-btn" data-value="bold">Bold</button>
+                <button id="boldNormal" type="button" class="bg-toggle-btn" data-value="normal">Normale</button>
+                <button id="boldBold" type="button" class="bg-toggle-btn" data-value="bold">Grasse</button>
               </div>
             </div>
 
             <div class="set-row">
-              <span class="set-label">Text size</span>
+              <span class="set-label">Taille du texte</span>
               <input id="fontSize" class="field-input set-input set-input-num" type="number" min="12" max="32" step="0.5" value="16">
             </div>
           </div>
 
           <div class="settings-actions">
-            <button id="saveSettings" class="button primary">Save</button>
-            <button id="resetSettings" class="button secondary">Reset</button>
+            <button id="saveSettings" class="button primary">Enregistrer</button>
+            <button id="resetSettings" class="button secondary">Réinitialiser</button>
           </div>
 
           <div class="settings-preview" id="settingsPreview">
             <div class="preview-card bento-block">
-              <div class="preview-badge">Preview</div>
-              <h2>Dashboard theme</h2>
-              <p>Settings apply to all pages immediately.</p>
+              <div class="preview-badge">Aperçu</div>
+              <h2>Thème du dashboard</h2>
+              <p>Les paramètres s'appliquent à toutes les pages immédiatement.</p>
             </div>
           </div>
         </section>
@@ -168,11 +168,11 @@
           <div class="settings-theme-head">
             <span class="settings-theme-icon" data-icon="https://shared-assets.lumaris.fr.eu.org/icons/statistics.svg"></span>
             <div>
-              <span class="block-eyebrow">Usage</span>
-              <h2>Statistics</h2>
+              <span class="block-eyebrow">Utilisation</span>
+              <h2>Statistiques</h2>
             </div>
           </div>
-          <p class="settings-theme-desc">Live usage of your storage quota and AI neurons for today.</p>
+          <p class="settings-theme-desc">Utilisation en direct de votre quota de stockage et de vos neurones IA du jour.</p>
 
           <div class="settings-list bento-block">
             <div class="set-row set-row-stat">
@@ -184,12 +184,12 @@
                   </svg>
                   <div class="storage-center">
                     <span class="storage-percentage" id="storagePct">0% used</span>
-                    <small class="storage-capacity" id="storageCap">of 20GB</small>
+                    <small class="storage-capacity" id="storageCap">sur 20 Go</small>
                   </div>
                 </div>
                 <div class="stat-text">
-                  <span class="stat-title">Storage</span>
-                  <span class="legend-text" id="storageLegend">Files — 0.0 GB</span>
+                  <span class="stat-title">Stockage</span>
+                  <span class="legend-text" id="storageLegend">Fichiers — 0.0 Go</span>
                 </div>
               </div>
               <div class="stat-cell">
@@ -199,13 +199,13 @@
                     <circle class="ring-ai" cx="60" cy="60" r="54" id="ringAi" />
                   </svg>
                   <div class="ai-center">
-                    <span class="ai-percentage" id="aiPct">0% used</span>
-                    <small class="ai-capacity" id="aiCap">of 10000 neurons</small>
+                    <span class="ai-percentage" id="aiPct">0 % utilisé</span>
+                    <small class="ai-capacity" id="aiCap">sur 10000 neurones</small>
                   </div>
                 </div>
                 <div class="stat-text">
-                  <span class="stat-title">AI requests</span>
-                  <span class="legend-text" id="aiUsage">0 / 10000 neurons</span>
+                  <span class="stat-title">Requêtes IA</span>
+                  <span class="legend-text" id="aiUsage">0 / 10000 neurones</span>
                 </div>
               </div>
             </div>
@@ -215,17 +215,17 @@
         <!-- ===== Theme : Workspace ===== -->
         <section class="settings-theme wsadmin-main" id="sec-workspace">
           <div class="settings-theme-head">
-            <span class="settings-theme-icon" data-icon="https://shared-assets.lumaris.fr.eu.org/icons/database.svg"></span>
+            <span class="settings-theme-icon" data-icon="https://shared-assets.lumaris.fr.eu.org/icons/grid.svg"></span>
             <div>
               <span class="block-eyebrow">Workspace</span>
               <h2>Tasks &amp; lookups</h2>
             </div>
           </div>
-          <p class="settings-theme-desc">Manage the labels, flags, types, methods, priorities, attention levels, folders and templates used across the Workspace.</p>
+          <p class="settings-theme-desc">Gérez les labels, flags, types, méthodes, priorités, niveaux d'attention, dossiers et templates utilisés dans le Workspace.</p>
           <div class="wsadmin-tabs" id="wsadminTabs"></div>
           <article class="settings-panel bento-block wsadmin-panel" id="wsadminPanel">
             <div class="wsadmin-body" id="wsadminBody">
-              <p class="state-msg">Loading…</p>
+              <p class="state-msg">Chargement…</p>
             </div>
           </article>
         </section>
@@ -233,28 +233,28 @@
         <!-- ===== Theme : Session ===== -->
         <section class="settings-theme" id="sec-session">
           <div class="settings-theme-head">
-            <span class="settings-theme-icon" data-icon="https://shared-assets.lumaris.fr.eu.org/icons/key.svg"></span>
+            <span class="settings-theme-icon" data-icon="https://shared-assets.lumaris.fr.eu.org/icons/user.svg"></span>
             <div>
-              <span class="block-eyebrow">Account</span>
+              <span class="block-eyebrow">Compte</span>
               <h2>Session</h2>
             </div>
           </div>
-          <p class="settings-theme-desc">Your current sign-in session. The JWT renews automatically — refresh it manually if needed.</p>
+          <p class="settings-theme-desc">Votre session de connexion actuelle. Le JWT se renouvelle automatiquement — actualisez-le manuellement si besoin.</p>
 
           <div class="settings-list bento-block">
             <div class="set-row">
-              <span class="set-label">Account</span>
+              <span class="set-label">Compte</span>
               <span class="set-value" id="sessionUser">—</span>
             </div>
             <div class="set-row">
-              <span class="set-label">JWT expires</span>
+              <span class="set-label">Expiration JWT</span>
               <span class="set-value" id="sessionExp">—</span>
             </div>
             <div class="set-row">
               <span class="set-label">Actions</span>
               <div class="set-actions">
-                <button class="button secondary" type="button" id="sessionRefresh">↻ Refresh session</button>
-                <button class="button secondary" type="button" id="sessionLogout">Sign out</button>
+                <button class="button secondary" type="button" id="sessionRefresh">↻ Actualiser la session</button>
+                <button class="button secondary" type="button" id="sessionLogout">Se déconnecter</button>
               </div>
             </div>
           </div>

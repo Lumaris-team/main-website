@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#080912">
-  <meta name="description" content="Découvrez comment Lumaris réunit ÉcoleDirecte, un tuteur IA, vos fichiers, vos notes d'étude, vos outils de productivité et vos notifications dans un espace d'apprentissage simple.">
+  <meta name="description" content="Découvrez comment Lumaris réunit un workspace complet pour vos cours et révisions, un assistant IA multi-modèles, vos fichiers, vos outils et vos sites favoris dans un seul espace d'apprentissage.">
   <title>Lumaris — Comment ça marche</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -107,14 +107,14 @@
         <p class="eyebrow"><span class="pulse"></span>Comment ça marche</p>
         <p class="hero-step">01 / 04 — Connecter</p>
         <h1>Une connexion.<br>Toute votre <em>vie scolaire.</em></h1>
-        <p class="hero-intro">Lumaris se branche sur ÉcoleDirecte pour les notes, les devoirs et l'emploi du temps, ajoute un tuteur IA sur Workers AI, un espace de travail propulsé par MEGA, et une surveillance des notes qui vous prévient toutes les 4 heures.</p>
+        <p class="hero-intro">Lumaris est un workspace complet pour vos cours : importez vos leçons, laissez l'IA générer cours, flashcards et tests, révisez avec des séances espacées — le tout accompagné d'un assistant multi-modèles, de fichiers, d'outils et de sites favoris, le tout protégé par une session JWT et synchronisé en D1.</p>
         <div class="hero-actions">
           <a class="button button-primary" href="/sign-in">Se connecter <span>↗</span></a>
           <a class="text-link" href="#steps">Voir les 4 étapes <span>↓</span></a>
         </div>
         <dl class="hero-stats">
-          <div><dt>04</dt><dd>piliers — école, IA, fichiers, alertes</dd></div>
-          <div><dt>4h</dt><dd>rythme de vérification via cron + Workflow</dd></div>
+          <div><dt>07</dt><dd>espaces — accueil, workspace, IA, fichiers, outils, sites, réglages</dd></div>
+          <div><dt>4h</dt><dd>rythme de vérification des notes via cron + Workflow</dd></div>
           <div><dt>01</dt><dd>session JWT qui protège chaque route /api/*</dd></div>
         </dl>
       </div>
@@ -130,9 +130,9 @@
     </section>
     <section class="toolbox" id="toolbox">
       <div class="section-head">
-        <p class="eyebrow"><span class="pulse"></span>L'étape 03, en détail</p>
+        <p class="eyebrow"><span class="pulse"></span>L'étape 04, en détail</p>
         <h2>La <em>boîte à outils.</em></h2>
-        <p>Trois vrais outils sont livrés dans le tableau de bord, servis par <code>/api/tools/*</code>, <code>/api/pomodoro/*</code> et la couche de cache. Pas des maquettes — du code qui fonctionne.</p>
+        <p>Trois vrais outils sont livrés dans la page Outils, servis par <code>/api/tools/*</code>. Pas des maquettes — du code qui fonctionne.</p>
       </div>
       <div class="toolbox-grid">
         <article class="tool-card reveal">
@@ -150,11 +150,11 @@
           <span class="step-route">POST /api/tools/convert</span>
         </article>
         <article class="tool-card reveal">
-          <span class="step-icon" data-icon="https://shared-assets.lumaris.fr.eu.org/icons/clock.svg"></span>
-          <h3>Minuteur Pomodoro</h3>
-          <p>Des sessions de concentration persistées par jour avec suivi des séries. L'état survit aux rechargements grâce au cache + stockage.</p>
-          <ul><li>Cycles travail / pause avec stats du jour</li><li>Séries et cumuls par journée</li><li>Durées personnalisées dans les réglages</li></ul>
-          <span class="step-route">/api/pomodoro/* + couche cache</span>
+          <span class="step-icon" data-icon="https://shared-assets.lumaris.fr.eu.org/icons/code.svg"></span>
+          <h3>Exécuteur de code</h3>
+          <p>Exécutez du JavaScript directement dans le navigateur avec une sortie console — pratique pour vérifier un calcul ou tester un snippet sans quitter Lumaris.</p>
+          <ul><li>JavaScript exécuté côté client, sans installation</li><li>Sortie console et gestion des erreurs</li><li>Idéal pour les exercices et vérifications rapides</li></ul>
+          <span class="step-route">Exécution navigateur — /api/tools/*</span>
         </article>
       </div>
     </section>
@@ -168,7 +168,7 @@
         <li class="reveal"><span>01</span><strong>workers.dev bloqué</strong><p>Domaine personnalisé uniquement.</p></li>
         <li class="reveal"><span>02</span><strong>Amorçage public</strong><p>Clés Supabase + Turnstile, puis échange de session.</p></li>
         <li class="reveal"><span>03</span><strong>Gardien JWT Bearer</strong><p>Chaque route /api/* est vérifiée. Sans jeton : 401.</p></li>
-        <li class="reveal"><span>04</span><strong>Aiguillage du routeur</strong><p>École, IA, fichiers, outils, notes et réglages.</p></li>
+        <li class="reveal"><span>04</span><strong>Aiguillage du routeur</strong><p>Workspace, IA, fichiers, outils, notes et réglages.</p></li>
         <li class="reveal"><span>05</span><strong>Assets statiques</strong><p>Frontend avec correctif SVG et cache, routes propres.</p></li>
       </ol>
     </section>
