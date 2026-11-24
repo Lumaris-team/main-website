@@ -514,9 +514,7 @@ body {
   flex-direction: row;
   align-items: center;
   gap: 10px;
-  padding-top: 22px;
 }
-.ws-field-check .ws-field-label { order: 2; }
 
 .ws-field-label {
   font-size: .74rem;
@@ -526,6 +524,8 @@ body {
 
 .ws-field input[type="text"],
 .ws-field input[type="number"],
+.ws-field input[type="date"],
+.ws-field input[type="time"],
 .ws-field input[type="datetime-local"],
 .ws-field select,
 .ws-field textarea {
@@ -573,6 +573,152 @@ body {
 }
 .ws-check input:checked + .ws-check-ui { background: linear-gradient(135deg, #8cecff, #6aa8ff); }
 .ws-check input:checked + .ws-check-ui::after { transform: translateX(16px); background: #06121a; }
+
+/* ---- Entity form: chips, toggles, lists, reminder, AI note ---- */
+.ws-fchips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.ws-fchip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font: inherit;
+  font-size: .78rem;
+  font-weight: 600;
+  color: var(--muted);
+  background: rgba(255, 255, 255, .04);
+  border: 1px solid var(--line);
+  cursor: pointer;
+  transition: border-color .15s, color .15s, background .15s;
+}
+.ws-fchip:hover { color: var(--text); border-color: rgba(140, 236, 255, .35); }
+.ws-fchip.is-sel {
+  color: var(--accent);
+  border-color: rgba(140, 236, 255, .45);
+  background: var(--accent-soft);
+}
+.ws-fchip-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--chip, var(--accent));
+  flex: none;
+}
+
+.ws-bool {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 14px 8px 8px;
+  border-radius: 999px;
+  font: inherit;
+  font-size: .82rem;
+  font-weight: 650;
+  color: var(--muted);
+  background: rgba(255, 255, 255, .04);
+  border: 1px solid var(--line);
+  cursor: pointer;
+  transition: border-color .15s, color .15s, background .15s;
+}
+.ws-bool-ico {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  font-size: .8rem;
+  color: #06121a;
+  background: rgba(255, 255, 255, .14);
+  border: 1px solid var(--line);
+  position: relative;
+  transition: background .15s;
+  flex: none;
+}
+.ws-bool:not(.is-on) .ws-bool-ico::after {
+  content: "";
+  position: absolute;
+  left: 3px; right: 3px; top: 50%;
+  height: 1.5px;
+  background: var(--muted);
+  transform: rotate(-24deg);
+}
+.ws-bool.is-on {
+  color: var(--accent);
+  border-color: rgba(140, 236, 255, .45);
+  background: var(--accent-soft);
+}
+.ws-bool.is-on .ws-bool-ico { background: linear-gradient(135deg, #8cecff, #6aa8ff); border-color: transparent; }
+.ws-bool:not(.is-on) .ws-bool-txt { text-decoration: line-through; opacity: .65; }
+
+.ws-list { display: flex; flex-direction: column; gap: 6px; }
+.ws-list-row { display: flex; gap: 6px; align-items: center; }
+.ws-list-row input {
+  flex: 1;
+  min-width: 0;
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, .03);
+  color: var(--text);
+  font: inherit;
+  font-size: .85rem;
+  outline: none;
+}
+.ws-list-row input:focus { border-color: rgba(140, 236, 255, .4); box-shadow: 0 0 0 3px rgba(140, 236, 255, .1); }
+.ws-list-add {
+  align-self: flex-start;
+  border: 1px dashed var(--line);
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: .78rem;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: color .15s, border-color .15s;
+}
+.ws-list-add:hover { color: var(--accent); border-color: rgba(140, 236, 255, .4); }
+
+.ws-remseg { display: flex; flex-wrap: wrap; }
+.ws-rem-time {
+  width: auto !important;
+  margin-top: 8px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, .03);
+  color: var(--text);
+  font: inherit;
+  font-size: .85rem;
+  outline: none;
+}
+.ws-rem-time:focus { border-color: rgba(140, 236, 255, .4); box-shadow: 0 0 0 3px rgba(140, 236, 255, .1); }
+
+.ws-ainote-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+.ws-ainote-hint { font-size: .74rem; color: var(--muted); }
+
+.ws-info {
+  padding: 9px 12px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, .03);
+  border: 1px dashed var(--line);
+  color: var(--muted);
+  font-size: .8rem;
+}
+
+.ws-field-hint { font-size: .74rem; color: var(--muted); }
 
 .ws-detail-foot {
   display: flex;
@@ -1307,3 +1453,38 @@ body {
 .ct-testcfg input { width: 100%; }
 
 @media (max-width: 720px) { .ct-testcfg-grid { grid-template-columns: 1fr; } }
+
+/* ---------- Exam (contrôle) planner ---------- */
+.ct-exam { display: flex; flex-direction: column; gap: 12px; }
+.ct-exam-head { display: flex; align-items: flex-end; gap: 14px; flex-wrap: wrap; }
+.ct-exam-head .ws-field { min-width: 200px; }
+.ct-exam-head .ws-field input { width: 100%; padding: 8px 12px; border-radius: 10px; border: 1px solid var(--line); background: rgba(255,255,255,.03); color: var(--text); font: inherit; font-size: .85rem; }
+.ct-exam-list { display: flex; flex-direction: column; gap: 10px; }
+.ct-exam-row {
+  display: flex; flex-direction: column; gap: 8px;
+  padding: 12px 14px; border-radius: 14px;
+  background: rgba(255,255,255,.03); border: 1px solid var(--line);
+}
+.ct-exam-row-main { display: flex; gap: 10px; align-items: center; }
+.ct-exam-title {
+  flex: 1; min-width: 0; padding: 8px 12px; border-radius: 10px;
+  border: 1px solid var(--line); background: rgba(255,255,255,.04);
+  color: var(--text); font: inherit; font-size: .85rem; font-weight: 600; outline: none;
+}
+.ct-exam-title:focus, .ct-exam-date:focus, .ct-exam-desc:focus, .ct-exam-action:focus, .ct-exam-method:focus {
+  border-color: rgba(140,236,255,.4); box-shadow: 0 0 0 3px rgba(140,236,255,.1);
+}
+.ct-exam-date {
+  padding: 8px 12px; border-radius: 10px; border: 1px solid var(--line);
+  background: rgba(255,255,255,.04); color: var(--text); font: inherit; font-size: .82rem; outline: none;
+}
+.ct-exam-desc {
+  width: 100%; padding: 7px 12px; border-radius: 10px; border: 1px solid var(--line);
+  background: transparent; color: var(--muted); font: inherit; font-size: .8rem; outline: none;
+}
+.ct-exam-row-meta { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.ct-exam-action, .ct-exam-method {
+  padding: 7px 10px; border-radius: 10px; border: 1px solid var(--line);
+  background: rgba(255,255,255,.04); color: var(--text); font: inherit; font-size: .8rem; outline: none;
+  max-width: 220px;
+}

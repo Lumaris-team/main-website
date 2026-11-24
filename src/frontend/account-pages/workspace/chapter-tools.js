@@ -366,3 +366,150 @@ export function openAskAI(chapter) {
   });
   return modal;
 }
+
+// ---------- exam (contrôle) planner ----------
+// Builds a succession of dated tasks before tests_date — each linked to a
+// chapter action and a learning method, all editable before creation.
+const EXAM_PHASES = [
+  { key: "announce", title: "Identifier le programme et les attentes", offset: -7, action: "ask", desc: "Repérer le programme du contrôle et noter les attentes de la prof : format, durée, points forts." },
+  { key: "diagnose", title: "Tester les connaissances et travailler les lacunes", offset: -5, action: "activities", desc: "Faire un test blanc pour identifier les points faibles, puis travailler les lacunes." },
+  { key: "deepen", title: "Approfondir les notions difficiles et exercices", offset: -3, action: "course", desc: "Reprendre les notions difficiles à fond et enchaîner les exercices ciblés." },
+  { key: "eve", title: "Dernière vérification et revoir les erreurs", offset: -1, action: "review", desc: "Refaire les exercices ratés et vérifier les définitions et méthodes clés." },
+  { key: "day", title: "Rappel léger des points essentiels", offset: 0, action: "flashcards", desc: "Révision courte le jour J — les points essentiels, pas de marathon." },
+];
+
+function examDatePlus(iso, days) {
+  const d = iso ? new Date(`${iso}T12:00:00`) : new Date();
+  d.setDate(d.getDate() + days);
+  return d.toISOString().slice(0, 10);
+}
+
+function examRowHTML(p, methods, actions) {
+  return `
+    <div class="ct-exam-row" data-row>
+      <div class="ct-exam-row-main">
+        <input type="text" class="ct-exam-title" value="${esc(p.title)}" placeholder="Titre de l'étape">
+        <input type="date" class="ct-exam-date" value="${esc(p.date)}">
+      </div>
+      <input type="text" class="ct-exam-desc" value="${esc(p.desc)}" placeholder="Détails pour la tâche (optionnel)">
+      <div class="ct-exam-row-meta">
+        <select class="ct-exam-action" title="Action chapitre liée">
+          <option value="">Action —</option>
+          ${actions.map((a) => `<option value="${esc(a.value)}" ${a.value === p.action ? "selected" : ""}>${esc(a.label)}</option>`).join("")}
+        </select>
+        <select class="ct-exam-method" title="Méthode">
+          <option value="">Méthode —</option>
+          ${methods.map((m) => `<option value="${esc(m.method_id)}" ${String(m.method_id) === String(p.method) ? "selected" : ""}>${esc(m.name || `#${m.method_id}`)}</option>`).join("")}
+        </select>
+        <button class="ws-icon-btn" type="button" data-row-del title="Retirer l'étape">✕</button>
+      </div>
+    </div>`;
+}
+
+export function openExamPlan(chapter) {
+  const methods = api.getMethods?.() || [];
+  const actions = api.linkedActions || [];
+  const examIso = chapter.tests_date ? String(chapter.tests_date).slice(0, 10) : "";
+  const defaultDate = examIso || examDatePlus(new Date().toISOString().slice(0, 10), 7);
+
+  const rows = EXAM_PHASES.map((p) => ({
+    title: `${p.title} — ${chapter.lesson_name || "chapitre"}`,
+    desc: p.desc,
+    date: examDatePlus(examIso || defaultDate, p.offset),
+    action: p.action,
+    method: "",
+  }));
+
+  const listHtml = rows.map((r) => examRowHTML(r, methods, actions)).join("");
+
+  openModal({
+    title: `Planifier le contrôle — ${chapter.lesson_name || "chapitre"}`,
+    wide: true,
+    body: `
+      <div class="ct-exam">
+        <p class="ct-note">Le plan crée une succession de tâches datées avant le contrôle. Chaque étape est liée à une action du chapitre et à une méthode — vous pouvez tout modifier avant de créer.</p>
+        <div class="ct-exam-head">
+          <label class="ws-field"><span class="ws-field-label">Date du contrôle</span>
+            <input type="date" data-exam-date value="${esc(defaultDate)}"></label>
+          <button class="ws-btn ws-btn-ghost" type="button" data-add-row>＋ Ajouter une étape</button>
+        </div>
+        <div class="ct-exam-list" data-rows>${listHtml}</div>
+      </div>`,
+    foot: `
+      <button class="ws-btn ws-btn-ghost" type="button" data-close>Annuler</button>
+      <button class="ws-btn ws-btn-primary" type="button" data-create>Créer les tâches</button>`,
+    onMount(m) {
+      const rowsEl = m.el.querySelector("[data-rows]");
+      const examInput = m.el.querySelector("[data-exam-date]");
+
+      // Recompute all default phase dates when the exam date changes.
+      examInput.addEventListener("change", () => {
+        const iso = examInput.value;
+        if (!iso) return;
+        rowsEl.querySelectorAll("[data-row]").forEach((row, i) => {
+          const off = EXAM_PHASES[i]?.offset;
+          if (off !== undefined) {
+            const d = row.querySelector(".ct-exam-date");
+            if (d && !d.dataset.touched) d.value = examDatePlus(iso, off);
+          }
+        });
+      });
+      rowsEl.addEventListener("input", (e) => {
+        if (e.target.classList.contains("ct-exam-date")) e.target.dataset.touched = "1";
+      });
+      rowsEl.addEventListener("click", (e) => {
+        const del = e.target.closest("[data-row-del]");
+        if (del) del.closest("[data-row]")?.remove();
+      });
+      m.el.querySelector("[data-add-row]").addEventListener("click", () => {
+        rowsEl.insertAdjacentHTML("beforeend", examRowHTML({ title: "", desc: "", date: examInput.value || defaultDate, action: "", method: "" }, methods, actions));
+      });
+
+      m.el.querySelector("[data-create]").addEventListener("click", async (e) => {
+        const btn = e.currentTarget;
+        const examDate = examInput.value || defaultDate;
+        const items = [...rowsEl.querySelectorAll("[data-row]")].map((row) => ({
+          title: row.querySelector(".ct-exam-title").value.trim(),
+          date: row.querySelector(".ct-exam-date").value,
+          desc: row.querySelector(".ct-exam-desc").value.trim(),
+          action: row.querySelector(".ct-exam-action").value,
+          method: row.querySelector(".ct-exam-method").value,
+        })).filter((r) => r.title);
+        if (!items.length) { api.toast?.("Aucune étape — renseignez au moins un titre"); return; }
+        btn.disabled = true; btn.textContent = "Création…";
+        try {
+          if (examDate && examDate !== examIso) {
+            await updateChapter(chapter.lesson_id, { tests_date: examDate });
+          }
+          let created = 0;
+          for (const it of items) {
+            const remindDate = it.date ? new Date(`${it.date}T17:00:00`) : null;
+            const ad = { exam_plan: chapter.lesson_id, exam_date: examDate, reminder_mode: "day_before" };
+            await api.apiTasks("create", {
+              table: "tasks",
+              fields: {
+                title: it.title,
+                text_body: it.desc || "",
+                remind: 1,
+                remind_date: remindDate && !isNaN(remindDate) ? remindDate.toISOString() : "",
+                frequency: "",
+                linked_action: it.action || null,
+                methods_id: it.method || null,
+                chapter_id: chapter.lesson_id,
+                subject_id: chapter.subject_id ?? null,
+                additional_data: JSON.stringify(ad),
+              },
+            });
+            created++;
+          }
+          api.toast?.(`${created} tâche${created > 1 ? "s" : ""} de préparation créée${created > 1 ? "s" : ""}`);
+          m.close();
+          await api.reload?.();
+        } catch (err) {
+          api.toast?.(err.message);
+          btn.disabled = false; btn.textContent = "Créer les tâches";
+        }
+      });
+    },
+  });
+}

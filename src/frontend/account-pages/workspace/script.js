@@ -4,7 +4,7 @@ import { openActivityRunner, setLearningApi } from "./activity-runner.js";
 import {
   setChapterApi, openCreateChooser, confirmGenerate, openReviewMenu,
   openFlashcardReview, openSpacedReview, openAskAI, toggleEvaluation, estimateMinutes,
-  openTestSimulation,
+  openTestSimulation, openExamPlan,
 } from "./chapter-tools.js";
 
 // ================= API =================
@@ -49,9 +49,12 @@ async function apiLearning(action, payload = {}) {
 setLearningApi(apiLearning);
 setChapterApi({
   apiSubjects,
+  apiTasks,
   apiLearning,
   toast,
   reload: () => loadAll(),
+  getMethods: () => state.meta.methods || [],
+  get linkedActions() { return LINKED_ACTIONS; },
   onRunTest: (activities, chapter, cfg = {}) => {
     openActivityRunner(activities, {
       test: {
@@ -113,7 +116,7 @@ const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "
 
 // ================= Lookup helpers =================
 function lookupOptions(key, idKey, nameKey = "name") {
-  return (state.meta[key] || []).map((r) => ({ value: String(r[idKey]), label: r[nameKey] || `#${r[idKey]}` }));
+  return (state.meta[key] || []).map((r) => ({ value: String(r[idKey]), label: r[nameKey] || `#${r[idKey]}`, color: r.color || "" }));
 }
 const LOOKUP_FIELDS = {
   labels_id: () => lookupOptions("labels", "label_id"),
@@ -122,9 +125,9 @@ const LOOKUP_FIELDS = {
   methods_id: () => lookupOptions("methods", "method_id"),
   priority_id: () => lookupOptions("priorities", "priority_id"),
   attention_level_id: () => lookupOptions("attention", "attention_level_id"),
-  path: () => (state.meta.folders || []).map((f) => ({ value: f.path, label: f.name ? `${f.name} (${f.path})` : f.path })),
-  subject_id: () => state.subjects.map((s) => ({ value: String(s.subject_id), label: s.subject_name || `Subject ${s.subject_id}` })),
-  chapter_id: () => state.chapters.map((c) => ({ value: String(c.lesson_id), label: c.lesson_name || `Lesson ${c.lesson_id}` })),
+  path: () => (state.meta.folders || []).map((f) => ({ value: f.path, label: f.name ? `${f.name} (${f.path})` : f.path, color: f.color || "" })),
+  subject_id: () => state.subjects.map((s) => ({ value: String(s.subject_id), label: s.subject_name || `Matière ${s.subject_id}` })),
+  chapter_id: () => state.chapters.map((c) => ({ value: String(c.lesson_id), label: c.lesson_name || `Chapitre ${c.lesson_id}` })),
 };
 
 // Chapter actions a task can be linked to — values match onChapterTool() keys.
@@ -134,63 +137,101 @@ const LINKED_ACTIONS = [
   { value: "flashcards", label: "Flashcards" },
   { value: "activities", label: "Activités / tests" },
   { value: "review", label: "Révision" },
+  { value: "examplan", label: "Planifier le contrôle" },
   { value: "ask", label: "Poser une question IA" },
   { value: "edit", label: "Modifier le cours" },
   { value: "eval", label: "Évaluation" },
 ];
 
 // ================= Field definitions =================
-// type: text | textarea | number | select | checkbox | datetime | lines | mono
-// optionsFrom: key into LOOKUP_FIELDS resolved at render time
+// type: text | textarea | number | chips | toggle | list | lines | datetime | date
+//        | reminder | ai-note | info
+// chips: optionsFrom/options, multi ( several ) + json (store JSON array) or join:","
+// toggle: boolean as a strike-through icon button
+// list: dynamic add/remove rows stored as a JSON array
+// reminder: segmented mode (none/day_before/same_day/custom) → remind + additional_data
+// ai-note: "generate with AI" button + optional editable comment
+// info: read-only summary of an AI-managed JSON column (never written back)
+const FREQ_OPTIONS = [
+  { value: "daily", label: "Quotidien" }, { value: "weekly", label: "Hebdomadaire" },
+  { value: "monthly", label: "Mensuel" }, { value: "yearly", label: "Annuel" },
+  { value: "custom", label: "Personnalisé" },
+];
+
+const INFO_FORMATTERS = {
+  flashcards: (v) => {
+    const p = parseMaybeJSON(v);
+    const n = Array.isArray(p?.cards) ? p.cards.length : 0;
+    const d = p?.generated_at ? ` · ${new Date(p.generated_at).toLocaleDateString()}` : "";
+    return n ? `${n} carte${n > 1 ? "s" : ""}${d}` : "Aucune flashcard — générez-les depuis les outils du chapitre";
+  },
+  tests: (v) => {
+    const p = parseMaybeJSON(v);
+    const n = Array.isArray(p?.activities) ? p.activities.length : 0;
+    const d = p?.generated_at ? ` · ${new Date(p.generated_at).toLocaleDateString()}` : "";
+    return n ? `${n} activité${n > 1 ? "s" : ""}${d}` : "Aucune activité — générez-les depuis les outils du chapitre";
+  },
+  tests_results: (v) => {
+    const p = parseMaybeJSON(v);
+    const n = Array.isArray(p) ? p.length : 0;
+    return n ? `${n} résultat${n > 1 ? "x" : ""} enregistré${n > 1 ? "s" : ""}` : "Aucun résultat de test";
+  },
+  review_plan: (v) => {
+    const p = parseMaybeJSON(v);
+    const n = Array.isArray(p?.sessions) ? p.sessions.length : 0;
+    const done = Array.isArray(p?.sessions) ? p.sessions.filter((s) => s?.done).length : 0;
+    return n ? `${n} séance${n > 1 ? "s" : ""} planifiée${n > 1 ? "s" : ""} — ${done} faite${done > 1 ? "s" : ""}` : "Pas de plan de révision";
+  },
+};
+
 const TASK_SECTIONS = [
   {
     title: "Contenu",
     fields: [
       { key: "text_body", label: "Corps", type: "textarea", rows: 5, placeholder: "Détails, instructions…" },
-      { key: "steps", label: "Étapes", type: "textarea", rows: 3, placeholder: "Une étape par ligne, ou JSON" },
+      { key: "steps", label: "Étapes", type: "list", placeholder: "Une étape…" },
     ],
   },
   {
     title: "Organisation",
     fields: [
-      { key: "subject_id", label: "Matière", type: "select", optionsFrom: "subject_id", placeholder: "—" },
-      { key: "chapter_id", label: "Chapitre", type: "select", optionsFrom: "chapter_id", placeholder: "—" },
+      { key: "subject_id", label: "Matière", type: "chips", optionsFrom: "subject_id" },
+      { key: "chapter_id", label: "Chapitre", type: "chips", optionsFrom: "chapter_id" },
       { key: "chapter_part_id", label: "Partie du chapitre", type: "number" },
-      { key: "linked_action", label: "Action chapitre liée", type: "select", options: LINKED_ACTIONS, placeholder: "—" },
-      { key: "type_id", label: "Type", type: "select", optionsFrom: "type_id", placeholder: "—" },
-      { key: "methods_id", label: "Méthode", type: "select", optionsFrom: "methods_id", placeholder: "—" },
-      { key: "priority_id", label: "Priorité", type: "select", optionsFrom: "priority_id", placeholder: "—" },
-      { key: "attention_level_id", label: "Attention", type: "select", optionsFrom: "attention_level_id", placeholder: "—" },
-      { key: "flags_id", label: "Drapeau", type: "select", optionsFrom: "flags_id", placeholder: "—" },
-      { key: "labels_id", label: "Étiquette", type: "select", optionsFrom: "labels_id", placeholder: "—" },
-      { key: "path", label: "Dossier", type: "select", optionsFrom: "path", placeholder: "/" },
+      { key: "linked_action", label: "Action chapitre liée", type: "chips", options: LINKED_ACTIONS },
+      { key: "methods_id", label: "Méthode", type: "chips", optionsFrom: "methods_id" },
+      { key: "priority_id", label: "Priorité", type: "chips", optionsFrom: "priority_id" },
+      { key: "attention_level_id", label: "Attention", type: "chips", optionsFrom: "attention_level_id" },
+      { key: "flags_id", label: "Drapeau", type: "chips", optionsFrom: "flags_id" },
+      { key: "labels_id", label: "Étiquette", type: "chips", optionsFrom: "labels_id" },
+      { key: "path", label: "Dossier", type: "chips", optionsFrom: "path" },
     ],
   },
   {
     title: "Planification",
     fields: [
-      { key: "remind", label: "Rappel", type: "checkbox" },
-      { key: "remind_date", label: "Date du rappel", type: "datetime" },
-      { key: "periods", label: "Périodes", type: "textarea", rows: 2, placeholder: "Tableau JSON ou texte libre" },
-      { key: "frequency", label: "Fréquence", type: "text", placeholder: "ex. quotidien, hebdomadaire" },
-      { key: "excludes_periods", label: "Périodes exclues", type: "textarea", rows: 2 },
+      { key: "remind_date", label: "Échéance", type: "datetime" },
+      { key: "reminder", label: "Rappel", type: "reminder" },
+      { key: "frequency", label: "Fréquence", type: "chips", options: FREQ_OPTIONS },
+      { key: "periods", label: "Périodes", type: "list", placeholder: "ex. 2026-01-05 → 2026-01-16" },
+      { key: "excludes_periods", label: "Périodes exclues", type: "list", placeholder: "ex. vacances de février" },
     ],
   },
   {
     title: "Ressources",
     fields: [
-      { key: "is_homework", label: "Devoir", type: "checkbox" },
+      { key: "is_homework", label: "Devoir", type: "toggle" },
       { key: "homeworks_id", label: "Réf. devoir", type: "text" },
       { key: "urls", label: "URLs", type: "lines", placeholder: "Une URL par ligne" },
-      { key: "attachements_id", label: "Pièces jointes", type: "textarea", rows: 2, placeholder: "JSON ou texte libre" },
-      { key: "push_tasks", label: "Notifications push", type: "checkbox" },
+      { key: "attachements_id", label: "Pièces jointes", type: "lines", placeholder: "Une pièce jointe par ligne" },
+      { key: "push_tasks", label: "Notifications push", type: "toggle" },
     ],
   },
   {
     title: "Notes",
     fields: [
       { key: "comments", label: "Commentaires", type: "textarea", rows: 3 },
-      { key: "ai_comments", label: "Commentaires IA", type: "textarea", rows: 3 },
+      { key: "ai_comments", label: "Commentaire IA", type: "ai-note", aiKind: "task" },
     ],
   },
 ];
@@ -203,7 +244,7 @@ const SUBJECT_SECTIONS = [
       { key: "ed_subject_id", label: "ID matière ED", type: "number" },
       { key: "ed_subject_code", label: "Code ED", type: "text", placeholder: "ex. MATH" },
       { key: "ed_subject_name", label: "Nom ED", type: "text" },
-      { key: "methods", label: "Méthodes (IDs JSON)", type: "textarea", rows: 2, mono: true },
+      { key: "methods", label: "Méthodes", type: "chips", optionsFrom: "methods_id", multi: true, json: true },
     ],
   },
   {
@@ -212,7 +253,7 @@ const SUBJECT_SECTIONS = [
       { key: "comments", label: "Commentaires", type: "textarea", rows: 3 },
       { key: "tests_comments", label: "Commentaires tests", type: "textarea", rows: 3 },
       { key: "teacher_notes", label: "Notes de la prof — comment elle teste & attentes", type: "textarea", rows: 4, placeholder: "Attentes de la matière : format des tests, style de notation, sujets favoris…" },
-      { key: "ai_comments", label: "Commentaires IA", type: "textarea", rows: 3 },
+      { key: "ai_comments", label: "Commentaire IA", type: "ai-note", aiKind: "subject" },
     ],
   },
 ];
@@ -224,31 +265,32 @@ const CHAPTER_SECTIONS = [
       { key: "lesson_name", label: "Nom", type: "text", placeholder: "ex. Chapitre 1 — Limites" },
       { key: "lesson_description", label: "Description", type: "textarea", rows: 3 },
       { key: "teacher_notes", label: "Notes de la prof — comment elle teste & attentes", type: "textarea", rows: 4, placeholder: "ex. Tests surtout en QCM sur les définitions, elle attend des démonstrations rigoureuses…" },
-      { key: "subject_id", label: "Matière", type: "select", optionsFrom: "subject_id", placeholder: "—" },
-      { key: "tests_date", label: "Prochain test", type: "text", placeholder: "AAAA-MM-JJ" },
-      { key: "session_date", label: "Date de séance", type: "text", placeholder: "AAAA-MM-JJ" },
-      { key: "awaiting_evaluation", label: "En attente d'évaluation", type: "checkbox" },
-      { key: "parents_lessons_id", label: "Chapitres parents (IDs séparés par des virgules)", type: "text" },
-      { key: "childs_lessons_id", label: "Chapitres enfants (IDs séparés par des virgules)", type: "text" },
-      { key: "is_method", label: "Est une méthode/ressource", type: "checkbox" },
-      { key: "is_yearly", label: "Annuel", type: "checkbox" },
-      { key: "methods", label: "Méthodes (IDs JSON)", type: "textarea", rows: 2, mono: true },
+      { key: "subject_id", label: "Matière", type: "chips", optionsFrom: "subject_id" },
+      { key: "tests_date", label: "Prochain test", type: "date" },
+      { key: "session_date", label: "Date de séance", type: "date" },
+      { key: "awaiting_evaluation", label: "En attente d'évaluation", type: "toggle" },
+      { key: "parents_lessons_id", label: "Chapitres parents", type: "chips", optionsFrom: "chapter_id", multi: true, join: ",", excludeSelf: true },
+      { key: "childs_lessons_id", label: "Chapitres enfants", type: "chips", optionsFrom: "chapter_id", multi: true, join: ",", excludeSelf: true },
+      { key: "is_method", label: "Est une méthode/ressource", type: "toggle" },
+      { key: "is_yearly", label: "Annuel", type: "toggle" },
+      { key: "methods", label: "Méthodes", type: "chips", optionsFrom: "methods_id", multi: true, json: true },
+      { key: "review_plan", label: "Plan de révision", type: "info" },
     ],
   },
   {
     title: "Contenu du cours",
     fields: [
       { key: "body", label: "Corps du cours", type: "textarea", rows: 10, placeholder: "Le cours généré / rédigé…" },
-      { key: "raw_lessons", label: "Leçons brutes", type: "textarea", rows: 6, mono: true },
-      { key: "raw_recorded_lessons", label: "Leçons enregistrées brutes", type: "textarea", rows: 4, mono: true },
+      { key: "raw_lessons", label: "Leçons brutes", type: "textarea", rows: 6 },
+      { key: "raw_recorded_lessons", label: "Leçons enregistrées brutes", type: "textarea", rows: 4 },
     ],
   },
   {
     title: "IA & tests",
     fields: [
-      { key: "flashcards", label: "Flashcards (JSON)", type: "textarea", rows: 4, mono: true },
-      { key: "tests", label: "Tests (JSON)", type: "textarea", rows: 4, mono: true },
-      { key: "tests_results", label: "Résultats des tests (JSON)", type: "textarea", rows: 3, mono: true },
+      { key: "flashcards", label: "Flashcards", type: "info" },
+      { key: "tests", label: "Tests & activités", type: "info" },
+      { key: "tests_results", label: "Résultats des tests", type: "info" },
     ],
   },
   {
@@ -263,7 +305,7 @@ const CHAPTER_SECTIONS = [
     title: "Notes",
     fields: [
       { key: "comments", label: "Commentaires", type: "textarea", rows: 3 },
-      { key: "ai_comments", label: "Commentaires IA", type: "textarea", rows: 3 },
+      { key: "ai_comments", label: "Commentaire IA", type: "ai-note", aiKind: "chapter" },
     ],
   },
 ];
@@ -779,7 +821,7 @@ function renderDetail() {
 
   const wrap = $("#dFields");
   let html = cfg.sections.map((sec) => {
-    const items = sec.fields.filter((f) => f.key in row && !(cfg.hideKeys || []).includes(f.key)).map((f) => fieldHTML(f, row[f.key])).join("");
+    const items = sec.fields.filter((f) => (f.key in row || f.type === "reminder") && !(cfg.hideKeys || []).includes(f.key)).map((f) => fieldHTML(f, row[f.key], { entity: row })).join("");
     return items ? `<div class="ws-dsec"><h3>${sec.title}</h3><div class="ws-dgrid">${items}</div></div>` : "";
   }).join("");
 
@@ -808,6 +850,7 @@ function renderDetail() {
         <h3>Révision</h3>
         <div class="ws-tools">
           <button class="ws-btn ws-btn-ghost" type="button" data-tool="review">Réviser</button>
+          <button class="ws-btn ws-btn-ghost" type="button" data-tool="examplan">Planifier le contrôle</button>
           <button class="ws-btn ws-btn-ghost" type="button" data-tool="ask">Poser une question</button>
         </div>
         <p class="ws-tools-hint">Retour des flashcards, séances espacées par semaine/intervalle, et questions basées sur le contenu du cours.</p>
@@ -843,47 +886,264 @@ function renderDetail() {
   });
 }
 
-function fieldHTML(f, value) {
+// Parse a chips field's stored value into a Set of selected option values.
+function chipsSelected(f, value) {
+  if (f.multi) {
+    if (f.json) {
+      const p = parseMaybeJSON(value);
+      return new Set(Array.isArray(p) ? p.map(String) : []);
+    }
+    if (f.join) return new Set(String(value ?? "").split(",").map((s) => s.trim()).filter(Boolean));
+    const p = parseMaybeJSON(value);
+    if (Array.isArray(p)) return new Set(p.map(String));
+    return value ? new Set([String(value)]) : new Set();
+  }
+  return new Set(value === null || value === undefined || value === "" ? [] : [String(value)]);
+}
+
+function chipsOptions(f, ctx) {
+  let opts = f.optionsFrom ? (LOOKUP_FIELDS[f.optionsFrom]?.() || []) : (f.options || []);
+  if (f.excludeSelf && ctx?.entity?.lesson_id) {
+    opts = opts.filter((o) => String(o.value) !== String(ctx.entity.lesson_id));
+  }
+  return opts;
+}
+
+function fieldHTML(f, value, ctx = {}) {
   const id = `f_${f.key}`;
-  const opts = f.optionsFrom ? (LOOKUP_FIELDS[f.optionsFrom]?.() || []) : (f.options || []);
-  let input;
+  const wide = ["textarea", "lines", "list", "ai-note", "reminder", "info"].includes(f.type) || (f.type === "chips" && f.multi);
+  let input = "";
+
   if (f.type === "textarea") {
-    input = `<textarea id="${id}" rows="${f.rows || 3}" placeholder="${esc(f.placeholder || "")}" ${f.mono ? 'class="mono"' : ""}>${esc(value ?? "")}</textarea>`;
-  } else if (f.type === "checkbox") {
-    input = `<label class="ws-check"><input type="checkbox" id="${id}" ${value ? "checked" : ""}><span class="ws-check-ui"></span></label>`;
-  } else if (f.type === "select") {
-    const hasEmpty = f.placeholder !== undefined || opts.length === 0;
-    input = `<select id="${id}">${hasEmpty ? `<option value="">${esc(f.placeholder || "—")}</option>` : ""}${opts.map((o) => `<option value="${esc(o.value)}" ${String(value ?? "") === String(o.value) ? "selected" : ""}>${esc(o.label)}</option>`).join("")}</select>`;
+    input = `<textarea id="${id}" rows="${f.rows || 3}" placeholder="${esc(f.placeholder || "")}">${esc(value ?? "")}</textarea>`;
+  } else if (f.type === "toggle") {
+    const on = !!value;
+    return `
+      <div class="ws-field ws-field-check">
+        <button type="button" class="ws-bool${on ? " is-on" : ""}" data-bool="${f.key}" aria-pressed="${on}">
+          <span class="ws-bool-ico" aria-hidden="true">✓</span><span class="ws-bool-txt">${esc(f.label)}</span>
+        </button>
+      </div>`;
+  } else if (f.type === "chips") {
+    const opts = chipsOptions(f, ctx);
+    const sel = chipsSelected(f, value);
+    const extra = !f.multi && opts.length && !opts.some((o) => sel.has(String(o.value))) && sel.size
+      ? [{ value: [...sel][0], label: [...sel][0] }] : [];
+    const all = [...opts, ...extra];
+    // Single-select chips for frequency-like fields: keep an unknown current value visible.
+    const merged = f.options && !f.multi && value && !all.some((o) => String(o.value) === String(value))
+      ? [...all, { value: String(value), label: String(value) }] : all;
+    input = `<div class="ws-fchips" data-chips="${f.key}" data-multi="${f.multi ? "1" : "0"}">${merged.map((o) => `
+      <button type="button" class="ws-fchip${sel.has(String(o.value)) ? " is-sel" : ""}" data-value="${esc(o.value)}" ${o.color ? `style="--chip:${esc(o.color)}"` : ""}>${o.color ? '<i class="ws-fchip-dot" aria-hidden="true"></i>' : ""}${esc(o.label)}</button>`).join("")}</div>`;
+    if (!merged.length) input += `<span class="ws-field-hint">Aucune option pour le moment — gérez-les dans Réglages → Workspace.</span>`;
+    return `
+      <div class="ws-field ${wide ? "ws-field-wide" : ""}">
+        <span class="ws-field-label">${esc(f.label)}</span>
+        ${input}
+      </div>`;
+  } else if (f.type === "list") {
+    const p = parseMaybeJSON(value);
+    let items = Array.isArray(p) ? p : null;
+    if (!items) {
+      const t = toLines(value).trim();
+      items = t ? t.split("\n").map((s) => s.trim()).filter(Boolean) : [];
+    }
+    items = items.map((x) => (typeof x === "string" ? x : JSON.stringify(x)));
+    if (!items.length) items = [""];
+    input = `<div class="ws-list" data-list="${f.key}">${items.map((v) => `
+      <div class="ws-list-row">
+        <input type="text" value="${esc(v)}" placeholder="${esc(f.placeholder || "")}">
+        <button type="button" class="ws-icon-btn" data-list-del title="Retirer">✕</button>
+      </div>`).join("")}
+      <button type="button" class="ws-list-add" data-list-add>＋ Ajouter</button>
+    </div>`;
+  } else if (f.type === "reminder") {
+    const ad = parseMaybeJSON(ctx.entity?.additional_data);
+    const adObj = ad && typeof ad === "object" && !Array.isArray(ad) ? ad : {};
+    const mode = adObj.reminder_mode || (ctx.entity?.remind ? "same_day" : "none");
+    const rtime = adObj.reminder_time || "";
+    input = `
+      <div class="ws-segmented ws-remseg" data-remseg>
+        <button type="button" class="ws-seg" data-rem="none" data-active="${mode === "none"}">Aucun</button>
+        <button type="button" class="ws-seg" data-rem="day_before" data-active="${mode === "day_before"}">La veille</button>
+        <button type="button" class="ws-seg" data-rem="same_day" data-active="${mode === "same_day"}">Le jour même</button>
+        <button type="button" class="ws-seg" data-rem="custom" data-active="${mode === "custom"}">Personnalisé</button>
+      </div>
+      <input type="time" class="ws-rem-time" data-rem-time value="${esc(rtime)}" ${mode === "custom" ? "" : "hidden"}>`;
+  } else if (f.type === "ai-note") {
+    const entityId = f.aiKind === "chapter" ? ctx.entity?.lesson_id : f.aiKind === "subject" ? ctx.entity?.subject_id : null;
+    input = `
+      <div class="ws-ainote-bar">
+        <button type="button" class="ws-btn ws-btn-ghost" data-ai-gen data-ai-kind="${f.aiKind}" ${entityId ? `data-ai-id="${entityId}"` : ""}>✦ Générer avec l'IA</button>
+        <span class="ws-ainote-hint">Basé sur les informations du ${f.aiKind === "subject" ? "matière et ses chapitres" : "chapitre et sa matière"} — vous pouvez modifier le résultat.</span>
+      </div>
+      <textarea id="${id}" rows="3" placeholder="Laissez vide puis générez, ou écrivez votre propre note…">${esc(value ?? "")}</textarea>`;
+  } else if (f.type === "info") {
+    const txt = INFO_FORMATTERS[f.key]?.(value) ?? "—";
+    return `
+      <div class="ws-field ws-field-wide">
+        <span class="ws-field-label">${esc(f.label)}</span>
+        <div class="ws-info">${esc(txt)}</div>
+      </div>`;
   } else if (f.type === "datetime") {
     input = `<input type="datetime-local" id="${id}" value="${toLocalInput(value)}">`;
+  } else if (f.type === "date") {
+    input = `<input type="date" id="${id}" value="${esc(String(value ?? "").slice(0, 10))}">`;
   } else if (f.type === "lines") {
     input = `<textarea id="${id}" rows="3" placeholder="${esc(f.placeholder || "")}">${esc(toLines(value))}</textarea>`;
   } else {
     input = `<input type="${f.type === "number" ? "number" : "text"}" id="${id}" value="${esc(value ?? "")}" placeholder="${esc(f.placeholder || "")}" ${f.type === "number" ? 'step="any"' : ""}>`;
   }
+
   return `
-    <label class="ws-field ${f.type === "checkbox" ? "ws-field-check" : ""} ${f.type === "textarea" || f.type === "lines" ? "ws-field-wide" : ""}">
+    <label class="ws-field ${wide ? "ws-field-wide" : ""}">
       <span class="ws-field-label">${esc(f.label)}</span>
       ${input}
     </label>`;
 }
 
-function collectFields(sections, titleKey, titleEl, root = document) {
+function collectFields(sections, titleKey, titleEl, root = document, prev = {}) {
   const fields = {};
   for (const sec of sections) {
     for (const f of sec.fields) {
+      if (f.type === "info") continue; // AI-managed columns are never written back
+      if (f.type === "toggle") {
+        const b = root.querySelector(`[data-bool="${f.key}"]`);
+        if (b) fields[f.key] = b.classList.contains("is-on") ? 1 : 0;
+        continue;
+      }
+      if (f.type === "chips") {
+        const wrap = root.querySelector(`[data-chips="${f.key}"]`);
+        const sel = [...(wrap?.querySelectorAll(".ws-fchip.is-sel") || [])].map((b) => b.dataset.value);
+        if (f.multi) {
+          if (f.json) fields[f.key] = JSON.stringify(sel.map((v) => (/^\d+$/.test(v) ? Number(v) : v)));
+          else if (f.join) fields[f.key] = sel.join(f.join);
+          else fields[f.key] = JSON.stringify(sel);
+        } else {
+          fields[f.key] = sel[0] !== undefined ? sel[0] : (f.key === "path" ? "/" : null);
+        }
+        continue;
+      }
+      if (f.type === "list") {
+        const rows = [...root.querySelectorAll(`[data-list="${f.key}"] .ws-list-row input`)]
+          .map((i) => i.value.trim()).filter(Boolean);
+        fields[f.key] = JSON.stringify(rows);
+        continue;
+      }
+      if (f.type === "reminder") {
+        const seg = root.querySelector("[data-remseg]");
+        const mode = seg?.querySelector('.ws-seg[data-active="true"]')?.dataset.rem || "none";
+        fields.remind = mode === "none" ? 0 : 1;
+        const prevAd = parseMaybeJSON(prev.additional_data);
+        const ad = prevAd && typeof prevAd === "object" && !Array.isArray(prevAd) ? { ...prevAd } : {};
+        if (mode === "none") {
+          delete ad.reminder_mode; delete ad.reminder_time;
+        } else {
+          ad.reminder_mode = mode;
+          if (mode === "custom") ad.reminder_time = root.querySelector("[data-rem-time]")?.value || "";
+          else delete ad.reminder_time;
+        }
+        fields.additional_data = Object.keys(ad).length ? JSON.stringify(ad) : "";
+        continue;
+      }
       const el = root.querySelector(`[id="f_${f.key}"]`);
       if (!el) continue;
       if (f.type === "checkbox") fields[f.key] = el.checked ? 1 : 0;
       else if (f.type === "number") fields[f.key] = el.value === "" ? null : Number(el.value);
       else if (f.type === "datetime") fields[f.key] = fromLocalInput(el.value);
       else if (f.type === "lines") fields[f.key] = fromLines(el.value);
-      else if (f.type === "select") fields[f.key] = el.value === "" ? (f.key === "path" ? "/" : null) : el.value;
       else fields[f.key] = el.value;
     }
   }
   if (titleKey && titleEl) fields[titleKey] = titleEl.value;
   return fields;
+}
+
+// ================= Field interactions (delegated: modal + detail panel) =================
+function collectAiContext(scope, kind) {
+  const parts = [];
+  scope.querySelectorAll("input[id^='f_'], textarea[id^='f_']").forEach((el) => {
+    const v = (el.value || "").trim();
+    if (!v) return;
+    const key = el.id.slice(2);
+    parts.push(`${key}: ${v.length > 6000 ? `${v.slice(0, 6000)}…` : v}`);
+  });
+  if (kind === "chapter") {
+    const sid = scope.querySelector('[data-chips="subject_id"] .ws-fchip.is-sel')?.dataset.value;
+    const sub = state.subjects.find((s) => String(s.subject_id) === String(sid));
+    if (sub?.subject_name) parts.unshift(`subject_name: ${sub.subject_name}`);
+    if (sub?.teacher_notes) parts.unshift(`subject_teacher_notes: ${sub.teacher_notes}`);
+  }
+  return parts.join("\n").slice(0, 14000);
+}
+
+async function runAiComment(btn) {
+  const field = btn.closest(".ws-field");
+  const ta = field?.querySelector("textarea");
+  const scope = btn.closest(".ws-modal, #detailPanel") || document;
+  const { aiKind: kind, aiId: id } = btn.dataset;
+  const old = btn.textContent;
+  btn.disabled = true; btn.textContent = "Génération…";
+  try {
+    let payload;
+    if (kind === "chapter" && id) payload = { lesson_id: Number(id) };
+    else if (kind === "subject" && id) payload = { subject_id: Number(id) };
+    else payload = { context: collectAiContext(scope, kind) };
+    const res = await apiLearning("ai-comment", payload);
+    if (ta) { ta.value = res.comment || ""; ta.focus(); }
+    toast("Commentaire généré");
+  } catch (e) { toast(e.message); }
+  btn.disabled = false; btn.textContent = old;
+}
+
+function bindFieldInteractions() {
+  document.addEventListener("click", (e) => {
+    const gen = e.target.closest("[data-ai-gen]");
+    if (gen) { e.preventDefault(); runAiComment(gen); return; }
+
+    const chip = e.target.closest(".ws-fchip");
+    if (chip && chip.closest("[data-chips]")) {
+      const wrap = chip.closest("[data-chips]");
+      if (wrap.dataset.multi === "1") chip.classList.toggle("is-sel");
+      else {
+        wrap.querySelectorAll(".ws-fchip.is-sel").forEach((c) => c.classList.remove("is-sel"));
+        chip.classList.add("is-sel");
+      }
+      return;
+    }
+
+    const bool = e.target.closest("[data-bool]");
+    if (bool) {
+      bool.classList.toggle("is-on");
+      bool.setAttribute("aria-pressed", bool.classList.contains("is-on"));
+      return;
+    }
+
+    const seg = e.target.closest("[data-remseg] .ws-seg");
+    if (seg) {
+      const segWrap = seg.closest("[data-remseg]");
+      segWrap.querySelectorAll(".ws-seg").forEach((s) => s.setAttribute("data-active", "false"));
+      seg.setAttribute("data-active", "true");
+      const time = segWrap.parentElement?.querySelector("[data-rem-time]");
+      if (time) time.hidden = seg.dataset.rem !== "custom";
+      return;
+    }
+
+    const del = e.target.closest("[data-list-del]");
+    if (del) { del.closest(".ws-list-row")?.remove(); return; }
+
+    const add = e.target.closest("[data-list-add]");
+    if (add) {
+      const list = add.closest("[data-list]");
+      const row = document.createElement("div");
+      row.className = "ws-list-row";
+      const ph = list.querySelector(".ws-list-row input")?.placeholder || "";
+      row.innerHTML = `<input type="text" placeholder="${esc(ph)}"><button type="button" class="ws-icon-btn" data-list-del title="Retirer">✕</button>`;
+      list.insertBefore(row, add);
+      row.querySelector("input")?.focus();
+      return;
+    }
+  });
 }
 
 // ================= Creation / edit modal =================
@@ -906,7 +1166,8 @@ function openEntityModal(kind, id = null, existing = null, opts = {}) {
   if (kind === "chapter" && !values.subject_id && state.currentSubject) values.subject_id = state.currentSubject.subject_id;
 
   const bodyHtml = defs.sections.map((sec) => {
-    const items = sec.fields.map((f) => fieldHTML(f, values[f.key])).join("");
+    const entity = { ...values, lesson_id: values.lesson_id ?? (kind === "chapter" ? id : undefined), subject_id: values.subject_id ?? (kind === "subject" ? id : undefined) };
+    const items = sec.fields.map((f) => fieldHTML(f, values[f.key], { entity })).join("");
     return `<div class="ws-dsec"><h3>${sec.title}</h3><div class="ws-dgrid">${items}</div></div>`;
   }).join("");
 
@@ -947,7 +1208,7 @@ function openEntityModal(kind, id = null, existing = null, opts = {}) {
     if (sel && [...sel.options].some((o) => o.value === opts.presetTable)) sel.value = opts.presetTable;
   }
 
-  const collect = () => collectFields(defs.sections, kind === "task" ? "title" : null, kind === "task" ? root.querySelector("#m_title") : null, root.querySelector(".ws-modal"));
+  const collect = () => collectFields(defs.sections, kind === "task" ? "title" : null, kind === "task" ? root.querySelector("#m_title") : null, root.querySelector(".ws-modal"), values);
 
   root.querySelector("[data-save-tpl]").addEventListener("click", async () => {
     const fields = collect();
@@ -1045,6 +1306,7 @@ function onChapterTool(tool, chapter) {
   }
   if (tool === "run") return openTestSimulation(chapter);
   if (tool === "review") return openReviewMenu(chapter);
+  if (tool === "examplan") return openExamPlan(chapter);
   if (tool === "ask") return openAskAI(chapter);
   if (tool === "edit") return openEntityModal("chapter", lessonId, chapter);
   if (tool === "eval") return toggleEvaluation(chapter);
@@ -1289,7 +1551,7 @@ function bindUI() {
     btn.disabled = true; btn.textContent = "Enregistrement…";
     try {
       const cfg = detailConfig();
-      const fields = collectFields(cfg.sections, cfg.titleKey, document.getElementById("dTitle"), document.getElementById("detailPanel"));
+      const fields = collectFields(cfg.sections, cfg.titleKey, document.getElementById("dTitle"), document.getElementById("detailPanel"), sel.row);
       if (sel.kind === "task") await apiTasks("update", { table: sel.table, task_id: sel.row.task_id, fields });
       else await apiSubjects("update-chapter", { lesson_id: sel.row.lesson_id, fields });
       toast("Enregistré");
@@ -1347,6 +1609,7 @@ function init() {
   const now = new Date();
   $("#todayLabel").textContent = now.toLocaleDateString([], { weekday: "long", day: "numeric", month: "long" });
   bindUI();
+  bindFieldInteractions();
   loadAll();
 }
 
