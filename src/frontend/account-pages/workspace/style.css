@@ -1206,7 +1206,6 @@ body {
 }
 .ct-choice:hover:not(:disabled) { border-color: var(--ws-accent, #22d3ee); transform: translateY(-1px); background: rgba(34,211,238,.06); }
 .ct-choice:disabled, .ct-choice.is-disabled { opacity: .45; cursor: not-allowed; }
-.ct-choice-icon { font-size: 22px; }
 .ct-choice-label { font-weight: 600; font-size: 14px; }
 .ct-choice-desc { font-size: 12px; opacity: .65; line-height: 1.35; }
 

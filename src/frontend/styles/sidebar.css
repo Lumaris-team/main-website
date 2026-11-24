@@ -61,7 +61,7 @@
 .files-nav[data-active="true"] svg,
 .settings-nav.active svg,
 .settings-nav[data-active="true"] svg {
-  stroke: rgba(0,0,0,0.8);
+  stroke: #8cecff;
   opacity: 1;
   filter: none;
 }
@@ -108,8 +108,8 @@
 .settings-nav.active,
 .settings-nav[data-active="true"] {
   color: var(--accent);
-  background: rgba(255, 255, 255, 0.95);
-  border-color: transparent;
+  background: rgba(140, 236, 255, 0.12);
+  border-color: rgba(140, 236, 255, 0.28);
 }
 
 /* ===================== RESPONSIVE ===================== */

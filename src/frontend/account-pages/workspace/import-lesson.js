@@ -118,12 +118,12 @@ export function openImportModal({ onImport, initialTab = "pdf" }) {
         <button class="ws-icon-btn" type="button" data-close>✕</button>
       </div>
       <div class="il-tabs">
-        <button class="ws-seg" type="button" data-tab="pdf" data-active="true">📄 PDF</button>
-        <button class="ws-seg" type="button" data-tab="voice">🎙 Voice</button>
-        <button class="ws-seg" type="button" data-tab="text">✏️ Text</button>
-        <button class="ws-seg" type="button" data-tab="link">🔗 Link</button>
-        <button class="ws-seg" type="button" data-tab="files">📁 Files</button>
-        <button class="ws-seg" type="button" data-tab="camera">📷 Camera</button>
+        <button class="ws-seg" type="button" data-tab="pdf" data-active="true">PDF</button>
+        <button class="ws-seg" type="button" data-tab="voice">Voice</button>
+        <button class="ws-seg" type="button" data-tab="text">Text</button>
+        <button class="ws-seg" type="button" data-tab="link">Link</button>
+        <button class="ws-seg" type="button" data-tab="files">Files</button>
+        <button class="ws-seg" type="button" data-tab="camera">Camera</button>
       </div>
       <div class="ws-modal-body il-body" id="ilBody"></div>
       <div class="ws-modal-foot">
@@ -372,7 +372,7 @@ function renderFiles(body, setText) {
 function renderCamera(body, setText) {
   body.innerHTML = `
     <div class="il-source">
-      <button class="ws-btn ws-btn-primary" type="button" id="ilCam">📷 Open camera</button>
+      <button class="ws-btn ws-btn-primary" type="button" id="ilCam">Open camera</button>
       <span class="il-hint">Capture → drag the 4 corners to straighten → OCR runs locally (Tesseract.js).</span>
     </div>
     <div class="il-cam-stage" data-stage hidden>
@@ -386,10 +386,10 @@ function renderCamera(body, setText) {
         <svg class="il-corner-lines" data-lines><polygon data-poly fill="rgba(140,236,255,.08)" stroke="#8cecff" stroke-width="1.5"/></svg>
       </div>
       <div class="il-cam-controls">
-        <button class="ws-btn ws-btn-primary" type="button" data-act="capture" hidden>📸 Capture</button>
+        <button class="ws-btn ws-btn-primary" type="button" data-act="capture" hidden>Capture</button>
         <button class="ws-btn ws-btn-ghost" type="button" data-act="apply" hidden>✓ Apply crop</button>
         <button class="ws-btn ws-btn-ghost" type="button" data-act="retake" hidden>↺ Retake</button>
-        <button class="ws-btn ws-btn-primary" type="button" data-act="ocr" hidden>🔍 OCR</button>
+        <button class="ws-btn ws-btn-primary" type="button" data-act="ocr" hidden>OCR</button>
         <button class="ws-btn ws-btn-ghost" type="button" data-act="stop" hidden>Stop</button>
       </div>
     </div>

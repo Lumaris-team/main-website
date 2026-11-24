@@ -16,17 +16,19 @@ body {
 
 /* Sidebar stays pinned on screen while the settings scroll */
 .settings-sidebar {
-  position: fixed;
-  left: max(16px, calc(50vw - 590px));
+  position: sticky;
   top: calc(var(--navbar-height) + 14px);
+  flex: 0 0 var(--sidebar-w);
   width: var(--sidebar-w);
   z-index: 40;
 }
 
 .settings-shell {
-  width: min(1180px, calc(100vw - 32px));
+  width: min(1280px, calc(100vw - 32px));
   margin: 108px auto 64px;
-  display: block;
+  display: flex;
+  gap: 28px;
+  align-items: flex-start;
 }
 
 .settings-main {
@@ -34,7 +36,8 @@ body {
   flex-direction: column;
   gap: 30px;
   align-items: stretch;
-  width: 100%;
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 .settings-main > * {
@@ -381,9 +384,14 @@ body {
 }
 
 @media (max-width: 960px) {
+  .settings-shell {
+    flex-direction: column;
+    gap: 16px;
+  }
   .settings-sidebar {
     display: flex;
     position: static;
+    flex: none;
     flex-direction: row;
     justify-content: flex-start;
     align-items: center;

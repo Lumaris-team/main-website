@@ -44,7 +44,7 @@ export function confirmGenerate({ title, minutes, detail = "", confirmLabel = "G
     title,
     body: `
       <div class="ct-estimate">
-        <div class="ct-estimate-icon">⏱</div>
+        <div class="ct-estimate-icon">≈</div>
         <div>
           <p class="ct-estimate-line"><strong>~${minutes} min</strong> indicative duration</p>
           <p class="ct-estimate-sub">GPT OSS 120B generates section by section — you can leave and come back, progress is saved.${detail ? ` ${esc(detail)}` : ""}</p>
@@ -62,17 +62,16 @@ export function confirmGenerate({ title, minutes, detail = "", confirmLabel = "G
 // ---------- creation type chooser ----------
 export function openCreateChooser({ onPick }) {
   const choices = [
-    { key: "task", icon: "✅", label: "Task", desc: "A thing to do, with scheduling and metadata" },
-    { key: "event", icon: "📅", label: "Event", desc: "A one-off or dated happening" },
-    { key: "chapter", icon: "📖", label: "Chapter", desc: "A course chapter with AI tools" },
-    { key: "evaluation", icon: "📝", label: "Evaluation", desc: "A test or exam — special workflow (soon)" },
+    { key: "task", label: "Task", desc: "A thing to do, with scheduling and metadata" },
+    { key: "event", label: "Event", desc: "A one-off or dated happening" },
+    { key: "chapter", label: "Chapter", desc: "A course chapter with AI tools" },
+    { key: "evaluation", label: "Evaluation", desc: "A test or exam — special workflow (soon)" },
   ];
   openModal({
     title: "Create something",
     wide: true,
     body: `<div class="ct-choice-grid">${choices.map((c) => `
       <button class="ct-choice" type="button" data-pick="${c.key}">
-        <span class="ct-choice-icon">${c.icon}</span>
         <span class="ct-choice-label">${c.label}</span>
         <span class="ct-choice-desc">${c.desc}</span>
       </button>`).join("")}</div>`,
@@ -119,16 +118,15 @@ export function openReviewMenu(chapter) {
   const hasActs = !!parseJSONField(chapter.tests)?.activities?.length;
   const plan = parseJSONField(chapter.review_plan);
   const methods = [
-    { key: "flashcards", icon: "🃏", label: "Flashcards", desc: hasFlash ? "Flip through generated cards" : "No flashcards yet — generate them first", disabled: !hasFlash, run: () => openFlashcardReview(chapter) },
-    { key: "activities", icon: "🏃", label: "Test simulation", desc: hasActs ? "Timed test with grade /x and progression remark" : "No activities yet — generate them first", disabled: !hasActs, run: () => openTestSimulation(chapter) },
-    { key: "spaced", icon: "🗓", label: "Spaced sessions", desc: plan ? `${(plan.sessions || []).length} sessions planned` : "Plan reviews by week / interval", run: () => openSpacedReview(chapter) },
+    { key: "flashcards", label: "Flashcards", desc: hasFlash ? "Flip through generated cards" : "No flashcards yet — generate them first", disabled: !hasFlash, run: () => openFlashcardReview(chapter) },
+    { key: "activities", label: "Test simulation", desc: hasActs ? "Timed test with grade /x and progression remark" : "No activities yet — generate them first", disabled: !hasActs, run: () => openTestSimulation(chapter) },
+    { key: "spaced", label: "Spaced sessions", desc: plan ? `${(plan.sessions || []).length} sessions planned` : "Plan reviews by week / interval", run: () => openSpacedReview(chapter) },
   ];
   openModal({
     title: `Review — ${chapter.lesson_name || "chapter"}`,
     wide: true,
     body: `<div class="ct-choice-grid ct-choice-grid-3">${methods.map((m) => `
       <button class="ct-choice ${m.disabled ? "is-disabled" : ""}" type="button" data-pick="${m.key}" ${m.disabled ? "disabled" : ""}>
-        <span class="ct-choice-icon">${m.icon}</span>
         <span class="ct-choice-label">${m.label}</span>
         <span class="ct-choice-desc">${m.desc}</span>
       </button>`).join("")}</div>`,
@@ -199,7 +197,7 @@ export function openFlashcardReview(chapter) {
           } else {
             m.el.querySelector(".ws-modal-body").innerHTML = `
               <div class="ct-done">
-                <div class="ct-done-icon">🎉</div>
+                <div class="ct-done-icon">✓</div>
                 <p><strong>${known}/${cards.length}</strong> cards mastered</p>
                 ${again.length ? `<p class="ct-done-sub">${again.length} card(s) flagged for review.</p>` : ""}
               </div>`;

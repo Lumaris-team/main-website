@@ -129,14 +129,14 @@ const LOOKUP_FIELDS = {
 
 // Chapter actions a task can be linked to — values match onChapterTool() keys.
 const LINKED_ACTIONS = [
-  { value: "import", label: "📥 Import lesson" },
-  { value: "course", label: "✨ Generate course" },
-  { value: "flashcards", label: "🃏 Flashcards" },
-  { value: "activities", label: "🏃 Activities / tests" },
-  { value: "review", label: "🔁 Review" },
-  { value: "ask", label: "❓ Ask AI" },
-  { value: "edit", label: "✏️ Modify course" },
-  { value: "eval", label: "📝 Evaluation" },
+  { value: "import", label: "Import lesson" },
+  { value: "course", label: "Generate course" },
+  { value: "flashcards", label: "Flashcards" },
+  { value: "activities", label: "Activities / tests" },
+  { value: "review", label: "Review" },
+  { value: "ask", label: "Ask AI" },
+  { value: "edit", label: "Modify course" },
+  { value: "eval", label: "Evaluation" },
 ];
 
 // ================= Field definitions =================
@@ -739,7 +739,7 @@ function detailConfig() {
       isDone: !!sel.row.is_done,
       isTrash,
       deleteLabel: isTrash ? "Delete forever" : "Move to trash",
-      badges: [sel.table.replace("_", "-"), sel.row.is_done ? "done" : "open", sel.row.frequency ? `↻ ${sel.row.frequency}` : "", sel.row.linked_action ? `⚡ ${sel.row.linked_action}` : ""].filter(Boolean),
+      badges: [sel.table.replace("_", "-"), sel.row.is_done ? "done" : "open", sel.row.frequency ? `↻ ${sel.row.frequency}` : "", sel.row.linked_action ? `→ ${sel.row.linked_action}` : ""].filter(Boolean),
     };
   }
   // chapter
@@ -748,7 +748,7 @@ function detailConfig() {
     c.is_method ? "method" : "", c.is_yearly ? "yearly" : "",
     c.body ? "course ✓" : "no course",
     c.flashcards && c.flashcards !== "[]" ? "flashcards" : "",
-    c.awaiting_evaluation ? "⏳ awaiting eval" : "",
+    c.awaiting_evaluation ? "awaiting eval" : "",
   ].filter(Boolean);
   return {
     titleKey: "lesson_name",
@@ -790,33 +790,33 @@ function renderDetail() {
       <div class="ws-dsec">
         <h3>Import lesson</h3>
         <div class="ws-tools">
-          <button class="ws-btn ws-btn-ghost" type="button" data-tool="import">� Import lesson</button>
+          <button class="ws-btn ws-btn-ghost" type="button" data-tool="import">Import lesson</button>
         </div>
         <p class="ws-tools-hint">PDF, voice, text, link + explanation, files / images (OCR), camera — all extraction runs locally in your browser.</p>
       </div>
       <div class="ws-dsec">
         <h3>AI generation</h3>
         <div class="ws-tools">
-          <button class="ws-btn ws-btn-primary" type="button" data-tool="course">✨ Generate course</button>
-          <button class="ws-btn ws-btn-primary" type="button" data-tool="flashcards">✨ Generate flashcards</button>
-          <button class="ws-btn ws-btn-primary" type="button" data-tool="activities">✨ Generate activities</button>
-          ${actCount ? `<button class="ws-btn ws-btn-ghost" type="button" data-tool="run">▶ Run activities (${actCount})</button>` : ""}
+          <button class="ws-btn ws-btn-primary" type="button" data-tool="course">Generate course</button>
+          <button class="ws-btn ws-btn-primary" type="button" data-tool="flashcards">Generate flashcards</button>
+          <button class="ws-btn ws-btn-primary" type="button" data-tool="activities">Generate activities</button>
+          ${actCount ? `<button class="ws-btn ws-btn-ghost" type="button" data-tool="run">Run test (${actCount})</button>` : ""}
         </div>
         <p class="ws-tools-hint">GPT OSS 120B via Workers AI — estimated duration is shown before each run; progress is saved and resumable.</p>
       </div>
       <div class="ws-dsec">
         <h3>Review</h3>
         <div class="ws-tools">
-          <button class="ws-btn ws-btn-ghost" type="button" data-tool="review">🔁 Review</button>
-          <button class="ws-btn ws-btn-ghost" type="button" data-tool="ask">❓ Ask AI</button>
+          <button class="ws-btn ws-btn-ghost" type="button" data-tool="review">Review</button>
+          <button class="ws-btn ws-btn-ghost" type="button" data-tool="ask">Ask AI</button>
         </div>
         <p class="ws-tools-hint">Flashcard flip-through, spaced sessions by week/interval, and questions grounded in the course content.</p>
       </div>
       <div class="ws-dsec">
         <h3>Course</h3>
         <div class="ws-tools">
-          <button class="ws-btn ws-btn-ghost" type="button" data-tool="edit">✏️ Modify course</button>
-          <button class="ws-btn ws-btn-ghost ${row.awaiting_evaluation ? "is-active" : ""}" type="button" data-tool="eval">${row.awaiting_evaluation ? "⏳ Awaiting evaluation ✓" : "📝 Mark for evaluation"}</button>
+          <button class="ws-btn ws-btn-ghost" type="button" data-tool="edit">Modify course</button>
+          <button class="ws-btn ws-btn-ghost ${row.awaiting_evaluation ? "is-active" : ""}" type="button" data-tool="eval">${row.awaiting_evaluation ? "Awaiting evaluation" : "Mark for evaluation"}</button>
         </div>
         <p class="ws-tools-hint">Edit the chapter fields, or flag it as awaiting an evaluation (dedicated workflow coming soon).</p>
       </div>`;
@@ -831,7 +831,7 @@ function renderDetail() {
       <div class="ws-dsec">
         <h3>Linked action</h3>
         <div class="ws-tools">
-          <button class="ws-btn ws-btn-primary" type="button" data-linked-action ${ch ? "" : "disabled"}>▶ ${esc(act?.label || row.linked_action)}${ch ? ` — ${esc(ch.lesson_name || "chapter")}` : " (chapter not found)"}</button>
+          <button class="ws-btn ws-btn-primary" type="button" data-linked-action ${ch ? "" : "disabled"}>${esc(act?.label || row.linked_action)}${ch ? ` — ${esc(ch.lesson_name || "chapter")}` : " (chapter not found)"}</button>
         </div>
         <p class="ws-tools-hint">Runs this chapter tool on the linked chapter.</p>
       </div>`;
