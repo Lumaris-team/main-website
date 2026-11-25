@@ -65,7 +65,7 @@ export function openCreateChooser({ onPick }) {
     { key: "task", label: "Tâche", desc: "Une chose à faire, avec planification et métadonnées" },
     { key: "event", label: "Événement", desc: "Un événement ponctuel ou daté" },
     { key: "chapter", label: "Chapitre", desc: "Un chapitre de cours avec outils IA" },
-    { key: "evaluation", label: "Évaluation", desc: "Un test ou examen — workflow spécial (bientôt)" },
+    { key: "evaluation", label: "Évaluation", desc: "Un contrôle ou examen daté — notation /x, durée max et plan de révision" },
   ];
   openModal({
     title: "Créer quelque chose",
@@ -79,14 +79,6 @@ export function openCreateChooser({ onPick }) {
       m.el.querySelectorAll("[data-pick]").forEach((b) => b.addEventListener("click", () => {
         const key = b.dataset.pick;
         m.close();
-        if (key === "evaluation") {
-          openModal({
-            title: "Évaluation",
-            body: `<p class="ct-note">Le workflow d'évaluation est en cours de construction — formulaire dédié, notation et correction IA arrivent bientôt.</p>`,
-            foot: `<button class="ws-btn ws-btn-primary" type="button" data-close>Compris</button>`,
-          });
-          return;
-        }
         onPick?.(key);
       }));
     },
@@ -370,7 +362,7 @@ export function openAskAI(chapter) {
 // ---------- exam (contrôle) planner ----------
 // Builds a succession of dated tasks before tests_date — each linked to a
 // chapter action and a learning method, all editable before creation.
-const EXAM_PHASES = [
+export const EXAM_PHASES = [
   { key: "announce", title: "Identifier le programme et les attentes", offset: -7, action: "ask", desc: "Repérer le programme du contrôle et noter les attentes de la prof : format, durée, points forts." },
   { key: "diagnose", title: "Tester les connaissances et travailler les lacunes", offset: -5, action: "activities", desc: "Faire un test blanc pour identifier les points faibles, puis travailler les lacunes." },
   { key: "deepen", title: "Approfondir les notions difficiles et exercices", offset: -3, action: "course", desc: "Reprendre les notions difficiles à fond et enchaîner les exercices ciblés." },
@@ -378,7 +370,7 @@ const EXAM_PHASES = [
   { key: "day", title: "Rappel léger des points essentiels", offset: 0, action: "flashcards", desc: "Révision courte le jour J — les points essentiels, pas de marathon." },
 ];
 
-function examDatePlus(iso, days) {
+export function examDatePlus(iso, days) {
   const d = iso ? new Date(`${iso}T12:00:00`) : new Date();
   d.setDate(d.getDate() + days);
   return d.toISOString().slice(0, 10);
@@ -406,21 +398,63 @@ function examRowHTML(p, methods, actions) {
     </div>`;
 }
 
-export function openExamPlan(chapter) {
-  const methods = api.getMethods?.() || [];
-  const actions = api.linkedActions || [];
-  const examIso = chapter.tests_date ? String(chapter.tests_date).slice(0, 10) : "";
-  const defaultDate = examIso || examDatePlus(new Date().toISOString().slice(0, 10), 7);
-
-  const rows = EXAM_PHASES.map((p) => ({
-    title: `${p.title} — ${chapter.lesson_name || "chapitre"}`,
+export function examPlanDefaults(examDate, chapterName = "") {
+  const base = examDate || examDatePlus(new Date().toISOString().slice(0, 10), 7);
+  return EXAM_PHASES.map((p) => ({
+    title: chapterName ? `${p.title} — ${chapterName}` : p.title,
     desc: p.desc,
-    date: examDatePlus(examIso || defaultDate, p.offset),
+    date: examDatePlus(examDate || base, p.offset),
     action: p.action,
     method: "",
   }));
+}
 
-  const listHtml = rows.map((r) => examRowHTML(r, methods, actions)).join("");
+export function examPlanListHTML(rows) {
+  const methods = api.getMethods?.() || [];
+  const actions = api.linkedActions || [];
+  return rows.map((r) => examRowHTML(r, methods, actions)).join("");
+}
+
+export function collectExamPlanRows(rowsEl) {
+  return [...rowsEl.querySelectorAll("[data-row]")].map((row) => ({
+    title: row.querySelector(".ct-exam-title").value.trim(),
+    date: row.querySelector(".ct-exam-date").value,
+    desc: row.querySelector(".ct-exam-desc").value.trim(),
+    action: row.querySelector(".ct-exam-action").value,
+    method: row.querySelector(".ct-exam-method").value,
+  })).filter((r) => r.title);
+}
+
+export async function createExamPlanTasks(items, chapter, examDate) {
+  let created = 0;
+  for (const it of items) {
+    const remindDate = it.date ? new Date(`${it.date}T17:00:00`) : null;
+    const ad = { exam_plan: chapter?.lesson_id || null, exam_date: examDate, reminder_mode: "day_before" };
+    await api.apiTasks("create", {
+      table: "tasks",
+      fields: {
+        title: it.title,
+        text_body: it.desc || "",
+        remind: 1,
+        remind_date: remindDate && !isNaN(remindDate) ? remindDate.toISOString() : "",
+        frequency: "",
+        linked_action: it.action || null,
+        methods_id: it.method || null,
+        chapter_id: chapter?.lesson_id ?? null,
+        subject_id: chapter?.subject_id ?? null,
+        additional_data: JSON.stringify(ad),
+      },
+    });
+    created++;
+  }
+  return created;
+}
+
+export function openExamPlan(chapter) {
+  const examIso = chapter.tests_date ? String(chapter.tests_date).slice(0, 10) : "";
+  const defaultDate = examIso || examDatePlus(new Date().toISOString().slice(0, 10), 7);
+  const rows = examPlanDefaults(defaultDate, chapter.lesson_name || "chapitre");
+  const listHtml = examPlanListHTML(rows);
 
   openModal({
     title: `Planifier le contrôle — ${chapter.lesson_name || "chapitre"}`,
@@ -462,46 +496,20 @@ export function openExamPlan(chapter) {
         if (del) del.closest("[data-row]")?.remove();
       });
       m.el.querySelector("[data-add-row]").addEventListener("click", () => {
-        rowsEl.insertAdjacentHTML("beforeend", examRowHTML({ title: "", desc: "", date: examInput.value || defaultDate, action: "", method: "" }, methods, actions));
+        rowsEl.insertAdjacentHTML("beforeend", examPlanListHTML([{ title: "", desc: "", date: examInput.value || defaultDate, action: "", method: "" }]));
       });
 
       m.el.querySelector("[data-create]").addEventListener("click", async (e) => {
         const btn = e.currentTarget;
         const examDate = examInput.value || defaultDate;
-        const items = [...rowsEl.querySelectorAll("[data-row]")].map((row) => ({
-          title: row.querySelector(".ct-exam-title").value.trim(),
-          date: row.querySelector(".ct-exam-date").value,
-          desc: row.querySelector(".ct-exam-desc").value.trim(),
-          action: row.querySelector(".ct-exam-action").value,
-          method: row.querySelector(".ct-exam-method").value,
-        })).filter((r) => r.title);
+        const items = collectExamPlanRows(rowsEl);
         if (!items.length) { api.toast?.("Aucune étape — renseignez au moins un titre"); return; }
         btn.disabled = true; btn.textContent = "Création…";
         try {
           if (examDate && examDate !== examIso) {
             await updateChapter(chapter.lesson_id, { tests_date: examDate });
           }
-          let created = 0;
-          for (const it of items) {
-            const remindDate = it.date ? new Date(`${it.date}T17:00:00`) : null;
-            const ad = { exam_plan: chapter.lesson_id, exam_date: examDate, reminder_mode: "day_before" };
-            await api.apiTasks("create", {
-              table: "tasks",
-              fields: {
-                title: it.title,
-                text_body: it.desc || "",
-                remind: 1,
-                remind_date: remindDate && !isNaN(remindDate) ? remindDate.toISOString() : "",
-                frequency: "",
-                linked_action: it.action || null,
-                methods_id: it.method || null,
-                chapter_id: chapter.lesson_id,
-                subject_id: chapter.subject_id ?? null,
-                additional_data: JSON.stringify(ad),
-              },
-            });
-            created++;
-          }
+          const created = await createExamPlanTasks(items, chapter, examDate);
           api.toast?.(`${created} tâche${created > 1 ? "s" : ""} de préparation créée${created > 1 ? "s" : ""}`);
           m.close();
           await api.reload?.();

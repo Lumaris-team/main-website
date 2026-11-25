@@ -5,6 +5,7 @@ import {
   setChapterApi, openCreateChooser, confirmGenerate, openReviewMenu,
   openFlashcardReview, openSpacedReview, openAskAI, toggleEvaluation, estimateMinutes,
   openTestSimulation, openExamPlan,
+  examPlanDefaults, examPlanListHTML, collectExamPlanRows, createExamPlanTasks, EXAM_PHASES,
 } from "./chapter-tools.js";
 
 // ================= API =================
@@ -1262,6 +1263,154 @@ function openEntityModal(kind, id = null, existing = null, opts = {}) {
   });
 }
 
+// ================= Evaluation (contrôle / examen) creation =================
+// Creates a dated event carrying the exam config (notation /x, max duration),
+// flags the chapter as awaiting evaluation, then offers the prep plan.
+function openEvaluationModal() {
+  const root = $("#modalRoot");
+  root.hidden = false;
+
+  const subjOpts = state.subjects.map((s) => `<option value="${s.subject_id}">${esc(s.subject_name || `Matière ${s.subject_id}`)}</option>`).join("");
+  const chOpts = state.chapters.map((c) => `<option value="${c.lesson_id}" data-sub="${c.subject_id ?? ""}">${esc(c.lesson_name || `Chapitre ${c.lesson_id}`)}</option>`).join("");
+  const defaultDate = new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10);
+
+  root.innerHTML = `
+    <div class="ws-modal-backdrop">
+      <div class="ws-modal ws-modal-form" role="dialog" aria-modal="true">
+        <div class="ws-modal-head">
+          <h2>Nouvelle évaluation</h2>
+          <button class="ws-icon-btn" type="button" data-close>✕</button>
+        </div>
+        <div class="ws-modal-body">
+          <div class="ws-dsec"><h3>Évaluation</h3><div class="ws-dgrid">
+            <label class="ws-field ws-field-wide"><span class="ws-field-label">Titre</span>
+              <input type="text" id="ev_title" placeholder="ex. Contrôle — Chapitre 3"></label>
+            <label class="ws-field"><span class="ws-field-label">Matière</span>
+              <select id="ev_subject"><option value="">—</option>${subjOpts}</select></label>
+            <label class="ws-field"><span class="ws-field-label">Chapitre</span>
+              <select id="ev_chapter"><option value="">—</option>${chOpts}</select></label>
+            <label class="ws-field"><span class="ws-field-label">Date</span>
+              <input type="date" id="ev_date" value="${defaultDate}"></label>
+            <label class="ws-field"><span class="ws-field-label">Notation (/x)</span>
+              <input type="number" id="ev_notation" min="1" max="100" step="0.5" value="20"></label>
+            <label class="ws-field"><span class="ws-field-label">Durée max (min, vide = aucune)</span>
+              <input type="number" id="ev_duration" min="1" max="600" placeholder="ex. 60"></label>
+          </div></div>
+          <div class="ct-exam">
+            <div class="ct-exam-head">
+              <span class="ws-field-label">Plan de préparation — le contrôle pilote les dates</span>
+              <button class="ws-btn ws-btn-ghost" type="button" data-add-row>＋ Ajouter une étape</button>
+            </div>
+            <div class="ct-exam-list" data-rows>${examPlanListHTML(examPlanDefaults(defaultDate))}</div>
+          </div>
+          <p class="ws-tools-hint">L'évaluation est créée comme événement daté. Si un chapitre est choisi, sa date de test et le statut « en attente d'évaluation » sont renseignés. Chaque étape du plan devient une tâche datée, liée à une action du chapitre et à une méthode — tout est modifiable avant création.</p>
+        </div>
+        <div class="ws-modal-foot">
+          <button class="ws-btn ws-btn-ghost" type="button" data-close>Annuler</button>
+          <button class="ws-btn ws-btn-primary" type="button" data-submit>Créer l'évaluation</button>
+        </div>
+      </div>
+    </div>`;
+
+  const close = () => { root.hidden = true; root.innerHTML = ""; };
+  root.querySelectorAll("[data-close]").forEach((b) => b.addEventListener("click", close));
+  root.querySelector(".ws-modal-backdrop").addEventListener("click", (e) => { if (e.target.classList.contains("ws-modal-backdrop")) close(); });
+
+  const subjSel = root.querySelector("#ev_subject");
+  const chSel = root.querySelector("#ev_chapter");
+  const titleEl = root.querySelector("#ev_title");
+  const syncChapters = () => {
+    const sid = subjSel.value;
+    [...chSel.options].forEach((o) => {
+      if (!o.value) return;
+      o.hidden = !!sid && o.dataset.sub !== sid;
+    });
+    if (chSel.selectedOptions[0]?.hidden) chSel.value = "";
+  };
+  subjSel.addEventListener("change", syncChapters);
+  syncChapters();
+
+  const autoTitle = () => {
+    const ch = state.chapters.find((c) => String(c.lesson_id) === chSel.value);
+    const sub = state.subjects.find((s) => String(s.subject_id) === subjSel.value);
+    const what = ch?.lesson_name || sub?.subject_name;
+    if (what && !titleEl.dataset.touched) titleEl.value = `Évaluation — ${what}`;
+  };
+  chSel.addEventListener("change", autoTitle);
+  subjSel.addEventListener("change", autoTitle);
+  titleEl.addEventListener("input", () => { titleEl.dataset.touched = "1"; });
+
+  // ---- prep plan rows: exam date drives untouched dates, rows add/remove ----
+  const rowsEl = root.querySelector("[data-rows]");
+  const dateEl = root.querySelector("#ev_date");
+  dateEl.addEventListener("change", () => {
+    const iso = dateEl.value;
+    if (!iso) return;
+    rowsEl.querySelectorAll("[data-row]").forEach((row, i) => {
+      const off = EXAM_PHASES[i]?.offset;
+      const d = row.querySelector(".ct-exam-date");
+      if (off !== undefined && d && !d.dataset.touched) {
+        const dt = new Date(`${iso}T12:00:00`);
+        dt.setDate(dt.getDate() + off);
+        d.value = dt.toISOString().slice(0, 10);
+      }
+    });
+  });
+  rowsEl.addEventListener("input", (e) => {
+    if (e.target.classList.contains("ct-exam-date")) e.target.dataset.touched = "1";
+  });
+  rowsEl.addEventListener("click", (e) => {
+    const del = e.target.closest("[data-row-del]");
+    if (del) del.closest("[data-row]")?.remove();
+  });
+  root.querySelector("[data-add-row]").addEventListener("click", () => {
+    rowsEl.insertAdjacentHTML("beforeend", examPlanListHTML([{ title: "", desc: "", date: dateEl.value || defaultDate, action: "", method: "" }]));
+  });
+
+  root.querySelector("[data-submit]").addEventListener("click", async (e) => {
+    const btn = e.currentTarget;
+    const chId = chSel.value ? Number(chSel.value) : null;
+    const subId = subjSel.value ? Number(subjSel.value) : (chId ? Number(state.chapters.find((c) => c.lesson_id === chId)?.subject_id) || null : null);
+    const date = root.querySelector("#ev_date").value;
+    const title = titleEl.value.trim() || `Évaluation — ${state.chapters.find((c) => c.lesson_id === chId)?.lesson_name || state.subjects.find((s) => s.subject_id === subId)?.subject_name || "générale"}`;
+    const notation = Math.max(1, Number(root.querySelector("#ev_notation").value) || 20);
+    const durRaw = root.querySelector("#ev_duration").value;
+    const maxMinutes = durRaw ? Math.max(1, Number(durRaw)) : null;
+
+    btn.disabled = true; btn.textContent = "Création…";
+    try {
+      const remindDate = date ? new Date(`${date}T08:00:00`) : null;
+      await apiTasks("create", {
+        table: "events",
+        fields: {
+          title,
+          remind: 1,
+          remind_date: remindDate && !isNaN(remindDate) ? remindDate.toISOString() : "",
+          chapter_id: chId,
+          subject_id: subId,
+          linked_action: "eval",
+          additional_data: JSON.stringify({ evaluation: { notation, max_minutes: maxMinutes } }),
+        },
+      });
+      const chapter = chId ? state.chapters.find((c) => c.lesson_id === chId) : null;
+      if (chapter && date) {
+        await apiSubjects("update-chapter", { lesson_id: chId, fields: { tests_date: date, awaiting_evaluation: 1 } });
+      }
+      const planItems = collectExamPlanRows(rowsEl);
+      let planCreated = 0;
+      if (planItems.length) {
+        planCreated = await createExamPlanTasks(planItems, { lesson_id: chId, subject_id: subId }, date);
+      }
+      toast(`Évaluation créée${planCreated ? ` — ${planCreated} tâche${planCreated > 1 ? "s" : ""} de préparation` : ""}`);
+      close();
+      await loadAll();
+    } catch (err) {
+      toast(err.message);
+      btn.disabled = false; btn.textContent = "Créer l'évaluation";
+    }
+  });
+}
+
 // ================= Chapter tools: import & AI =================
 function onChapterTool(tool, chapter) {
   const lessonId = chapter.lesson_id;
@@ -1516,6 +1665,8 @@ function bindUI() {
             openEntityModal("task", null, null, { template: state.template, presetTable: preset });
           } else if (key === "chapter") {
             openEntityModal("chapter", null, null, { template: state.template });
+          } else if (key === "evaluation") {
+            openEvaluationModal();
           }
         },
       });
