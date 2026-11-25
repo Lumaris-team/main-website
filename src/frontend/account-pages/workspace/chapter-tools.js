@@ -119,7 +119,7 @@ export function openReviewMenu(chapter) {
   const plan = parseJSONField(chapter.review_plan);
   const methods = [
     { key: "flashcards", label: "Flashcards", desc: hasFlash ? "Parcourez les cartes générées" : "Pas encore de flashcards — générez-les d'abord", disabled: !hasFlash, run: () => openFlashcardReview(chapter) },
-    { key: "activities", label: "Test simulation", desc: hasActs ? "Test chronométré avec note /x et remarque de progression" : "Pas encore d'activités — générez-les d'abord", disabled: !hasActs, run: () => openTestSimulation(chapter) },
+    { key: "activities", label: "Examen blanc", desc: hasActs ? "Test chronométré avec note /x et remarque de progression" : "Pas encore d'activités — générez-les d'abord", disabled: !hasActs, run: () => openTestSimulation(chapter) },
     { key: "spaced", label: "Séances espacées", desc: plan ? `${(plan.sessions || []).length} séances planifiées` : "Planifiez les révisions par semaine / intervalle", run: () => openSpacedReview(chapter) },
   ];
   openModal({
@@ -285,13 +285,13 @@ function renderSessionList(sessions) {
     </div>`).join("");
 }
 
-// ---------- Test simulation (notation /x + max duration + progression remark) ----------
+// ---------- Examen blanc (notation /x + max duration + progression remark) ----------
 export function openTestSimulation(chapter) {
   const parsed = parseJSONField(chapter.tests);
   const list = Array.isArray(parsed?.activities) ? parsed.activities : [];
   if (!list.length) { api.toast?.("Pas encore d'activités — générez-les d'abord"); return; }
   openModal({
-    title: `Test simulation — ${chapter.lesson_name || "chapitre"}`,
+    title: `Examen blanc — ${chapter.lesson_name || "chapitre"}`,
     body: `
       <div class="ct-testcfg">
         <p class="ct-note">${list.length} exercice(s) seront servis comme un vrai test. Définissez l'échelle de notation et la limite de temps — un compte à rebours démarre au lancement, et une remarque de progression basée sur les attentes de la prof est générée à la fin.</p>

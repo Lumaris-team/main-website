@@ -775,7 +775,7 @@ async function showConversations(offset = 0) {
     if (!loadMoreBtn) {
       const loadMoreHtml = `
         <button id="load-more-conversations" style="margin: 8px auto; display: block; padding: 8px 16px; background: var(--accent); border: none; border-radius: 6px; color: #1a1a1a; cursor: pointer; font-size: 0.85rem;">
-          Load more conversations
+          Charger plus de conversations
         </button>
       `;
       chatContainer.insertAdjacentHTML("beforeend", loadMoreHtml);
@@ -984,13 +984,13 @@ async function showLimits() {
   }
 
   // Display limits
-  const unit = limits.daily?.unit || "Neurons";
+  const unit = limits.daily?.unit || "neurones";
   const limitsHtml = `
     <div class="bento-grid">
       <article class="bento-block limit-item" style="grid-column: span 4;">
         <p class="block-eyebrow">Utilisation quotidienne</p>
         <strong class="card-value">${limits.daily?.used || 0}</strong>
-        <p class="card-desc">${unit} used today</p>
+        <p class="card-desc">${unit} utilisés aujourd'hui</p>
       </article>
       <article class="bento-block limit-item" style="grid-column: span 4;">
         <p class="block-eyebrow">Limite</p>
@@ -1011,7 +1011,7 @@ async function showLimits() {
           <span class="model-consumption" style="font-weight: 600;">${model.consumption.toLocaleString()} ${unit}</span>
         </article>
       `).join("")}
-      ${(limits.models || []).filter(m => m.consumption > 0).length === 0 ? '<p style="color: var(--muted);">Aucun modèle utilisé aujourd'hui.</p>' : ''}
+      ${(limits.models || []).filter(m => m.consumption > 0).length === 0 ? "<p style=\"color: var(--muted);\">Aucun modèle utilisé aujourd'hui.</p>" : ''}
     </div>
   `;
 

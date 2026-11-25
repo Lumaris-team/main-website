@@ -427,7 +427,7 @@ function renderChrome() {
     subjects: "Matières", subject: state.currentSubject?.subject_name || "Matière",
     all: "Toutes", recurring: "Récurrentes", events: "Événements", trash: "Corbeille",
   };
-  $("#pageTitle").textContent = titles[state.view] || "Espace de travail";
+  $("#pageTitle").textContent = titles[state.view] || "Workspace";
 
   // Top-level section tabs (Tasks | Subjects)
   document.querySelectorAll("#sectionTabs .ws-seg").forEach((b) => {
@@ -1181,7 +1181,7 @@ function openEntityModal(kind, id = null, existing = null, opts = {}) {
         <div class="ws-modal-body">
           ${kind === "task" ? `<label class="ws-field ws-field-wide"><span class="ws-field-label">Titre</span><input type="text" id="m_title" value="${esc(values.title || "")}" placeholder="Titre de la tâche"></label>` : ""}
           ${kind === "task" && !id && ["all", "recurring", "events"].includes(state.view) ? `
-          <label class="ws-field ws-field-wide"><span class="ws-field-label">Kind</span>
+          <label class="ws-field ws-field-wide"><span class="ws-field-label">Type</span>
             <select id="m_kind">
               ${state.view === "all" ? `<option value="tasks">Tâche</option><option value="events">Événement</option>` : ""}
               ${state.view === "recurring" ? `<option value="repeat_tasks">Tâche récurrente</option><option value="repeat_events">Événement récurrent</option>` : ""}
@@ -1335,13 +1335,13 @@ function openGenModal(title) {
         <div class="ws-gen-item" data-i="${i}">
           <span class="ws-gen-dot" data-dot></span>
           <span class="ws-gen-name">${esc(s.title || `Section ${i + 1}`)}</span>
-          <span class="ws-gen-state" data-state>${done?.[i] ? "done" : "…"}</span>
+          <span class="ws-gen-state" data-state>${done?.[i] ? "fait" : "…"}</span>
         </div>`).join("");
     },
     setItem(i, stateName) {
       const item = this.list.querySelector(`[data-i="${i}"]`);
       if (!item) return;
-      item.querySelector("[data-state]").textContent = stateName;
+      item.querySelector("[data-state]").textContent = stateName === "done" ? "fait" : stateName === "error" ? "erreur" : stateName === "run" ? "…" : stateName;
       item.querySelector("[data-dot]").className = `ws-gen-dot ${stateName === "done" ? "ok" : stateName === "error" ? "err" : "run"}`;
     },
     setStatus(t) { this.status.textContent = t; },

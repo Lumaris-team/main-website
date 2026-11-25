@@ -111,7 +111,7 @@ const isPortraitLayout = () => window.matchMedia('(max-width: 760px), (orientati
 // no fade-out / timeout / re-layout — always the right format at once.
 
 const experienceScenes = [
-  { kicker: 'Espace de travail', title: 'Toute votre semaine<br>scolaire, <em>au même endroit.</em>', description: 'Tâches, événements et éléments récurrents se planifient avec rappels, priorités, étiquettes et modèles — la corbeille garde une sortie de secours.', location: '01 / Planification' },
+  { kicker: 'Workspace', title: 'Toute votre semaine<br>scolaire, <em>au même endroit.</em>', description: 'Tâches, événements et éléments récurrents se planifient avec rappels, priorités, étiquettes et modèles — la corbeille garde une sortie de secours.', location: '01 / Planification' },
   { kicker: 'Matières & chapitres', title: 'Chaque chapitre devient<br>un <em>terrain d’entraînement.</em>', description: 'Matières, chapitres et sous-chapitres organisés par matière, avec les notes de la prof sur ses attentes et son style de test, les dates de séance et le prochain contrôle.', location: '02 / Chapitres' },
   { kicker: 'Import & génération IA', title: 'Votre cours devient<br>matière à <em>réviser.</em>', description: 'Importez une leçon par PDF, vocal, texte, lien, fichiers avec OCR ou caméra — puis l’IA génère le cours, les flashcards et les activités avec une durée estimée.', location: '03 / Contenu IA' },
   { kicker: 'Révision & évaluation', title: 'Révisez comme<br><em>à l’examen.</em>', description: 'Flashcards, test simulation chronométré avec note sur /x et remarque de progression, séances espacées par intervalle et questions à l’IA sur le cours.', location: '04 / Révision' }

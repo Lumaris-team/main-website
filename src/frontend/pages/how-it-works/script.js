@@ -17,7 +17,7 @@ const STEPS = [
     n: "03", icon: "https://shared-assets.lumaris.fr.eu.org/icons/sparkles.svg",
     title: "Apprendre avec l'IA",
     text: "GPT OSS 120B génère le cours, les flashcards et les activités à partir de vos leçons importées — avec une durée estimée avant chaque lancement. Révisez ensuite par flashcards, test simulation chronométré ou séances espacées.",
-    points: ["Génération de cours, flashcards et activités avec estimation", "Test simulation : note /x, minuteur, remarque de progression", "Répétition espacée par intervalle + questions à l'IA sur le cours"],
+    points: ["Génération de cours, flashcards et activités avec estimation", "Examen blanc : note /x, minuteur, remarque de progression", "Répétition espacée par intervalle + questions à l'IA sur le cours"],
     route: "POST /api/learning/* - page Intelligence /api/ai/*"
   },
   {

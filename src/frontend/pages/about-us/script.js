@@ -1,7 +1,7 @@
 const PILLARS = [
   { icon: "https://shared-assets.lumaris.fr.eu.org/icons/homework.svg", title: "Gestion scolaire", text: "Notes, devoirs et emploi du temps synchronisés depuis ÉcoleDirecte dans un tableau de bord apaisé. Les priorités se lisent d'un coup d'œil.", tag: "SYNC ED" },
   { icon: "https://shared-assets.lumaris.fr.eu.org/icons/sparkles.svg", title: "Assistance IA", text: "Un tuteur qui explique, raisonne, cherche sur le web et commente vos notes — propulsé par Workers AI.", tag: "WORKERS AI" },
-  { icon: "https://shared-assets.lumaris.fr.eu.org/icons/database.svg", title: "Espace de travail", text: "Notes d'étude, fichiers sur MEGA.nz, sites web, pomodoro et outils pratiques. Tout ce que vous produisez a sa place.", tag: "MEGA + D1" },
+  { icon: "https://shared-assets.lumaris.fr.eu.org/icons/database.svg", title: "Workspace", text: "Notes d'étude, fichiers sur MEGA.nz, sites web, pomodoro et outils pratiques. Tout ce que vous produisez a sa place.", tag: "MEGA + D1" },
   { icon: "https://shared-assets.lumaris.fr.eu.org/icons/send.svg", title: "Notifications", text: "Surveillance des notes toutes les 4 heures avec alertes e-mail. Vous ne manquez jamais l'essentiel.", tag: "CRON + MAIL" }
 ];
 const grid = document.getElementById("pillars-grid");

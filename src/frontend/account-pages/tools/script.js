@@ -883,12 +883,12 @@ async function runCode() {
         }
       } else {
         const errorData = await response.json();
-        codeOutputContent.textContent = errorData.error || errorData.message || 'Échec de l'exécution';
+        codeOutputContent.textContent = errorData.error || errorData.message || "Échec de l'exécution";
       }
     }
   } catch (error) {
     console.error('Code execution error:', error);
-    codeOutputContent.textContent = error.message || 'Erreur lors de l'exécution du code';
+    codeOutputContent.textContent = error.message || "Erreur lors de l'exécution du code";
   } finally {
     codeRunBtn.disabled = false;
   }
