@@ -7,6 +7,7 @@ import {
   openTestSimulation, openExamPlan,
   examPlanDefaults, examPlanListHTML, collectExamPlanRows, createExamPlanTasks, EXAM_PHASES,
 } from "./chapter-tools.js";
+import { renderTimetable, edtStats } from "./timetable.js";
 
 // ================= API =================
 async function apiTasks(action, payload = {}) {
@@ -109,7 +110,7 @@ const state = {
   selected: null,            // { kind: "task"|"chapter", table?, row }
 };
 
-const section = () => (SUBJECT_VIEWS.includes(state.view) ? "subjects" : "tasks");
+const section = () => (state.view === "timetable" ? "timetable" : SUBJECT_VIEWS.includes(state.view) ? "subjects" : "tasks");
 const templateKind = () => (state.view === "subject" ? "chapter" : state.view === "subjects" ? "subject" : "task");
 
 const $ = (sel) => document.querySelector(sel);
@@ -426,6 +427,7 @@ function renderAll() {
 function renderChrome() {
   const titles = {
     subjects: "Matières", subject: state.currentSubject?.subject_name || "Matière",
+    timetable: "Emploi du temps",
     all: "Toutes", recurring: "Récurrentes", events: "Événements", trash: "Corbeille",
   };
   $("#pageTitle").textContent = titles[state.view] || "Workspace";
@@ -438,6 +440,10 @@ function renderChrome() {
   const taskTabs = $("#taskTabs");
   const isTasks = section() === "tasks";
   taskTabs.hidden = !isTasks;
+  // Templates / search / new button are task-subject only
+  const isTimetable = section() === "timetable";
+  $("#templateMenu").style.display = isTimetable ? "none" : "";
+  $(".ws-search").style.display = isTimetable ? "none" : "";
   if (isTasks) {
     taskTabs.querySelectorAll(".ws-seg").forEach((b) => {
       b.dataset.active = b.dataset.view === state.view ? "true" : "false";
@@ -480,7 +486,7 @@ function renderChrome() {
 
   // Contextual primary actions visibility
   $("#newBtn").textContent = state.view === "subject" ? "＋ Chapitre" : state.view === "subjects" ? "＋ Matière" : "＋ Nouveau";
-  $("#newBtn").style.display = state.view === "trash" ? "none" : "";
+  $("#newBtn").style.display = ["trash", "timetable"].includes(state.view) ? "none" : "";
 }
 
 // ================= Stats =================
@@ -491,7 +497,10 @@ function renderStats() {
   const overdue = pending.filter((t) => dueBucket(t.remind_date) === "overdue").length;
   const trash = (state.tables.trash_tasks || []).length + (state.tables.trash_events || []).length;
   let html;
-  if (state.view === "subjects") {
+  if (state.view === "timetable") {
+    const stats = edtStats();
+    html = stats || [["…", "emploi du temps"]];
+  } else if (state.view === "subjects") {
     const chapters = state.chapters.length;
     html = [[state.subjects.length, "matières"], [chapters, "chapitres"]];
   } else if (state.view === "subject" && state.currentSubject) {
@@ -508,6 +517,11 @@ function renderStats() {
 function renderContent() {
   $("#taskGroups").innerHTML = "";
   $("#subjectGrid").hidden = state.view !== "subjects";
+  $("#timetableView").hidden = state.view !== "timetable";
+  if (state.view === "timetable") {
+    $("#emptyState").hidden = true;
+    return renderTimetable();
+  }
   if (state.view === "subjects") return renderSubjects();
   if (state.view === "subject") return renderSubjectDetail();
   return renderTaskGroups();
@@ -1562,7 +1576,7 @@ function bindUI() {
   $("#sectionTabs").addEventListener("click", (e) => {
     const btn = e.target.closest(".ws-seg");
     if (!btn) return;
-    state.view = btn.dataset.section === "subjects" ? "subjects" : "all";
+    state.view = btn.dataset.section === "subjects" ? "subjects" : btn.dataset.section === "timetable" ? "timetable" : "all";
     state.currentSubject = null;
     state.template = null;
     closeDetail();

@@ -1488,3 +1488,62 @@ body {
   background: rgba(255,255,255,.04); color: var(--text); font: inherit; font-size: .8rem; outline: none;
   max-width: 220px;
 }
+
+/* ================= Emploi du temps (ÉcoleDirecte) ================= */
+.ws-tt { display: flex; flex-direction: column; gap: 28px; padding: 8px 4px 24px; }
+.ws-tt-week-title {
+  margin: 0 0 12px; font-size: .78rem; font-weight: 700; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--muted);
+}
+.ws-tt-grid {
+  display: grid; grid-template-columns: repeat(6, minmax(150px, 1fr));
+  gap: 12px; align-items: start;
+}
+.ws-tt-day {
+  border: 1px solid var(--line); border-radius: 14px; padding: 10px;
+  background: rgba(255,255,255,.02); min-height: 120px;
+}
+.ws-tt-day.is-today { border-color: rgba(140,236,255,.35); background: rgba(140,236,255,.04); }
+.ws-tt-day-name {
+  font-size: .72rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
+  color: var(--muted); margin-bottom: 8px;
+}
+.ws-tt-today-tag {
+  display: inline-block; margin-left: 6px; padding: 1px 7px; border-radius: 999px;
+  background: rgba(140,236,255,.15); color: #8cecff; font-size: .62rem;
+  letter-spacing: .04em; text-transform: none; vertical-align: 1px;
+}
+.ws-tt-day-list { display: flex; flex-direction: column; gap: 8px; }
+.ws-tt-empty-day { color: var(--muted); font-size: .78rem; text-align: center; padding: 14px 0; opacity: .5; }
+.ws-tt-course {
+  border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px;
+  background: rgba(255,255,255,.03); display: flex; flex-direction: column; gap: 2px;
+}
+.ws-tt-course.is-sub { border-style: dashed; opacity: .75; }
+.ws-tt-course.is-cancelled { opacity: .45; }
+.ws-tt-time { font-size: .68rem; font-weight: 600; color: #8cecff; font-variant-numeric: tabular-nums; }
+.ws-tt-subject { font-size: .82rem; font-weight: 600; color: var(--text); line-height: 1.25; }
+.ws-tt-meta { font-size: .72rem; color: var(--muted); }
+.ws-tt-cancel { color: #ff7d9c; font-weight: 600; font-size: .72rem; }
+.ws-tt-loading { padding: 40px; text-align: center; color: var(--muted); font-size: .85rem; }
+@media (max-width: 1100px) { .ws-tt-grid { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 640px) { .ws-tt-grid { grid-template-columns: 1fr; } }
+
+/* ================= QCM ÉcoleDirecte ================= */
+.ct-qcm-question {
+  font-size: .95rem; font-weight: 600; color: var(--text); margin: 14px 0 12px;
+}
+.ct-qcm-list { display: flex; flex-direction: column; gap: 8px; }
+.ct-qcm-choice {
+  display: flex; align-items: center; gap: 12px; width: 100%; text-align: left;
+  padding: 12px 14px; border-radius: 12px; border: 1px solid var(--line);
+  background: rgba(255,255,255,.03); color: var(--text); font: inherit; font-size: .88rem;
+  cursor: pointer; transition: border-color .15s, background .15s;
+}
+.ct-qcm-choice:hover:not(:disabled) { border-color: rgba(140,236,255,.45); background: rgba(140,236,255,.06); }
+.ct-qcm-choice:disabled { opacity: .5; cursor: default; }
+.ct-qcm-key {
+  flex: 0 0 26px; height: 26px; border-radius: 8px; display: grid; place-items: center;
+  background: rgba(140,236,255,.12); color: #8cecff; font-size: .75rem; font-weight: 700;
+}
+.ct-qcm-status { min-height: 1.2em; margin-top: 10px !important; }
