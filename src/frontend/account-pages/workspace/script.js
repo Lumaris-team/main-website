@@ -8,6 +8,7 @@ import {
   examPlanDefaults, examPlanListHTML, collectExamPlanRows, createExamPlanTasks, EXAM_PHASES,
 } from "./chapter-tools.js";
 import { renderTimetable, edtStats } from "./timetable.js";
+import { initDatePicker, setDayHeat, lumarisDateField, refreshDatePickerLabels } from "./date-picker.js";
 
 // ================= API =================
 async function apiTasks(action, payload = {}) {
@@ -391,6 +392,68 @@ function lookupName(key, idKey, id) {
   return row?.name || "";
 }
 
+// ================= Date-picker heatmap =================
+// Task density per day, fed to the Lumaris calendar picker.
+// Non-recurring undone tasks/events count once on their remind_date.
+// Recurring rows are expanded into occurrences (daily/weekly/monthly/yearly
+// from their remind_date anchor) over a ±2-year window; "custom" frequencies
+// only count on their anchor day since no schedule engine exists.
+const HEAT_WINDOW_DAYS = 730;
+
+function buildDayHeat() {
+  const counts = new Map();
+  const p2 = (n) => String(n).padStart(2, "0");
+  const localKey = (d) => `${d.getFullYear()}-${p2(d.getMonth() + 1)}-${p2(d.getDate())}`;
+  const addDate = (d) => { const k = localKey(d); counts.set(k, (counts.get(k) || 0) + 1); };
+  const add = (iso) => {
+    const d = String(iso || "").slice(0, 10);
+    if (/^\d{4}-\d{2}-\d{2}$/.test(d)) counts.set(d, (counts.get(d) || 0) + 1);
+  };
+  for (const t of ["tasks", "events"]) {
+    for (const r of state.tables[t] || []) {
+      if (r?.remind_date && !r.is_done) add(r.remind_date);
+    }
+  }
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const start = new Date(today); start.setDate(start.getDate() - HEAT_WINDOW_DAYS);
+  const end = new Date(today); end.setDate(end.getDate() + HEAT_WINDOW_DAYS);
+
+  const expandRepeat = (r) => {
+    const anchor = r?.remind_date ? new Date(r.remind_date) : null;
+    if (!anchor || isNaN(anchor)) { if (r?.remind_date) add(r.remind_date); return; }
+    anchor.setHours(0, 0, 0, 0);
+    const freq = String(r.frequency || "custom");
+    if (freq === "custom" || !freq) { addDate(anchor); return; }
+
+    if (freq === "daily" || freq === "weekly") {
+      const step = freq === "daily" ? 1 : 7;
+      for (let d = new Date(anchor); d <= end; d.setDate(d.getDate() + step)) {
+        if (d >= start) addDate(d);
+      }
+      return;
+    }
+    if (freq === "monthly" || freq === "yearly") {
+      const dom = anchor.getDate();
+      const d = new Date(anchor);
+      while (d <= end) {
+        if (d >= start) addDate(d);
+        if (freq === "monthly") {
+          d.setMonth(d.getMonth() + 1);
+          // Clamp to month length (e.g. anchor 31 → Feb 28)
+          if (d.getDate() !== dom) d.setDate(0);
+        } else {
+          d.setFullYear(d.getFullYear() + 1);
+        }
+      }
+    }
+  };
+  for (const t of ["repeat_tasks", "repeat_events"]) {
+    for (const r of state.tables[t] || []) expandRepeat(r);
+  }
+  return counts;
+}
+
 // ================= Loading =================
 async function loadAll() {
   try {
@@ -403,6 +466,7 @@ async function loadAll() {
     state.subjects = subjectsResp?.subjects || [];
     state.chapters = subjectsResp?.chapters || [];
     state.meta = metaResp?.meta || {};
+    setDayHeat(buildDayHeat());
     renderAll();
     if (state.selected) refreshSelected();
     // Templates are optional — a missing endpoint must not break the page.
@@ -1001,9 +1065,9 @@ function fieldHTML(f, value, ctx = {}) {
         <div class="ws-info">${esc(txt)}</div>
       </div>`;
   } else if (f.type === "datetime") {
-    input = `<input type="datetime-local" id="${id}" value="${toLocalInput(value)}">`;
+    input = lumarisDateField({ id, value: toLocalInput(value), mode: "datetime" });
   } else if (f.type === "date") {
-    input = `<input type="date" id="${id}" value="${esc(String(value ?? "").slice(0, 10))}">`;
+    input = lumarisDateField({ id, value: String(value ?? "").slice(0, 10), mode: "date" });
   } else if (f.type === "lines") {
     input = `<textarea id="${id}" rows="3" placeholder="${esc(f.placeholder || "")}">${esc(toLines(value))}</textarea>`;
   } else {
@@ -1304,7 +1368,7 @@ function openEvaluationModal() {
             <label class="ws-field"><span class="ws-field-label">Chapitre</span>
               <select id="ev_chapter"><option value="">—</option>${chOpts}</select></label>
             <label class="ws-field"><span class="ws-field-label">Date</span>
-              <input type="date" id="ev_date" value="${defaultDate}"></label>
+              ${lumarisDateField({ id: "ev_date", value: defaultDate, mode: "date" })}</label>
             <label class="ws-field"><span class="ws-field-label">Notation (/x)</span>
               <input type="number" id="ev_notation" min="1" max="100" step="0.5" value="20"></label>
             <label class="ws-field"><span class="ws-field-label">Durée max (min, vide = aucune)</span>
@@ -1369,6 +1433,7 @@ function openEvaluationModal() {
         d.value = dt.toISOString().slice(0, 10);
       }
     });
+    refreshDatePickerLabels(root);
   });
   rowsEl.addEventListener("input", (e) => {
     if (e.target.classList.contains("ct-exam-date")) e.target.dataset.touched = "1";
@@ -1773,6 +1838,7 @@ function toast(msg) {
 function init() {
   const now = new Date();
   $("#todayLabel").textContent = now.toLocaleDateString([], { weekday: "long", day: "numeric", month: "long" });
+  initDatePicker();
   bindUI();
   bindFieldInteractions();
   loadAll();

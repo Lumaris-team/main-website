@@ -2,6 +2,8 @@
 // local files, camera capture with 4-corner perspective correction + local OCR (Tesseract.js).
 // Everything runs in the browser — nothing is uploaded raw.
 
+import { lumarisDateField } from "./date-picker.js";
+
 const PDFJS_URL = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js";
 const TESSERACT_URL = "https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js";
 
@@ -133,7 +135,7 @@ export function openImportModal({ onImport, initialTab = "pdf" }) {
             <option value="raw_lessons">Leçons brutes</option>
             <option value="raw_recorded_lessons">Leçons enregistrées</option>
           </select>
-          <label class="il-session">Date de séance <input type="date" id="ilSession"></label>
+          <label class="il-session">Date de séance ${lumarisDateField({ id: "ilSession", mode: "date" })}</label>
         </div>
         <button class="ws-btn ws-btn-ghost" type="button" data-close>Annuler</button>
         <button class="ws-btn ws-btn-primary" type="button" id="ilImport" disabled>Importer le texte</button>

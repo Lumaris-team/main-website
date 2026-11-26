@@ -1528,3 +1528,182 @@ body {
 .ws-tt-loading { padding: 40px; text-align: center; color: var(--muted); font-size: .85rem; }
 @media (max-width: 1100px) { .ws-tt-grid { grid-template-columns: repeat(3, 1fr); } }
 @media (max-width: 640px) { .ws-tt-grid { grid-template-columns: 1fr; } }
+
+/* ================= Lumaris date picker ================= */
+.lp-field { display: flex; width: 100%; }
+.lp-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, .03);
+  color: var(--text);
+  font: inherit;
+  font-size: .85rem;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color .15s, box-shadow .15s;
+}
+.lp-btn:hover { border-color: rgba(140, 236, 255, .3); }
+.lp-btn:focus-visible { border-color: rgba(140, 236, 255, .4); box-shadow: 0 0 0 3px rgba(140, 236, 255, .1); outline: none; }
+.lp-ico { width: 15px; height: 15px; color: var(--accent); flex: none; }
+.lp-btn-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lp-btn.is-empty .lp-btn-text { color: var(--muted); }
+
+.lp-pop {
+  position: fixed;
+  z-index: 1400;
+  width: 296px;
+  padding: 14px;
+  border-radius: var(--radius);
+  border: 1px solid var(--line);
+  background: #0d1020;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, .55), 0 0 0 1px rgba(140, 236, 255, .05);
+  color: var(--text);
+  font-size: .85rem;
+}
+.lp-pop[hidden] { display: none; }
+
+.lp-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.lp-title { font-weight: 700; font-size: .95rem; text-transform: capitalize; }
+.lp-nav {
+  width: 30px; height: 30px;
+  display: grid; place-items: center;
+  border-radius: 9px;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  color: var(--text);
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background .15s;
+}
+.lp-nav:hover { background: var(--panel-strong); }
+
+.lp-dow {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  margin-bottom: 4px;
+}
+.lp-dow span {
+  text-align: center;
+  font-size: .68rem;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  padding: 4px 0;
+}
+
+.lp-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 3px;
+}
+.lp-day {
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  cursor: pointer;
+  padding: 0;
+  transition: background .12s;
+}
+.lp-day:hover { background: var(--panel); }
+.lp-day.is-out { opacity: .35; }
+.lp-day.is-today .lp-num { box-shadow: inset 0 0 0 1.5px var(--accent); }
+.lp-day.is-sel { background: var(--accent-soft); }
+.lp-day.is-sel .lp-num { box-shadow: inset 0 0 0 1.5px var(--accent); }
+
+/* Colored disc = task density. --h ∈ [0,1], full red = heatScale tasks. */
+.lp-num {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  max-width: 34px;
+  max-height: 34px;
+  border-radius: 50%;
+  font-size: .8rem;
+  font-weight: 600;
+  color: var(--text);
+  background: rgba(251, 113, 133, calc(var(--h, 0) * .85));
+  text-shadow: 0 1px 2px rgba(0, 0, 0, .4);
+  transition: transform .1s;
+}
+.lp-day:hover .lp-num { transform: scale(1.06); }
+.lp-day.is-sel .lp-num { box-shadow: 0 0 0 2px var(--accent); }
+.lp-time {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+.lp-time label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: .75rem;
+  color: var(--muted);
+}
+.lp-time select {
+  padding: 6px 8px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, .04);
+  color: var(--text);
+  font: inherit;
+  font-size: .8rem;
+}
+.lp-time-sep { color: var(--muted); font-weight: 700; }
+
+.lp-foot {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 12px;
+}
+.lp-legend {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.lp-legend-lbl { font-size: .68rem; color: var(--muted); flex: none; }
+.lp-grad {
+  flex: 1;
+  height: 8px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(251, 113, 133, .12), rgb(251, 113, 133));
+}
+.lp-clear, .lp-apply {
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  color: var(--muted);
+  font: inherit;
+  font-size: .75rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.lp-apply {
+  background: var(--accent-soft);
+  border-color: rgba(140, 236, 255, .3);
+  color: var(--accent);
+  font-weight: 700;
+}
+.lp-clear:hover, .lp-apply:hover { background: var(--panel-strong); }
+.lp-apply:hover { border-color: var(--accent); }
+
+/* Date fields inside compact rows (exam plan, spaced repetition) */
+.ct-exam-row .lp-field,
+.ct-exam-head .lp-field { min-width: 130px; }
+.il-session .lp-field { min-width: 140px; }

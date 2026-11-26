@@ -2,6 +2,8 @@
 // flashcard reviewer, AI Q&A and evaluation flag.
 // Wired from script.js via setChapterApi().
 
+import { lumarisDateField, refreshDatePickerLabels } from "./date-picker.js";
+
 let api = null;
 export function setChapterApi(apis) { api = apis; }
 
@@ -225,7 +227,7 @@ export function openSpacedReview(chapter) {
       <div class="ct-spaced">
         <div class="ct-spaced-form">
           <label class="ws-field"><span class="ws-field-label">Date de début (date de séance)</span>
-            <input type="date" data-start value="${esc(startDate)}"></label>
+            ${lumarisDateField({ id: "ct_start", value: startDate, mode: "date", attrs: "data-start" })}</label>
           <label class="ws-field"><span class="ws-field-label">Intervalle entre séances (jours)</span>
             <input type="number" data-interval min="1" max="30" value="${plan.interval_days || 3}"></label>
           <label class="ws-field"><span class="ws-field-label">Nombre de séances</span>
@@ -381,7 +383,7 @@ function examRowHTML(p, methods, actions) {
     <div class="ct-exam-row" data-row>
       <div class="ct-exam-row-main">
         <input type="text" class="ct-exam-title" value="${esc(p.title)}" placeholder="Titre de l'étape">
-        <input type="date" class="ct-exam-date" value="${esc(p.date)}">
+        ${lumarisDateField({ id: "", value: p.date, mode: "date", inputClass: "ct-exam-date" })}
       </div>
       <input type="text" class="ct-exam-desc" value="${esc(p.desc)}" placeholder="Détails pour la tâche (optionnel)">
       <div class="ct-exam-row-meta">
@@ -464,7 +466,7 @@ export function openExamPlan(chapter) {
         <p class="ct-note">Le plan crée une succession de tâches datées avant le contrôle. Chaque étape est liée à une action du chapitre et à une méthode — vous pouvez tout modifier avant de créer.</p>
         <div class="ct-exam-head">
           <label class="ws-field"><span class="ws-field-label">Date du contrôle</span>
-            <input type="date" data-exam-date value="${esc(defaultDate)}"></label>
+            ${lumarisDateField({ id: "ct_exam_date", value: defaultDate, mode: "date", attrs: "data-exam-date" })}</label>
           <button class="ws-btn ws-btn-ghost" type="button" data-add-row>＋ Ajouter une étape</button>
         </div>
         <div class="ct-exam-list" data-rows>${listHtml}</div>
@@ -487,6 +489,7 @@ export function openExamPlan(chapter) {
             if (d && !d.dataset.touched) d.value = examDatePlus(iso, off);
           }
         });
+        refreshDatePickerLabels(m.el);
       });
       rowsEl.addEventListener("input", (e) => {
         if (e.target.classList.contains("ct-exam-date")) e.target.dataset.touched = "1";
