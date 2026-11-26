@@ -1,9 +1,9 @@
 import { authedFetch } from "/lib/auth.js";
 
 // ================= Emploi du temps (ÉcoleDirecte) =================
-// The worker owns the whole ED session (login, cookies, 2FA relay). This
-// module only asks for the timetable, shows the QCM when ED requires it,
-// and renders the week grids.
+// The worker owns the whole ED session (login, cookies, and the 2FA QCM —
+// answered automatically server-side from the worker's secrets). This
+// module only asks for the timetable and renders the week grids.
 
 const DAY_ORDER = ["lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi"];
 const DAY_LABELS = {
@@ -36,68 +36,14 @@ async function apiEd(subpath, { method = "GET", body, headers = {} } = {}) {
 async function fetchTimetable() {
   const resp = await apiEd("timetable", { headers: { filter: "true" } });
   if (resp?.qcm_required) {
-    const ok = await askQCM(resp);
-    if (!ok) return null;
-    return fetchTimetable(); // session now cached server-side — retry once
+    // Should not happen: the worker auto-answers the QCM from its secrets.
+    // Reaching this means the question wasn't recognized — surface it.
+    throw new Error(`Vérification ÉcoleDirecte requise : « ${resp.question || "question inconnue"} »`);
   }
   if (resp?.timetable?.json || resp?.ok === false) {
     throw new Error(resp?.error || "Réponse ÉcoleDirecte invalide");
   }
   return resp;
-}
-
-// ---------- QCM 2FA modal ----------
-function askQCM({ question, propositions }) {
-  return new Promise((resolve) => {
-    const root = document.getElementById("modalRoot");
-    if (!root) return resolve(false);
-    root.hidden = false;
-    root.innerHTML = `
-      <div class="ws-modal-backdrop">
-        <div class="ws-modal ws-modal-form" role="dialog" aria-modal="true">
-          <div class="ws-modal-head">
-            <h2>Vérification ÉcoleDirecte</h2>
-            <button class="ws-icon-btn" type="button" data-close>✕</button>
-          </div>
-          <div class="ws-modal-body">
-            <p class="ws-tools-hint">ÉcoleDirecte demande une vérification avant de continuer.</p>
-            <p class="ct-qcm-question">${esc(question)}</p>
-            <div class="ct-qcm-list">
-              ${propositions.map((p, i) => `
-                <button class="ct-qcm-choice" type="button" data-choice="${i}">
-                  <span class="ct-qcm-key">${String.fromCharCode(65 + i)}</span>
-                  <span>${esc(p)}</span>
-                </button>`).join("")}
-            </div>
-            <p class="ws-tools-hint ct-qcm-status" data-status></p>
-          </div>
-          <div class="ws-modal-foot">
-            <button class="ws-btn ws-btn-ghost" type="button" data-close>Plus tard</button>
-          </div>
-        </div>
-      </div>`;
-
-    const close = (val) => { root.hidden = true; root.innerHTML = ""; resolve(val); };
-    root.querySelectorAll("[data-close]").forEach((b) => b.addEventListener("click", () => close(false)));
-    root.querySelector(".ws-modal-backdrop").addEventListener("click", (e) => {
-      if (e.target.classList.contains("ws-modal-backdrop")) close(false);
-    });
-
-    const status = root.querySelector("[data-status]");
-    root.querySelectorAll("[data-choice]").forEach((btn) => {
-      btn.addEventListener("click", async () => {
-        root.querySelectorAll("[data-choice]").forEach((b) => { b.disabled = true; });
-        status.textContent = "Envoi de la réponse…";
-        try {
-          await apiEd("qcm", { method: "POST", body: { choice: Number(btn.dataset.choice) } });
-          close(true);
-        } catch (err) {
-          status.textContent = `Erreur : ${err.message}`;
-          root.querySelectorAll("[data-choice]").forEach((b) => { b.disabled = false; });
-        }
-      });
-    });
-  });
 }
 
 // ---------- Rendering ----------
@@ -162,10 +108,7 @@ export async function renderTimetable() {
       view.innerHTML = `<div class="ws-tt-loading">Connexion à ÉcoleDirecte…</div>`;
     }
     const data = await fetchTimetable();
-    if (!data) {
-      view.innerHTML = `<div class="ws-empty"><div class="ws-empty-icon">✦</div><p class="ws-empty-title">Synchronisation interrompue</p><p class="ws-empty-sub">Le questionnaire ÉcoleDirecte n'a pas été complété.</p></div>`;
-      return;
-    }
+    if (!data) return;
     lastData = data;
     const hasA = DAY_ORDER.some((d) => (data.semaineA?.[d] || []).length);
     const hasB = DAY_ORDER.some((d) => (data.semaineB?.[d] || []).length);

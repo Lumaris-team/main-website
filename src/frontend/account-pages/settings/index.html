@@ -183,7 +183,7 @@
                     <circle class="ring-files" cx="60" cy="60" r="54" id="ringFiles" />
                   </svg>
                   <div class="storage-center">
-                    <span class="storage-percentage" id="storagePct">0% used</span>
+                    <span class="storage-percentage" id="storagePct">0%</span>
                     <small class="storage-capacity" id="storageCap">sur 20 Go</small>
                   </div>
                 </div>
@@ -199,13 +199,29 @@
                     <circle class="ring-ai" cx="60" cy="60" r="54" id="ringAi" />
                   </svg>
                   <div class="ai-center">
-                    <span class="ai-percentage" id="aiPct">0 % utilisé</span>
+                    <span class="ai-percentage" id="aiPct">0%</span>
                     <small class="ai-capacity" id="aiCap">sur 10000 neurones</small>
                   </div>
                 </div>
                 <div class="stat-text">
                   <span class="stat-title">Requêtes IA</span>
                   <span class="legend-text" id="aiUsage">0 / 10000 neurones</span>
+                </div>
+              </div>
+              <div class="stat-cell">
+                <div class="d1-chart" aria-hidden="true">
+                  <svg viewBox="0 0 120 120" class="d1-ring">
+                    <circle class="ring-bg" cx="60" cy="60" r="54" />
+                    <circle class="ring-d1" cx="60" cy="60" r="54" id="ringD1" />
+                  </svg>
+                  <div class="d1-center">
+                    <span class="d1-percentage" id="d1Pct">0%</span>
+                    <small class="d1-capacity" id="d1Cap">sur 5 Go</small>
+                  </div>
+                </div>
+                <div class="stat-text">
+                  <span class="stat-title">Base de données</span>
+                  <span class="legend-text" id="d1Legend">Tasks — 0 Ko</span>
                 </div>
               </div>
             </div>

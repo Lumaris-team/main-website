@@ -1528,22 +1528,3 @@ body {
 .ws-tt-loading { padding: 40px; text-align: center; color: var(--muted); font-size: .85rem; }
 @media (max-width: 1100px) { .ws-tt-grid { grid-template-columns: repeat(3, 1fr); } }
 @media (max-width: 640px) { .ws-tt-grid { grid-template-columns: 1fr; } }
-
-/* ================= QCM ÉcoleDirecte ================= */
-.ct-qcm-question {
-  font-size: .95rem; font-weight: 600; color: var(--text); margin: 14px 0 12px;
-}
-.ct-qcm-list { display: flex; flex-direction: column; gap: 8px; }
-.ct-qcm-choice {
-  display: flex; align-items: center; gap: 12px; width: 100%; text-align: left;
-  padding: 12px 14px; border-radius: 12px; border: 1px solid var(--line);
-  background: rgba(255,255,255,.03); color: var(--text); font: inherit; font-size: .88rem;
-  cursor: pointer; transition: border-color .15s, background .15s;
-}
-.ct-qcm-choice:hover:not(:disabled) { border-color: rgba(140,236,255,.45); background: rgba(140,236,255,.06); }
-.ct-qcm-choice:disabled { opacity: .5; cursor: default; }
-.ct-qcm-key {
-  flex: 0 0 26px; height: 26px; border-radius: 8px; display: grid; place-items: center;
-  background: rgba(140,236,255,.12); color: #8cecff; font-size: .75rem; font-weight: 700;
-}
-.ct-qcm-status { min-height: 1.2em; margin-top: 10px !important; }

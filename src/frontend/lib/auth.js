@@ -67,7 +67,19 @@ function isJWTValid() {
 
 // --- JWT renewal ------------------------------------------------------------
 
+// Several callers can need a renewal at once (guardPage + parallel authedFetch
+// on page load). The one-time token is single-use: without sharing the
+// in-flight exchange, the losers get a 404 and trigger a spurious sign-in
+// overlay even though the session was just renewed successfully.
+let renewPromise = null;
+
 async function renewJWT() {
+  if (renewPromise) return renewPromise;
+  renewPromise = doRenewJWT().finally(() => { renewPromise = null; });
+  return renewPromise;
+}
+
+async function doRenewJWT() {
   const username = getUsername();
   const oneTimeToken = getOneTimeToken();
   
@@ -202,6 +214,7 @@ export async function authedFetch(input, init = {}) {
 
 let authOverlay = null;
 let authOverlayPoll = null;
+let authOverlayFailures = 0;
 
 const AUTH_OVERLAY_STYLE = `
   #auth-overlay {
@@ -287,9 +300,17 @@ export async function showAuthOverlay() {
     authOverlay.appendChild(shell.cloneNode(true));
     // Fresh module instance each open so listeners bind to the new DOM.
     await import(`/pages/sign-in/script.js?overlay=${Date.now()}`);
+    authOverlayFailures = 0;
   } catch (e) {
     console.error("Auth overlay failed to load:", e);
     hideAuthOverlay();
+    // Persistent load failure: fall back to the standalone sign-in page
+    // instead of looping show/hide forever.
+    if (++authOverlayFailures >= 2) {
+      authOverlayFailures = 0;
+      window.location.href = AUTH_PAGE;
+      return;
+    }
     redirectToAuth();
   }
 }
@@ -404,6 +425,9 @@ function isLandingPath() {
 
 function redirectToAuth() {
   if (isAuthPage()) return;
+  // A concurrent renewal may have just stored a fresh JWT — the caller that
+  // lost the race must not kick the user back to sign-in.
+  if (isJWTValid()) return;
   const target = window.location.pathname + window.location.search;
   if (target && !normalizePath(target).startsWith(normalizePath(AUTH_PAGE))) {
     setCookie(REDIRECT_COOKIE, target, REDIRECT_COOKIE_TTL);

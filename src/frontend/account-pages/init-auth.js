@@ -33,10 +33,13 @@ window.addEventListener('site-navbar:logout', () => {
 async function init() {
   // Store JWT from URL params if present
   if (jwt && oneTimeToken && username) {
-    sessionStorage.setItem('jwt_token', jwt);
-    sessionStorage.setItem('one_time_token', oneTimeToken);
-    sessionStorage.setItem('username', username);
-    sessionStorage.setItem('jwt_exp', String(Math.floor(Date.now() / 1000) + 1800));
+    const exp = String(Math.floor(Date.now() / 1000) + 1800);
+    for (const store of [sessionStorage, localStorage]) {
+      store.setItem('jwt_token', jwt);
+      store.setItem('one_time_token', oneTimeToken);
+      store.setItem('username', username);
+      store.setItem('jwt_exp', exp);
+    }
     
     // Clean URL params
     const cleanUrl = window.location.pathname;

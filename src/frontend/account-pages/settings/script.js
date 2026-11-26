@@ -247,53 +247,71 @@ function formatBytesToGB(bytes) {
   return (bytes / 1024 / 1024 / 1024).toFixed(1);
 }
 
+function formatBytes(bytes) {
+  if (!bytes || bytes <= 0) return "0 Ko";
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} Ko`;
+  if (bytes < 1024 * 1024 * 1024) return `${(bytes / 1024 / 1024).toFixed(1)} Mo`;
+  return `${(bytes / 1024 / 1024 / 1024).toFixed(2)} Go`;
+}
+
+// Keep the percentage inside the ring: short text + shrinking font.
+function fitPct(el, pct) {
+  if (!el) return;
+  const text = `${pct}%`;
+  el.textContent = text;
+  el.style.fontSize = text.length <= 4 ? "1.5rem" : text.length <= 5 ? "1.2rem" : "1rem";
+}
+
+function ringFraction(el, fraction) {
+  if (!el) return;
+  const len = Math.min(Math.max(fraction, 0), 1) * circumference;
+  el.setAttribute("stroke-dasharray", `${circumference} ${circumference}`);
+  el.setAttribute("stroke-dashoffset", "0");
+  el.getBoundingClientRect();
+  el.setAttribute("stroke-dasharray", `${len} ${circumference}`);
+  el.setAttribute("stroke-dashoffset", `${circumference}`);
+}
+
+const circumference = 339.292;
+
 function renderStats(stats) {
   const storage = stats?.storage || { totalBytes: 0, capacityGB: 20, items: [] };
   const ai = stats?.ai?.daily || { used: 0, limit: 10000 };
+  const d1 = stats?.d1 || { totalBytes: 0, capacityGB: 5, items: [] };
 
   const capacityGB = storage.capacityGB || 20;
   const totalBytes = storage.totalBytes || 0;
   const filesItem = storage.items?.find((i) => i.key === "files/") || { bytes: 0 };
 
   const pct = totalBytes > 0 ? (totalBytes / (capacityGB * 1024 * 1024 * 1024)) * 100 : 0;
-  const pctText = Number.isInteger(pct) ? String(pct) : pct.toFixed(2).replace(/\.?0+$/, "");
-  const pctEl = $("#storagePct");
-  if (pctEl) {
-    pctEl.textContent = `${pctText}% used`;
-    pctEl.style.fontSize = pctText.length <= 3 ? "1.6rem" : pctText.length <= 4 ? "1.4rem" : "1.2rem";
-  }
+  fitPct($("#storagePct"), pct < 1 && pct > 0 ? pct.toFixed(1) : Math.round(pct));
   const capEl = $("#storageCap");
-  if (capEl) capEl.textContent = `of ${capacityGB}GB`;
+  if (capEl) capEl.textContent = `sur ${capacityGB} Go`;
   const legendEl = $("#storageLegend");
   if (legendEl) legendEl.textContent = `Fichiers — ${formatBytesToGB(filesItem.bytes)} Go`;
 
-  const circumference = 339.292;
-  const filesCircle = $("#ringFiles");
-  if (filesCircle) {
-    const filesLen = totalBytes ? Math.min(filesItem.bytes / totalBytes, 1) * circumference : 0;
-    filesCircle.setAttribute("stroke-dasharray", `${filesLen} ${circumference}`);
-    filesCircle.setAttribute("stroke-dashoffset", `${circumference}`);
-  }
+  ringFraction($("#ringFiles"), totalBytes ? filesItem.bytes / totalBytes : 0);
 
   const aiUsed = ai.used || 0;
   const aiLimit = ai.limit || 10000;
-  const aiPct = Math.round((aiUsed / aiLimit) * 100);
-  const aiPctEl = $("#aiPct");
-  if (aiPctEl) aiPctEl.textContent = `${aiPct}% used`;
+  fitPct($("#aiPct"), Math.round((aiUsed / aiLimit) * 100));
   const aiCapEl = $("#aiCap");
-  if (aiCapEl) aiCapEl.textContent = `of ${aiLimit} neurons`;
+  if (aiCapEl) aiCapEl.textContent = `sur ${aiLimit} neurones`;
   const aiUsageEl = $("#aiUsage");
-  if (aiUsageEl) aiUsageEl.textContent = `${aiUsed} / ${aiLimit} neurons`;
+  if (aiUsageEl) aiUsageEl.textContent = `${aiUsed} / ${aiLimit} neurones`;
+  ringFraction($("#ringAi"), aiUsed / aiLimit);
 
-  const aiCircle = $("#ringAi");
-  if (aiCircle) {
-    const len = Math.min(aiUsed / aiLimit, 1) * circumference;
-    aiCircle.setAttribute("stroke-dasharray", `${circumference} ${circumference}`);
-    aiCircle.setAttribute("stroke-dashoffset", "0");
-    aiCircle.getBoundingClientRect();
-    aiCircle.setAttribute("stroke-dasharray", `${len} ${circumference}`);
-    aiCircle.setAttribute("stroke-dashoffset", `${circumference}`);
-  }
+  // D1 databases (tasks & co)
+  const d1Bytes = d1.totalBytes || 0;
+  const d1CapGB = d1.capacityGB || 5;
+  const d1Pct = d1Bytes > 0 ? (d1Bytes / (d1CapGB * 1024 * 1024 * 1024)) * 100 : 0;
+  fitPct($("#d1Pct"), d1Pct < 1 && d1Pct > 0 ? d1Pct.toFixed(1) : Math.round(d1Pct));
+  const d1CapEl = $("#d1Cap");
+  if (d1CapEl) d1CapEl.textContent = `sur ${d1CapGB} Go`;
+  const d1Item = d1.items?.[0] || { bytes: 0, label: "Tasks" };
+  const d1LegendEl = $("#d1Legend");
+  if (d1LegendEl) d1LegendEl.textContent = `${d1Item.label} — ${formatBytes(d1Item.bytes)}`;
+  ringFraction($("#ringD1"), d1Bytes / (d1CapGB * 1024 * 1024 * 1024));
 }
 
 // ================= Session =================
