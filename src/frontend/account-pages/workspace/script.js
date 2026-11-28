@@ -940,6 +940,16 @@ function chapterRowHTML(c) {
   const attCount = attIds(c.linked_files).length || attIds(c.attachements_id).length;
   const methodsCount = jsonCount(c.methods);
   const gapsList = (() => { const g = parseMaybeJSON(c.gaps); return Array.isArray(g) ? g.filter(Boolean) : []; })();
+  // Flashcards dues (SM-2): unscheduled cards count as due.
+  const fcDue = (() => {
+    const cards = parseMaybeJSON(c.flashcards)?.cards;
+    if (!Array.isArray(cards) || !cards.length) return 0;
+    const t = new Date().toISOString().slice(0, 10);
+    return cards.filter((x) => {
+      const d = /^\d{4}-\d{2}-\d{2}$/.test(x?.due || "") ? x.due : t;
+      return d <= t;
+    }).length;
+  })();
 
   const chips = [
     c.is_method ? `<span class="ws-chip ws-chip-method">méthode</span>` : "",
@@ -949,6 +959,7 @@ function chapterRowHTML(c) {
     c.session_date ? `<span class="ws-chip">séance ${esc(String(c.session_date).slice(0, 10))}</span>` : "",
     hasBody ? `<span class="ws-chip ws-chip-course">cours ✓</span>` : `<span class="ws-chip">pas de cours</span>`,
     hasFlash ? `<span class="ws-chip ws-chip-flash">flashcards</span>` : "",
+    fcDue ? `<span class="ws-chip ws-chip-due" title="${fcDue} flashcard${fcDue > 1 ? "s" : ""} à réviser (répétition espacée)">⚡ ${fcDue}</span>` : "",
     masteryPct != null ? `<span class="ws-chip ws-chip-mastery ${masteryPct < 40 ? "lo" : masteryPct < 65 ? "mid" : "hi"}" title="Maîtrise moyenne des notions">${masteryPct} %</span>` : "",
     gapsList.length ? `<span class="ws-chip ws-chip-gap" title="Lacunes : ${esc(gapsList.slice(0, 6).join(" · "))}${gapsList.length > 6 ? " …" : ""}">⚠ ${gapsList.length} lacune${gapsList.length > 1 ? "s" : ""}</span>` : "",
     sessPlan ? `<span class="ws-chip" title="${sessPlan} séance${sessPlan > 1 ? "s" : ""} de révision planifiée${sessPlan > 1 ? "s" : ""}">↻ ${sessPlan}</span>` : "",

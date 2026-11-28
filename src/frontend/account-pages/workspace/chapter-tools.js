@@ -200,7 +200,7 @@ const REVIEW_CATEGORIES = [
   {
     title: "8 · Flashcards",
     methods: [
-      { key: "flashcards", label: "Flashcards", desc: "Génère TOUTES les cartes (Q/R, cloze, inversées, formules, multi-niveaux) puis parcours-les", builtIn: true },
+      { key: "flashcards", label: "Flashcards", desc: "Cartes dues d'abord, notées Encore/Dur/Bien/Facile — l'IA reprogramme chaque carte (SM-2)", builtIn: true },
     ],
   },
   {
@@ -231,11 +231,29 @@ const GENERATOR_METHODS = new Set([
 ]);
 
 export function openReviewMenu(chapter) {
-  const hasFlash = !!parseJSONField(chapter.flashcards)?.cards?.length;
+  const flashCards = parseJSONField(chapter.flashcards)?.cards;
+  const hasFlash = !!flashCards?.length;
   const hasActs = !!parseJSONField(chapter.tests)?.activities?.length;
   const plan = parseJSONField(chapter.review_plan);
+  const today = new Date().toISOString().slice(0, 10);
+  const dueFlash = hasFlash
+    ? flashCards.filter((c) => {
+        const d = /^\d{4}-\d{2}-\d{2}$/.test(c?.due || "") ? c.due : today;
+        return d <= today;
+      }).length
+    : 0;
+  // Forecast: earliest future due date across scheduled cards.
+  const nextDue = hasFlash
+    ? flashCards.map((c) => (/^\d{4}-\d{2}-\d{2}$/.test(c?.due || "") ? c.due : today))
+        .filter((d) => d > today).sort()[0] || null
+    : null;
   const descFor = (key) => {
-    if (key === "flashcards") return hasFlash ? "Parcourez les cartes générées" : "Pas encore de flashcards — générez-les d'abord";
+    if (key === "flashcards") {
+      if (!hasFlash) return "Pas encore de flashcards — générez-les d'abord";
+      return dueFlash
+        ? `${dueFlash} carte${dueFlash > 1 ? "s" : ""} à réviser — répétition espacée SM-2`
+        : `Toutes les cartes sont à jour ✓${nextDue ? ` — prochaine : ${nextDue}` : ""}`;
+    }
     if (key === "activities") return hasActs ? "Test chronométré avec note /x et remarque de progression" : "Pas encore d'activités — générez-les d'abord";
     if (key === "spaced") return plan ? `${(plan.sessions || []).length} séances planifiées` : "Planifiez les révisions par semaine / intervalle";
     return null;
@@ -608,15 +626,62 @@ function showDebrief(chapter, methodKey, debrief) {
   });
 }
 
-// ---------- flashcard reviewer ----------
+// ---------- flashcard reviewer (SM-2 spaced repetition per card) ----------
+const GRADES = [
+  { q: 1, key: "again", label: "↺ Encore", cls: "g-again", hint: "rév. demain" },
+  { q: 3, key: "hard", label: "Dur", cls: "g-hard", hint: "intervalle ×1.2" },
+  { q: 4, key: "good", label: "Bien", cls: "g-good", hint: "intervalle normal" },
+  { q: 5, key: "easy", label: "Facile", cls: "g-easy", hint: "intervalle ×~1.3" },
+];
+
+function cardKey(c) { return String(c?.front || "").trim().toLowerCase(); }
+
+// Mirror of the backend SM-2 — used to preview the next interval and sort.
+function sm2Next(card, q) {
+  const ease = Number(card.ease) > 0 ? Number(card.ease) : 2.5;
+  const interval = Math.max(0, Number(card.interval) || 0);
+  const reps = Math.max(0, Number(card.reps) || 0);
+  const lapses = Math.max(0, Number(card.lapses) || 0);
+  q = Math.max(1, Math.min(5, Math.round(q)));
+  let ni, nr = reps, ne = ease, nl = lapses;
+  if (q < 3) { nr = 0; ni = 1; nl = lapses + 1; }
+  else {
+    nr = reps + 1;
+    ni = nr === 1 ? 1 : nr === 2 ? 6 : Math.max(1, Math.round(interval * ease));
+    ne = Math.max(1.3, ease + (0.1 - (5 - q) * (0.08 + (5 - q) * 0.02)));
+  }
+  return { interval: ni, ease: ne, reps: nr, lapses: nl };
+}
+
+function fmtDue(dateStr) {
+  if (!dateStr) return "aujourd'hui";
+  const t = new Date().toISOString().slice(0, 10);
+  if (dateStr <= t) return "à réviser";
+  const days = Math.round((new Date(`${dateStr}T12:00:00`) - new Date(`${t}T12:00:00`)) / 86400000);
+  if (days <= 1) return "demain";
+  if (days < 7) return `J+${days}`;
+  return dateStr;
+}
+
 export function openFlashcardReview(chapter) {
   const parsed = parseJSONField(chapter.flashcards);
-  let cards = Array.isArray(parsed?.cards) ? parsed.cards.filter((c) => c?.front) : [];
+  let cards = (Array.isArray(parsed?.cards) ? parsed.cards : []).filter((c) => c?.front);
   if (!cards.length) { api.toast?.("Pas de flashcards sur ce chapitre"); return; }
-  // shuffle
-  cards = cards.map((c) => ({ c, r: Math.random() })).sort((a, b) => a.r - b.r).map((x) => x.c);
 
-  let i = 0, flipped = false, known = 0, again = [];
+  const today = new Date().toISOString().slice(0, 10);
+  const isDue = (c) => {
+    const d = /^\d{4}-\d{2}-\d{2}$/.test(c?.due || "") ? c.due : today;
+    return d <= today;
+  };
+  const dueCount = cards.filter(isDue).length;
+
+  // Smart order: due cards first (shuffled), then scheduled-future cards.
+  const dueCards = cards.filter(isDue).map((c) => ({ c, r: Math.random() })).sort((a, b) => a.r - b.r).map((x) => x.c);
+  const futureCards = cards.filter((c) => !isDue(c)).map((c) => ({ c, r: Math.random() })).sort((a, b) => a.r - b.r).map((x) => x.c);
+  cards = [...dueCards, ...futureCards];
+
+  let i = 0, flipped = false, known = 0, graded = new Map(); // frontKey -> last grade
+  const requeued = new Set(); // cards already re-queued once this session
   const totalCards = cards.length; // stable denominator across re-queue passes
   const timerKey = `lumaris_fc_timer_${chapter.lesson_id}`;
   const savedTimer = Number(localStorage.getItem(timerKey)) || 0;
@@ -624,6 +689,10 @@ export function openFlashcardReview(chapter) {
     title: `Flashcards — ${i + 1}/${cards.length}`,
     body: `
       <div class="ct-flash">
+        <div class="ct-flash-smart">
+          <span class="ct-flash-due" data-due>${dueCount}/${totalCards} à réviser</span>
+          <span class="ct-flash-next" data-nexthidden></span>
+        </div>
         <div class="ct-tcfg">
           <label class="ws-field"><span class="ws-field-label">Temps par carte (s — 0 = désactivé)</span>
             <input type="number" data-timer min="0" max="600" value="${savedTimer}"></label>
@@ -634,13 +703,13 @@ export function openFlashcardReview(chapter) {
             <div class="ct-flash-face ct-flash-back" data-back></div>
           </div>
         </div>
+        <div class="ct-flash-meta" data-meta></div>
         <div class="ct-flash-foot">
           <div class="ct-timer" data-timer-display hidden>--:--</div>
           <div class="ct-flash-progress"><div class="ct-flash-bar" data-bar></div></div>
         </div>
         <div class="ct-flash-actions">
-          <button class="ws-btn ws-btn-ghost" type="button" data-again>↺ À revoir</button>
-          <button class="ws-btn ws-btn-primary" type="button" data-know>Je sais ✓</button>
+          ${GRADES.map((g) => `<button class="ws-btn ws-btn-ghost ct-grade ${g.cls}" type="button" data-g="${g.q}" disabled>${g.label}<em>${g.hint}</em></button>`).join("")}
         </div>
       </div>`,
     foot: `<button class="ws-btn ws-btn-ghost" type="button" data-close>Fermer</button>`,
@@ -654,6 +723,8 @@ export function openFlashcardReview(chapter) {
       const title = m.el.querySelector(".ws-modal-head h2");
       const timerInput = m.el.querySelector("[data-timer]");
       const timerEl = m.el.querySelector("[data-timer-display]");
+      const metaEl = m.el.querySelector("[data-meta]");
+      const gradeBtns = [...m.el.querySelectorAll("[data-g]")];
 
       // Per-card countdown: auto-flips to the answer side at 0, once per card.
       let timerLeft = 0, timerIv = null, autoFlipped = false;
@@ -690,36 +761,81 @@ export function openFlashcardReview(chapter) {
         back.textContent = cards[i].back || "";
         title.textContent = `Flashcards — ${i + 1}/${cards.length}`;
         bar.style.width = `${(i / cards.length) * 100}%`;
+        gradeBtns.forEach((b) => { b.disabled = true; });
+        // Card meta: current schedule (Anki-style EF / interval / due).
+        const s = {
+          ease: Number(cards[i].ease) > 0 ? Number(cards[i].ease) : 2.5,
+          interval: Math.max(0, Number(cards[i].interval) || 0),
+          reps: Math.max(0, Number(cards[i].reps) || 0),
+          lapses: Math.max(0, Number(cards[i].lapses) || 0),
+          due: /^\d{4}-\d{2}-\d{2}$/.test(cards[i].due || "") ? cards[i].due : today,
+        };
+        metaEl.textContent = s.reps || s.lapses
+          ? `EF ${s.ease.toFixed(2)} · ${s.interval}j · ${s.reps} réussites${s.lapses ? ` · ${s.lapses} échec${s.lapses > 1 ? "s" : ""}` : ""} · prochaine : ${fmtDue(s.due)}`
+          : "Nouvelle carte — jamais revue";
         startTimer();
       };
-      const flip = () => { flipped = !flipped; inner.classList.toggle("is-flipped", flipped); };
+      const flip = () => {
+        flipped = !flipped;
+        inner.classList.toggle("is-flipped", flipped);
+        gradeBtns.forEach((b) => { b.disabled = !flipped; });
+      };
       card.addEventListener("click", flip);
       card.addEventListener("keydown", (e) => { if (e.key === " " || e.key === "Enter") { e.preventDefault(); flip(); } });
+      // Keyboard grading: 1-4 once the answer is revealed.
+      m.el.addEventListener("keydown", (e) => {
+        if (!flipped || e.target.closest("input,textarea")) return;
+        const btn = gradeBtns.find((b) => b.dataset.g === String(["1", "3", "4", "5"][Number(e.key) - 1] ?? ""));
+        if (btn && !btn.disabled) { e.preventDefault(); btn.click(); }
+      });
 
-      const next = (knew) => {
-        if (knew) known++; else again.push(cards[i]);
+      const persistGrades = async () => {
+        if (!graded.size) return;
+        try {
+          const res = await api.apiLearning("review-log", {
+            lesson_id: chapter.lesson_id,
+            grades: [...graded.entries()].map(([front, q]) => ({ front, q })),
+          });
+          api.toast?.(`✓ ${res.updated} carte${res.updated > 1 ? "s" : ""} programmée${res.updated > 1 ? "s" : ""} — ${res.due} encore à réviser`);
+        } catch (e) { api.toast?.(`Révisions non enregistrées : ${e.message}`); }
+      };
+
+      const finish = async () => {
+        await persistGrades();
+        m.el.querySelector(".ws-modal-body").innerHTML = `
+          <div class="ct-done">
+            <div class="ct-done-icon">✓</div>
+            <p><strong>${known}/${totalCards}</strong> cartes réussies</p>
+            <p class="ct-done-sub">${graded.size} carte${graded.size > 1 ? "s" : ""} programmée${graded.size > 1 ? "s" : ""} selon la répétition espacée — seules les cartes dues reviendront.</p>
+          </div>`;
+        title.textContent = "Révision terminée";
+        await api.reload?.();
+      };
+
+      const next = (q) => {
+        const cardNow = cards[i];
+        graded.set(cardKey(cardNow), q); // last grade wins per card
+        if (q >= 4) known++;
+        // Re-queue failures once within the session (like before), they keep
+        // their scheduled grade — a later pass may upgrade them.
+        if (q < 3 && !requeued.has(cardKey(cardNow))) {
+          requeued.add(cardKey(cardNow));
+          const rest = cards.slice(i + 1);
+          const already = new Set(rest.map(cardKey));
+          if (!already.has(cardKey(cardNow))) cards.splice(i + 1, 0, cardNow);
+        }
         i++;
         if (i >= cards.length) {
-          // re-queue missed cards once
-          if (again.length && again.length < cards.length) {
-            const missed = again.length;
-            cards = again.splice(0); i = 0;
-            api.toast?.(`${missed} carte${missed > 1 ? "s" : ""} à revoir`);
-          } else {
-            m.el.querySelector(".ws-modal-body").innerHTML = `
-              <div class="ct-done">
-                <div class="ct-done-icon">✓</div>
-                <p><strong>${known}/${totalCards}</strong> cartes maîtrisées</p>
-                ${again.length ? `<p class="ct-done-sub">${again.length} carte(s) marquée(s) pour révision.</p>` : ""}
-              </div>`;
-            title.textContent = "Révision terminée";
-            return;
-          }
+          finish();
+          return;
         }
         show();
       };
-      m.el.querySelector("[data-know]").addEventListener("click", () => next(true));
-      m.el.querySelector("[data-again]").addEventListener("click", () => next(false));
+
+      gradeBtns.forEach((b) => b.addEventListener("click", () => {
+        if (!flipped) return;
+        next(Number(b.dataset.g));
+      }));
       show();
     },
   });
