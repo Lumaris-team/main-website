@@ -1,4 +1,4 @@
-import { defaultSettings, loadSettings, saveSettings, applyThemeSettings, saveRemoteSettings } from "/lib/settings.js";
+import { defaultSettings, loadSettings, saveSettings, applyThemeSettings, saveRemoteSettings, fetchRemoteSettings } from "/lib/settings.js";
 import { loadIcons } from "/lib/icons.js";
 import { authedFetch, refreshSession, getSessionInfo, logout } from "/lib/auth.js";
 import { initColorPickers } from "./color-picker.js";
@@ -14,6 +14,7 @@ const fields = {
   gradientRadialBtn: $("#gradientRadial"),
   color1: $("#color1"),
   color2: $("#color2"),
+  color3: $("#color3"),
   solidColor: $("#solidColor"),
   orient0: $("#orient0"),
   orient45: $("#orient45"),
@@ -27,7 +28,6 @@ const fields = {
   boldNormal: $("#boldNormal"),
   boldBold: $("#boldBold"),
   fontSize: $("#fontSize"),
-  saveButton: $("#saveSettings"),
   resetButton: $("#resetSettings"),
 };
 
@@ -38,6 +38,7 @@ function getCurrentSettings() {
     gradientOrientation: fields.gradientOrientation.value,
     color1: fields.color1.value,
     color2: fields.color2.value,
+    color3: fields.color3.value,
     solidColor: fields.solidColor.value,
     fontFamily: fields.fontFamily.value,
     fontWeight: fields.fontWeight.value === "bold" ? "700" : "500",
@@ -73,8 +74,8 @@ function renderPreview(settings) {
     settings.backgroundType === "solid"
       ? settings.solidColor
       : settings.gradientStyle === "radial"
-      ? `radial-gradient(circle at center, ${settings.color1} 0%, ${settings.color2} 100%)`
-      : `linear-gradient(${settings.gradientOrientation}, ${settings.color1} 0%, ${settings.color2} 100%)`;
+      ? `radial-gradient(circle at center, ${settings.color1} 0%, ${settings.color3} 50%, ${settings.color2} 100%)`
+      : `linear-gradient(${settings.gradientOrientation}, ${settings.color1} 0%, ${settings.color3} 50%, ${settings.color2} 100%)`;
   card.style.color = settings.backgroundType === "solid" ? "#f7fbff" : "#ffffff";
   card.style.fontFamily = settings.fontFamily;
   card.style.fontWeight = settings.fontWeight;
@@ -86,6 +87,7 @@ function populateForm(settings) {
   fields.gradientOrientation.value = settings.gradientOrientation;
   fields.color1.value = settings.color1;
   fields.color2.value = settings.color2;
+  fields.color3.value = settings.color3;
   fields.solidColor.value = settings.solidColor;
   fields.fontFamily.value = settings.fontFamily;
   fields.fontWeight.value = settings.fontWeight === "700" ? "bold" : "normal";
@@ -100,20 +102,37 @@ function populateForm(settings) {
   updateBoldToggleButtons();
 }
 
+// Every change persists instantly — local copy immediately, remote save
+// debounced so dragging a color picker or typing doesn't spam the API.
+let remoteSaveTimer = null;
 function handleFieldChange() {
   const settings = getCurrentSettings();
   applyThemeSettings(settings);
   renderPreview(settings);
   saveSettings(settings);
-  saveRemoteSettings(settings).catch(() => undefined);
+  clearTimeout(remoteSaveTimer);
+  remoteSaveTimer = setTimeout(() => saveRemoteSettings(settings).catch(() => undefined), 600);
 }
 
-function resetToDefaults() {
-  const initial = defaultSettings();
-  populateForm(initial);
-  applyThemeSettings(initial);
-  saveSettings(initial);
-  saveRemoteSettings(initial).catch(() => undefined);
+// Partial reset: fetch the persisted customization row, restore only the
+// chosen group's defaults, then save the merged result — the customization
+// table always receives the complete settings object.
+const RESET_GROUPS = {
+  background: ["backgroundType", "gradientStyle", "gradientOrientation", "color1", "color2", "color3", "solidColor"],
+  typography: ["fontFamily", "fontWeight", "fontSize"],
+};
+
+async function resetSettings(group) {
+  const base = (await fetchRemoteSettings()) || loadSettings();
+  const defaults = defaultSettings();
+  const next = { ...base };
+  const keys = group === "all"
+    ? [...RESET_GROUPS.background, ...RESET_GROUPS.typography]
+    : RESET_GROUPS[group] || [];
+  for (const key of keys) next[key] = defaults[key];
+  populateForm(next);
+  saveSettings(next);
+  await saveRemoteSettings(next);
 }
 
 function updateColorSwatch(input) {
@@ -135,7 +154,7 @@ function updateColorSwatch(input) {
 }
 
 function updateColorSwatches() {
-  [fields.color1, fields.color2, fields.solidColor].forEach((inp) => inp && updateColorSwatch(inp));
+  [fields.color1, fields.color2, fields.color3, fields.solidColor].forEach((inp) => inp && updateColorSwatch(inp));
 }
 
 function updateBgToggleButtons() {
@@ -269,28 +288,34 @@ function wireThemeEvents() {
   fields.fontSize?.addEventListener("input", () => {
     const value = parseFloat(fields.fontSize.value);
     if (!isNaN(value)) fields.fontSize.value = Math.round(value * 2) / 2;
+    handleFieldChange();
   });
 
-  [fields.color1, fields.color2, fields.solidColor].forEach((colorInput) => {
+  [fields.color1, fields.color2, fields.color3, fields.solidColor].forEach((colorInput) => {
     colorInput?.addEventListener("input", () => {
       updateColorSwatch(colorInput);
       handleFieldChange();
     });
   });
 
-  fields.saveButton?.addEventListener("click", async () => {
-    const settings = getCurrentSettings();
-    saveSettings(settings);
-    await saveRemoteSettings(settings);
-    fields.saveButton.classList.add("is-saved");
-    fields.saveButton.textContent = "Enregistré ✓";
-    setTimeout(() => {
-      fields.saveButton.classList.remove("is-saved");
-      fields.saveButton.textContent = "Enregistrer";
-    }, 1600);
+  // Reset menu: pick which customization group goes back to defaults.
+  const resetBtn = fields.resetButton;
+  const resetMenu = $("#resetMenu");
+  const closeResetMenu = () => { if (resetMenu) resetMenu.hidden = true; };
+  resetBtn?.addEventListener("click", (e) => {
+    e.stopPropagation();
+    if (resetMenu) resetMenu.hidden = !resetMenu.hidden;
   });
-
-  fields.resetButton?.addEventListener("click", resetToDefaults);
+  resetMenu?.querySelectorAll("[data-reset]").forEach((item) => {
+    item.addEventListener("click", async () => {
+      closeResetMenu();
+      await resetSettings(item.dataset.reset);
+    });
+  });
+  document.addEventListener("click", (e) => {
+    if (resetMenu && !e.target.closest(".reset-wrap")) closeResetMenu();
+  });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeResetMenu(); });
 }
 
 // ================= Statistics =================

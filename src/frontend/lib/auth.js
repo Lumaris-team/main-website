@@ -37,8 +37,18 @@ function getUsername() {
   return sessionStorage.getItem(STORAGE_KEYS.username) || localStorage.getItem(STORAGE_KEYS.username);
 }
 
-function storeJWT(jwt, oneTimeToken, username, expiresIn = 1800) {
-  const exp = Math.floor(Date.now() / 1000) + expiresIn;
+// Real expiry comes from the JWT exp claim — the lifetime is set by
+// authentication-client-worker (currently 1 hour), not by this client.
+function jwtExpiry(jwt, fallbackSeconds = 3600) {
+  try {
+    const payload = JSON.parse(atob(String(jwt).split(".")[1].replace(/-/g, "+").replace(/_/g, "/")));
+    if (typeof payload.exp === "number" && payload.exp > 0) return payload.exp;
+  } catch { /* fall through to the fallback */ }
+  return Math.floor(Date.now() / 1000) + fallbackSeconds;
+}
+
+function storeJWT(jwt, oneTimeToken, username, expiresIn = 3600) {
+  const exp = jwtExpiry(jwt, expiresIn);
   sessionStorage.setItem(STORAGE_KEYS.jwt, jwt);
   sessionStorage.setItem(STORAGE_KEYS.jwtExp, String(exp));
   sessionStorage.setItem(STORAGE_KEYS.oneTimeToken, oneTimeToken);
@@ -101,7 +111,7 @@ async function doRenewJWT() {
 
     const data = await response.json();
     if (data.valid && data.jwt && data.oneTimeToken) {
-      storeJWT(data.jwt, data.oneTimeToken, username, 1800);
+      storeJWT(data.jwt, data.oneTimeToken, username);
       return data.jwt;
     }
     return null;
@@ -148,7 +158,7 @@ export async function exchangeOneTimeToken(username, oneTimeToken) {
 
     const data = await response.json();
     if (data.valid && data.jwt && data.oneTimeToken) {
-      storeJWT(data.jwt, data.oneTimeToken, username, 1800);
+      storeJWT(data.jwt, data.oneTimeToken, username);
       return data.jwt;
     }
     return null;
@@ -464,7 +474,8 @@ let renewalInterval = null;
 export function startJWTRenewal() {
   if (renewalInterval) clearInterval(renewalInterval);
   
-  // Renew JWT every 9 minutes
+  // Renew JWT every 45 minutes (JWT lifetime is 1 hour — 15 min margin).
+  // On-demand renewal in ensureSessionToken covers any missed tick.
   renewalInterval = setInterval(async () => {
     const jwt = await renewJWT();
     if (!jwt) {
@@ -472,7 +483,7 @@ export function startJWTRenewal() {
       showLoadingOverlay();
       redirectToAuth();
     }
-  }, 540000); // 9 minutes
+  }, 2700000); // 45 minutes
 }
 
 export function stopJWTRenewal() {

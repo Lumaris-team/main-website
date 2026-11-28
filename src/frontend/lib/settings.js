@@ -8,6 +8,7 @@ const DEFAULT_SETTINGS = {
   gradientOrientation: "135deg",
   color1: "#0b3f91",
   color2: "#1c8cff",
+  color3: "#8b5cf6",
   solidColor: "#08100f",
   fontFamily: "Inter, ui-sans-serif, system-ui, sans-serif",
   fontWeight: "500",
@@ -46,6 +47,7 @@ function normalizeSettings(settings = {}) {
       : DEFAULT_SETTINGS.gradientOrientation,
     color1: typeof settings.color1 === "string" ? settings.color1 : DEFAULT_SETTINGS.color1,
     color2: typeof settings.color2 === "string" ? settings.color2 : DEFAULT_SETTINGS.color2,
+    color3: typeof settings.color3 === "string" ? settings.color3 : DEFAULT_SETTINGS.color3,
     solidColor: typeof settings.solidColor === "string" ? settings.solidColor : DEFAULT_SETTINGS.solidColor,
     fontFamily: typeof settings.fontFamily === "string" ? settings.fontFamily : DEFAULT_SETTINGS.fontFamily,
     fontWeight: ["400", "500", "600", "700", "800"].includes(settings.fontWeight)
@@ -94,8 +96,8 @@ export function applyThemeSettings(settings) {
     normalized.backgroundType === "solid"
       ? normalized.solidColor
       : normalized.gradientStyle === "radial"
-      ? `radial-gradient(circle at center, ${normalized.color1} 0%, ${normalized.color2} 100%)`
-      : `linear-gradient(${normalized.gradientOrientation}, ${normalized.color1} 0%, ${normalized.color2} 100%)`;
+      ? `radial-gradient(circle at center, ${normalized.color1} 0%, ${normalized.color3} 50%, ${normalized.color2} 100%)`
+      : `linear-gradient(${normalized.gradientOrientation}, ${normalized.color1} 0%, ${normalized.color3} 50%, ${normalized.color2} 100%)`;
 
   root.style.setProperty("--theme-background", background);
   root.style.setProperty("--theme-font-family", normalized.fontFamily);
@@ -137,6 +139,7 @@ export async function fetchRemoteSettings() {
       gradientOrientation: data.background_gradient_orientation || "135deg",
       color1: data.background_color_1 || "#0b3f91",
       color2: data.background_color_2 || "#1c8cff",
+      color3: data.background_color_3 || "#8b5cf6",
       solidColor: data.background_solid_color || "#08100f",
       fontFamily: data.background_font_family || "Inter, ui-sans-serif, system-ui, sans-serif",
       fontWeight: data.background_font_weight || "500",
@@ -164,6 +167,7 @@ export async function saveRemoteSettings(settings) {
       background_gradient_orientation: normalized.gradientOrientation,
       background_color_1: normalized.color1,
       background_color_2: normalized.color2,
+      background_color_3: normalized.color3,
       background_solid_color: normalized.solidColor,
       background_font_family: normalized.fontFamily,
       background_font_weight: normalized.fontWeight,

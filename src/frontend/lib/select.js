@@ -26,7 +26,7 @@ const CSS = `
 .lum-select-caret { flex: none; color: var(--muted, rgba(255,255,255,.55)); transition: transform .18s ease; }
 .lum-select.is-open .lum-select-caret { transform: rotate(180deg); }
 .lum-select-options {
-  position: absolute; top: calc(100% + 5px); left: 0; right: 0; z-index: 120;
+  position: absolute; top: calc(100% + 5px); left: 0; right: 0; z-index: 4000;
   display: none; flex-direction: column; gap: 2px; padding: 5px;
   border-radius: 10px; max-height: 230px; overflow-y: auto;
   border: 1px solid var(--line, rgba(255,255,255,.14));

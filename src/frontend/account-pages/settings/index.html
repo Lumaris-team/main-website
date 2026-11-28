@@ -111,6 +111,11 @@
                   <div class="color-swatch" aria-hidden="true"></div>
                   <input id="color2" class="field-input" type="color" value="#1c8cff">
                 </label>
+                <label class="color-field">
+                  <span class="color-name">Couleur 3</span>
+                  <div class="color-swatch" aria-hidden="true"></div>
+                  <input id="color3" class="field-input" type="color" value="#8b5cf6">
+                </label>
               </div>
             </div>
 
@@ -157,8 +162,14 @@
           </div>
 
           <div class="settings-actions">
-            <button id="saveSettings" class="button primary">Enregistrer</button>
-            <button id="resetSettings" class="button secondary">Réinitialiser</button>
+            <div class="reset-wrap">
+              <button id="resetSettings" class="button secondary" type="button">Réinitialiser</button>
+              <div class="reset-menu" id="resetMenu" hidden>
+                <button type="button" data-reset="all">Tout réinitialiser</button>
+                <button type="button" data-reset="background">Arrière-plan uniquement</button>
+                <button type="button" data-reset="typography">Typographie uniquement</button>
+              </div>
+            </div>
           </div>
 
           <div class="settings-preview" id="settingsPreview">

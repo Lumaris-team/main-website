@@ -33,7 +33,12 @@ window.addEventListener('site-navbar:logout', () => {
 async function init() {
   // Store JWT from URL params if present
   if (jwt && oneTimeToken && username) {
-    const exp = String(Math.floor(Date.now() / 1000) + 1800);
+    // Expiry comes from the JWT exp claim (1h lifetime set by the auth worker).
+    let exp = Math.floor(Date.now() / 1000) + 3600;
+    try {
+      const payload = JSON.parse(atob(String(jwt).split(".")[1].replace(/-/g, "+").replace(/_/g, "/")));
+      if (typeof payload.exp === "number" && payload.exp > 0) exp = payload.exp;
+    } catch { /* keep the fallback */ }
     for (const store of [sessionStorage, localStorage]) {
       store.setItem('jwt_token', jwt);
       store.setItem('one_time_token', oneTimeToken);

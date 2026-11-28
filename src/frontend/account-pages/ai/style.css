@@ -187,7 +187,7 @@ a {
   background: rgba(8, 9, 18, 0.95);
   border: 1px solid var(--line);
   border-radius: 8px;
-  z-index: 1000;
+  z-index: 4000;
   display: none;
   backdrop-filter: blur(10px);
   scrollbar-width: thin;
@@ -217,7 +217,7 @@ a {
 }
 
 .custom-select.open {
-  z-index: 1000;
+  z-index: 4000;
 }
 
 .custom-option {
