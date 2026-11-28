@@ -1,4 +1,6 @@
 import { authedFetch } from "/lib/auth.js";
+import { attachColorPicker } from "./color-picker.js";
+import { lumarisAlert as uiAlert, lumarisConfirm as uiConfirm } from "/lib/dialog.js";
 
 // Workspace settings admin — CRUD for the timetable lookup tables
 // (labels, flags, types, methods, priorities, attention levels, folders).
@@ -101,12 +103,17 @@ function renderPanel() {
   const body = rootEl.querySelector("#wsadminBody");
   const items = rows();
 
-  const formFields = ent.fields.map((f) => `
-    <label class="wsadmin-field">
+  const formFields = ent.fields.map((f) => {
+    const inputType = f.type === "number" ? "number" : f.type === "color" ? "color" : "text";
+    const control = f.type === "color"
+      ? `<span class="wsadmin-swatch" data-swatch></span><input type="color" data-f="${f.key}">`
+      : `<input type="${inputType}" data-f="${f.key}" placeholder="${esc(f.placeholder || "")}" step="any">`;
+    return `
+    <label class="wsadmin-field${f.type === "color" ? " wsadmin-field-color" : ""}">
       <span>${esc(f.label)}${f.required ? " *" : ""}</span>
-      <input type="${f.type === "number" ? "number" : f.type === "color" ? "color" : "text"}"
-        data-f="${f.key}" placeholder="${esc(f.placeholder || "")}" step="any">
-    </label>`).join("");
+      ${control}
+    </label>`;
+  }).join("");
 
   const list = items.length ? items.map((r) => {
     const id = r[idCol()];
@@ -137,6 +144,13 @@ function renderPanel() {
     <div class="wsadmin-list">${list}</div>`;
 
   body.querySelector("#wsadminForm").addEventListener("submit", onSubmit);
+  body.querySelectorAll('input[type="color"]').forEach((input) => {
+    const swatch = input.previousElementSibling;
+    attachColorPicker(input, swatch?.hasAttribute?.("data-swatch") ? swatch : null);
+    const sync = () => { if (swatch?.hasAttribute?.("data-swatch")) swatch.style.background = input.value || "transparent"; };
+    input.addEventListener("input", sync);
+    sync();
+  });
   body.querySelector("#wsadminCancel")?.addEventListener("click", () => { state.editingId = null; renderPanel(); });
   body.querySelectorAll(".wsadmin-row").forEach((row) => {
     const id = Number(row.dataset.id);
@@ -153,7 +167,10 @@ function startEdit(id) {
   const form = rootEl.querySelector("#wsadminForm");
   entity().fields.forEach((f) => {
     const input = form.querySelector(`[data-f="${f.key}"]`);
-    if (input && row[f.key] !== null && row[f.key] !== undefined) input.value = row[f.key];
+    if (input && row[f.key] !== null && row[f.key] !== undefined) {
+      input.value = row[f.key];
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+    }
   });
 }
 
@@ -167,7 +184,7 @@ async function onSubmit(e) {
     if (f.type === "number") v = v === "" ? null : Number(v);
     else if (f.type === "color") v = v || null;
     else v = v === "" ? null : v;
-    if (f.required && (v === null || v === "")) { alert(`${f.label} est requis`); return; }
+    if (f.required && (v === null || v === "")) { await uiAlert(`${f.label} est requis`); return; }
     fields[f.key] = v;
   }
   try {
@@ -179,19 +196,19 @@ async function onSubmit(e) {
     state.editingId = null;
     await load();
   } catch (err) {
-    alert(err.message);
+    await uiAlert(err.message);
   }
 }
 
 async function onDelete(id) {
   const ent = entity();
   const row = rows().find((r) => Number(r[idCol()]) === id);
-  if (!confirm(`Supprimer « ${row?.name || id} » ?`)) return;
+  if (!(await uiConfirm(`Supprimer « ${row?.name || id} » ?`))) return;
   try {
     await api("lookup", { entity: state.entity, op: "delete", id });
     if (state.editingId === id) state.editingId = null;
     await load();
   } catch (err) {
-    alert(err.message);
+    await uiAlert(err.message);
   }
 }

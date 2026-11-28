@@ -2,6 +2,7 @@
 
 import { ensureSessionToken } from "/lib/auth.js";
 import { loadIcons } from '/lib/icons.js';
+import { lumarisAlert } from "/lib/dialog.js";
 
 let websites = [];
 let editingWebsite = null;
@@ -331,7 +332,7 @@ document.getElementById('confirm-delete-btn').addEventListener('click', async ()
       closeDeleteModal();
     } catch (error) {
       console.error('Error deleting website:', error);
-      alert(`Échec de la suppression du site : ${error.message}`);
+      lumarisAlert(`Échec de la suppression du site : ${error.message}`);
     } finally {
       btn.disabled = false;
       btn.style.opacity = '1';
@@ -351,7 +352,7 @@ websiteForm.addEventListener('submit', async (e) => {
   console.log('Form submitted:', { name, url, editingWebsite });
 
   if (!name || !url) {
-    alert('Veuillez remplir tous les champs');
+    lumarisAlert('Veuillez remplir tous les champs');
     return;
   }
 
@@ -379,7 +380,7 @@ websiteForm.addEventListener('submit', async (e) => {
     closeWebsiteModal();
   } catch (error) {
     console.error('Error saving website:', error);
-    alert(`Échec de l'enregistrement du site : ${error.message}`);
+    lumarisAlert(`Échec de l'enregistrement du site : ${error.message}`);
   } finally {
     submitBtn.disabled = false;
     submitBtn.style.opacity = '1';

@@ -3,6 +3,7 @@
 // Everything runs in the browser — nothing is uploaded raw.
 
 import { lumarisDateField } from "./date-picker.js";
+import { lumarisAlert } from "/lib/dialog.js";
 
 const PDFJS_URL = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js";
 const TESSERACT_URL = "https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js";
@@ -109,7 +110,7 @@ function quadFromNorm(corners, w, h) {
 
 // ================= Modal shell =================
 
-export function openImportModal({ onImport, initialTab = "pdf" }) {
+export function openImportModal({ onImport, initialTab = "text" }) {
   const root = document.createElement("div");
   root.className = "ws-modal-root il-root";
   root.innerHTML = `
@@ -120,14 +121,19 @@ export function openImportModal({ onImport, initialTab = "pdf" }) {
         <button class="ws-icon-btn" type="button" data-close>✕</button>
       </div>
       <div class="il-tabs">
-        <button class="ws-seg" type="button" data-tab="pdf" data-active="true">PDF</button>
+        <button class="ws-seg" type="button" data-tab="text" data-active="true">Text</button>
+        <button class="ws-seg" type="button" data-tab="pdf">PDF</button>
         <button class="ws-seg" type="button" data-tab="voice">Voice</button>
-        <button class="ws-seg" type="button" data-tab="text">Text</button>
         <button class="ws-seg" type="button" data-tab="link">Link</button>
         <button class="ws-seg" type="button" data-tab="files">Files</button>
         <button class="ws-seg" type="button" data-tab="camera">Camera</button>
       </div>
       <div class="ws-modal-body il-body" id="ilBody"></div>
+      <div class="il-instructions">
+        <label class="il-instr-label" for="ilInstructions">Consignes pour l'IA <span class="il-instr-opt">(optionnel)</span></label>
+        <textarea id="ilInstructions" rows="2" placeholder="Ex. « mets en forme de fiche », « corrige l'anglais », « garde les titres et la mise en page », « traduis en français »…"></textarea>
+        <span class="il-hint">L'IA corrige automatiquement les erreurs de reconnaissance (OCR, voix, frappe) et arrange le texte en phrases — tout en conservant exactement le savoir (poèmes, verbes irréguliers, termes techniques…).</span>
+      </div>
       <div class="ws-modal-foot">
         <div class="il-target">
           <span>Enregistrer dans :</span>
@@ -136,6 +142,7 @@ export function openImportModal({ onImport, initialTab = "pdf" }) {
             <option value="raw_recorded_lessons">Leçons enregistrées</option>
           </select>
           <label class="il-session">Date de séance ${lumarisDateField({ id: "ilSession", mode: "date" })}</label>
+          <label class="il-flashgen" title="L'IA crée automatiquement des flashcards à partir du texte importé"><input type="checkbox" id="ilFlashgen" checked> Flashcards</label>
         </div>
         <button class="ws-btn ws-btn-ghost" type="button" data-close>Annuler</button>
         <button class="ws-btn ws-btn-primary" type="button" id="ilImport" disabled>Importer le texte</button>
@@ -145,13 +152,16 @@ export function openImportModal({ onImport, initialTab = "pdf" }) {
 
   const body = root.querySelector("#ilBody");
   const importBtn = root.querySelector("#ilImport");
+  const instrEl = root.querySelector("#ilInstructions");
   let currentText = "";
   let cleanup = null;
+  let activeTab = initialTab;
 
-  const close = () => { cleanup?.(); cleanup = null; root.remove(); };
+  const close = () => { cleanup?.(); cleanup = null; document.removeEventListener("keydown", escH); root.remove(); };
   root.querySelectorAll("[data-close]").forEach((b) => b.addEventListener("click", close));
   root.querySelector(".ws-modal-backdrop").addEventListener("click", close);
-  document.addEventListener("keydown", function escH(e) { if (e.key === "Escape") { close(); document.removeEventListener("keydown", escH); } });
+  function escH(e) { if (e.key === "Escape") close(); }
+  document.addEventListener("keydown", escH);
 
   function setText(t) {
     currentText = t;
@@ -165,12 +175,15 @@ export function openImportModal({ onImport, initialTab = "pdf" }) {
     try {
       await onImport(root.querySelector("#ilTarget").value, currentText, {
         session_date: root.querySelector("#ilSession")?.value || "",
+        gen_flashcards: !!root.querySelector("#ilFlashgen")?.checked,
+        instructions: instrEl?.value.trim() || "",
+        source: activeTab,
       });
       close();
     } catch (e) {
       importBtn.disabled = false;
       importBtn.textContent = "Importer le texte";
-      alert(e.message || "Échec de l'import");
+      lumarisAlert(e.message || "Échec de l'import");
     }
   });
 
@@ -180,6 +193,7 @@ export function openImportModal({ onImport, initialTab = "pdf" }) {
   };
   function showTab(name) {
     cleanup?.(); cleanup = null;
+    activeTab = name;
     body.innerHTML = "";
     setText("");
     root.querySelectorAll(".il-tabs .ws-seg").forEach((b) => b.dataset.active = b.dataset.tab === name ? "true" : "false");
@@ -256,6 +270,7 @@ function renderVoice(body, setText) {
   const status = body.querySelector("[data-status]");
   const preview = body.querySelector("[data-preview]");
   let rec = null, listening = false, finalText = "";
+  preview.addEventListener("input", () => { finalText = preview.value; setText(preview.value); });
 
   btn.addEventListener("click", () => {
     if (listening) { rec?.stop(); return; }
@@ -279,7 +294,6 @@ function renderVoice(body, setText) {
     listening = true;
     btn.innerHTML = "■ Arrêter";
     status.textContent = "Écoute… parlez maintenant.";
-    preview.addEventListener("input", () => { finalText = preview.value; setText(preview.value); });
   });
 
   return () => { listening = false; try { rec?.stop(); } catch {} };
@@ -290,10 +304,22 @@ function renderText(body, setText) {
   const { status, preview } = previewArea(body);
   body.insertAdjacentHTML("afterbegin", `
     <div class="il-source">
+      <button class="ws-btn ws-btn-ghost" type="button" id="ilPaste">📋 Coller depuis le presse-papiers</button>
       <span class="il-hint">Tapez ou collez directement le contenu de la leçon — il reste sur votre appareil jusqu'à l'import.</span>
     </div>`);
   preview.placeholder = "Écrivez ou collez le texte de la leçon ici…";
   preview.addEventListener("input", () => setText(preview.value));
+  body.querySelector("#ilPaste").addEventListener("click", async () => {
+    try {
+      const t = await navigator.clipboard.readText();
+      if (!t.trim()) { status.textContent = "Presse-papiers vide."; return; }
+      preview.value = preview.value.trim() ? `${preview.value.replace(/\s+$/, "")}\n\n${t}` : t;
+      preview.dispatchEvent(new Event("input"));
+      status.textContent = "Texte collé — modifiez puis importez.";
+    } catch {
+      status.textContent = "Accès au presse-papiers refusé — collez directement dans la zone (Ctrl+V / Cmd+V).";
+    }
+  });
   status.textContent = "Prêt.";
 }
 
@@ -504,6 +530,8 @@ function renderCamera(body, setText) {
     applying = false;
   }
 
+  preview.addEventListener("input", () => setText(preview.value));
+
   async function runOCR() {
     status.textContent = "Chargement du moteur OCR (le premier lancement télécharge ~10 Mo, puis mis en cache)…";
     try {
@@ -512,7 +540,6 @@ function renderCamera(body, setText) {
       const { data } = await T.recognize(shot);
       preview.value = data.text.trim();
       setText(preview.value);
-      preview.addEventListener("input", () => setText(preview.value));
       status.textContent = `OCR terminé — confiance ${Math.round((data.confidence || 0))} %. Modifiez puis importez.`;
     } catch (e) {
       status.textContent = `Erreur OCR : ${e.message}`;

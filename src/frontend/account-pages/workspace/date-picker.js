@@ -98,7 +98,11 @@ function escapeHtml(s) {
 // ---------------------------------------------------------------------------
 
 let pop = null;          // popover element
-let activeBtn = null;    // button that opened it
+let activeBtn = null;    // element the picker is anchored to
+let activeWrap = null;   // .lp-field wrapper owning the target input
+let activeInput = null;  // hidden input receiving the picked value
+let commitHook = null;   // optional callback mode (day filter, etc.)
+let tempWrap = null;     // detached wrapper created by selectDate()
 let viewY = 0, viewM = 0; // displayed month
 let selDate = null;      // Date currently selected in the grid
 let selTime = { h: 9, m: 0 };
@@ -129,20 +133,13 @@ function ensurePopover() {
 }
 
 function currentMode() {
-  return activeBtn?.closest("[data-lp-wrap]")?.dataset.lpMode || "date";
+  return activeWrap?.dataset.lpMode || "date";
 }
 
-function pickerInput() {
-  return activeBtn?.closest("[data-lp-wrap]")?.querySelector("input") || null;
-}
-
-function openPicker(btn) {
-  const input = btn.closest("[data-lp-wrap]")?.querySelector("input");
-  if (!input) return;
-  activeBtn = btn;
-  const mode = btn.closest("[data-lp-wrap]")?.dataset.lpMode || "date";
-
-  const parsed = parseValue(input.value, mode);
+function beginPicker() {
+  const mode = currentMode();
+  const input = activeInput;
+  const parsed = parseValue(input?.value, mode);
   const base = parsed || new Date();
   selDate = parsed ? new Date(base) : null;
   selTime = { h: base.getHours(), m: base.getMinutes() };
@@ -150,13 +147,54 @@ function openPicker(btn) {
   viewM = base.getMonth();
 
   render();
-  position(btn);
+  position(activeBtn);
   pop.hidden = false;
+}
+
+function openPicker(btn) {
+  const wrap = btn.closest("[data-lp-wrap]");
+  const input = wrap?.querySelector("input");
+  if (!input) return;
+  activeBtn = btn;
+  activeWrap = wrap;
+  activeInput = input;
+  commitHook = null;
+  beginPicker();
+}
+
+/**
+ * Standalone day picker — no form field involved. `onPick(value)` receives
+ * "YYYY-MM-DD" (or "" when cleared). `anchor` is any element to position from.
+ */
+export function selectDate({ anchor, value = "", mode = "date", onPick } = {}) {
+  ensurePopover();
+  if (pop && !pop.hidden && activeBtn === anchor) { closePicker(); return; }
+  tempWrap?.remove();
+  tempWrap = document.createElement("span");
+  tempWrap.className = "lp-field";
+  tempWrap.dataset.lpMode = mode;
+  tempWrap.style.display = "none";
+  const input = document.createElement("input");
+  input.type = "hidden";
+  input.value = value;
+  tempWrap.appendChild(input);
+  document.body.appendChild(tempWrap);
+
+  activeBtn = anchor;
+  activeWrap = tempWrap;
+  activeInput = input;
+  commitHook = onPick || null;
+  beginPicker();
 }
 
 function closePicker() {
   if (pop) pop.hidden = true;
   activeBtn = null;
+  activeWrap = null;
+  activeInput = null;
+  commitHook = null;
+  tempWrap?.remove();
+  tempWrap = null;
 }
 
 function position(btn) {
@@ -239,7 +277,7 @@ function render() {
 }
 
 function commit() {
-  const input = pickerInput();
+  const input = activeInput;
   if (!input) { closePicker(); return; }
   const mode = currentMode();
   if (!selDate) { input.value = ""; }
@@ -248,10 +286,15 @@ function commit() {
   } else {
     input.value = dayKey(selDate);
   }
-  const wrap = activeBtn.closest("[data-lp-wrap]");
-  const label = activeBtn.querySelector(".lp-btn-text");
+  if (commitHook) {
+    const hook = commitHook;
+    closePicker();
+    hook(input.value);
+    return;
+  }
+  const label = activeBtn?.querySelector(".lp-btn-text");
   if (label) label.textContent = formatLabel(input.value, mode);
-  activeBtn.classList.toggle("is-empty", !input.value);
+  activeBtn?.classList.toggle("is-empty", !input.value);
   input.dispatchEvent(new Event("input", { bubbles: true }));
   input.dispatchEvent(new Event("change", { bubbles: true }));
   closePicker();

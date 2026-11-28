@@ -1,4 +1,5 @@
 import { authedFetch } from "/lib/auth.js";
+import { lumarisConfirm } from "/lib/dialog.js";
 
 const AI_BASE = "/api/ai";
 
@@ -915,7 +916,7 @@ async function loadConversation(conversationId, offset = 0, limit = 100) {
 }
 
 async function deleteConversation(conversationId) {
-  if (!confirm("Êtes-vous sûr de vouloir supprimer cette conversation ?")) {
+  if (!(await lumarisConfirm("Êtes-vous sûr de vouloir supprimer cette conversation ?"))) {
     return;
   }
 

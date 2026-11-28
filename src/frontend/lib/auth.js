@@ -160,9 +160,14 @@ export async function exchangeOneTimeToken(username, oneTimeToken) {
 
 // --- Authenticated fetch ----------------------------------------------------
 
+// Pages may set window.__lumarisKeepLoading to own the overlay lifecycle
+// (e.g. workspace keeps it until its first data load settles).
+let authedFetchPending = 0;
+
 export async function authedFetch(input, init = {}) {
   const shouldShowLoading = sessionStorage.getItem('show_loading') === '1';
   if (!shouldShowLoading) {
+    authedFetchPending++;
     showLoadingOverlay();
   }
   
@@ -201,7 +206,10 @@ export async function authedFetch(input, init = {}) {
     return res;
   } finally {
     if (!shouldShowLoading) {
-      hideLoadingOverlay();
+      // Keep the overlay up until the LAST in-flight authedFetch settles —
+      // parallel calls share a single loading screen instead of flashing.
+      authedFetchPending = Math.max(0, authedFetchPending - 1);
+      if (authedFetchPending === 0) hideLoadingOverlay();
     }
   }
 }
@@ -349,8 +357,9 @@ export async function guardPage() {
 
     return true;
   } finally {
-    // Don't hide loading if it was triggered by login redirect
-    if (!shouldShowLoading) {
+    // Don't hide loading if it was triggered by login redirect, or if the
+    // page owns the overlay and will release it after its data load.
+    if (!shouldShowLoading && !window.__lumarisKeepLoading) {
       hideLoadingOverlay();
     }
   }

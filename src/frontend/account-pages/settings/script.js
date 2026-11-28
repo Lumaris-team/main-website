@@ -1,6 +1,7 @@
 import { defaultSettings, loadSettings, saveSettings, applyThemeSettings, saveRemoteSettings } from "/lib/settings.js";
 import { loadIcons } from "/lib/icons.js";
 import { authedFetch, refreshSession, getSessionInfo, logout } from "/lib/auth.js";
+import { initColorPickers } from "./color-picker.js";
 
 const $ = (sel) => document.querySelector(sel);
 
@@ -89,6 +90,7 @@ function populateForm(settings) {
   fields.fontFamily.value = settings.fontFamily;
   fields.fontWeight.value = settings.fontWeight === "700" ? "bold" : "normal";
   fields.fontSize.value = settings.fontSize;
+  syncFontSelect();
   syncSolidFieldVisibility();
   renderPreview(settings);
   updateColorSwatches();
@@ -169,6 +171,66 @@ function updateOrientationButtons() {
   });
 }
 
+// Custom Lumaris select for the font family — the hidden #fontFamily input
+// keeps feeding getCurrentSettings/handleFieldChange unchanged.
+function syncFontSelect() {
+  const root = $("#fontFamilySelect");
+  if (!root) return;
+  const value = fields.fontFamily?.value || "";
+  const opt = root.querySelector(`.set-select-option[data-value="${CSS.escape(value)}"]`);
+  const label = opt?.dataset.label || value.split(",")[0].replace(/['"]/g, "").trim() || "Police";
+  const trigger = root.querySelector(".set-select-value");
+  if (trigger) {
+    trigger.textContent = label;
+    trigger.style.fontFamily = value || "";
+  }
+  root.querySelectorAll(".set-select-option").forEach((o) =>
+    o.classList.toggle("is-selected", o === opt)
+  );
+}
+
+function wireFontSelect() {
+  const root = $("#fontFamilySelect");
+  if (!root || !fields.fontFamily) return;
+  const trigger = root.querySelector(".set-select-trigger");
+  const options = [...root.querySelectorAll(".set-select-option")];
+
+  const close = () => {
+    root.classList.remove("is-open");
+    trigger?.setAttribute("aria-expanded", "false");
+  };
+  const open = () => {
+    document.querySelectorAll(".set-select.is-open").forEach((el) => {
+      if (el !== root) {
+        el.classList.remove("is-open");
+        el.querySelector(".set-select-trigger")?.setAttribute("aria-expanded", "false");
+      }
+    });
+    root.classList.add("is-open");
+    trigger?.setAttribute("aria-expanded", "true");
+  };
+
+  trigger?.addEventListener("click", (e) => {
+    e.stopPropagation();
+    root.classList.contains("is-open") ? close() : open();
+  });
+  options.forEach((opt) => {
+    opt.addEventListener("click", (e) => {
+      e.stopPropagation();
+      fields.fontFamily.value = opt.dataset.value;
+      syncFontSelect();
+      fields.fontFamily.dispatchEvent(new Event("change", { bubbles: true }));
+      close();
+    });
+  });
+  document.addEventListener("click", (e) => {
+    if (!root.contains(e.target)) close();
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") close();
+  });
+}
+
 function wireThemeEvents() {
   [fields.backgroundType, fields.gradientStyle, fields.gradientOrientation, fields.fontFamily, fields.fontWeight, fields.fontSize]
     .forEach((input) => input?.addEventListener("change", handleFieldChange));
@@ -224,7 +286,7 @@ function wireThemeEvents() {
     fields.saveButton.textContent = "Enregistré ✓";
     setTimeout(() => {
       fields.saveButton.classList.remove("is-saved");
-      fields.saveButton.textContent = "Save";
+      fields.saveButton.textContent = "Enregistrer";
     }, 1600);
   });
 
@@ -301,17 +363,29 @@ function renderStats(stats) {
   if (aiUsageEl) aiUsageEl.textContent = `${aiUsed} / ${aiLimit} neurones`;
   ringFraction($("#ringAi"), aiUsed / aiLimit);
 
-  // D1 databases (tasks & co)
+  // D1 databases (tasks & co) — per-table breakdown with individual %
   const d1Bytes = d1.totalBytes || 0;
-  const d1CapGB = d1.capacityGB || 5;
-  const d1Pct = d1Bytes > 0 ? (d1Bytes / (d1CapGB * 1024 * 1024 * 1024)) * 100 : 0;
+  const d1CapGB = d1.capacityGB || 10;
+  const d1CapBytes = d1CapGB * 1024 * 1024 * 1024;
+  const d1Pct = d1Bytes > 0 ? (d1Bytes / d1CapBytes) * 100 : 0;
   fitPct($("#d1Pct"), d1Pct < 1 && d1Pct > 0 ? d1Pct.toFixed(1) : Math.round(d1Pct));
   const d1CapEl = $("#d1Cap");
   if (d1CapEl) d1CapEl.textContent = `sur ${d1CapGB} Go`;
-  const d1Item = d1.items?.[0] || { bytes: 0, label: "Tasks" };
   const d1LegendEl = $("#d1Legend");
-  if (d1LegendEl) d1LegendEl.textContent = `${d1Item.label} — ${formatBytes(d1Item.bytes)}`;
-  ringFraction($("#ringD1"), d1Bytes / (d1CapGB * 1024 * 1024 * 1024));
+  if (d1LegendEl) {
+    const tables = (d1.tables || []).filter((t) => t.bytes > 0).slice(0, 6);
+    if (tables.length) {
+      d1LegendEl.innerHTML = tables.map((t) => {
+        const tpct = d1CapBytes > 0 ? (t.bytes / d1CapBytes) * 100 : 0;
+        const tpctTxt = tpct > 0 && tpct < 0.1 ? "<0.1" : tpct < 1 && tpct > 0 ? tpct.toFixed(1) : Math.round(tpct);
+        return `<span class="d1-table-row"><span class="d1-table-name">${t.label}</span><span class="d1-table-pct">${tpctTxt}%</span><span class="d1-table-size">${formatBytes(t.bytes)}</span></span>`;
+      }).join("");
+    } else {
+      const d1Item = d1.items?.[0] || { bytes: 0, label: "Tâches" };
+      d1LegendEl.textContent = `${d1Item.label} — ${formatBytes(d1Item.bytes)}`;
+    }
+  }
+  ringFraction($("#ringD1"), d1Bytes / d1CapBytes);
 }
 
 // ================= Session =================
@@ -382,6 +456,8 @@ async function initSettingsPage() {
   const settings = loadSettings();
   populateForm(settings);
   wireThemeEvents();
+  wireFontSelect();
+  initColorPickers();
   wireSession();
   wireSidebar();
   loadIcons("[data-icon]").catch(() => undefined);

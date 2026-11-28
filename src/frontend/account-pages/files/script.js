@@ -2,6 +2,7 @@
 
 import { authedFetch } from "/lib/auth.js";
 import { loadIcons } from "/lib/icons.js";
+import { lumarisAlert } from "/lib/dialog.js";
 
 let currentPath = "";
 let files = [];
@@ -446,7 +447,7 @@ async function navigateTo(path) {
     
   } catch (error) {
     console.error('Error navigating to path:', error);
-    alert(`Échec du chargement du dossier : ${error.message}`);
+    lumarisAlert(`Échec du chargement du dossier : ${error.message}`);
   }
 }
 
@@ -492,7 +493,7 @@ async function openFile(file) {
   // 1. Download the file content
   // 2. Create a Blob URL
   // 3. Open it in a new tab or use a file preview library
-  alert(`Ouverture du fichier : ${file.name}\n\nL'aperçu des fichiers sera implémenté ici.\n\nLe fichier s'ouvrirait avec l'aperçu par défaut de l'appareil pour les fichiers ${file.extension}.`);
+  lumarisAlert(`Ouverture du fichier : ${file.name}\n\nL'aperçu des fichiers sera implémenté ici.\n\nLe fichier s'ouvrirait avec l'aperçu par défaut de l'appareil pour les fichiers ${file.extension}.`);
 }
 
 // ===================== MODAL FUNCTIONS =====================
@@ -579,7 +580,7 @@ editForm.addEventListener('submit', async (e) => {
 
   const newName = editNameInput.value.trim();
   if (!newName) {
-    alert('Veuillez saisir un nouveau nom');
+    lumarisAlert('Veuillez saisir un nouveau nom');
     return;
   }
 
@@ -594,7 +595,7 @@ editForm.addEventListener('submit', async (e) => {
     await navigateTo(currentPath);
   } catch (error) {
     console.error('Error renaming item:', error);
-    alert(`Échec du renommage : ${error.message}`);
+    lumarisAlert(`Échec du renommage : ${error.message}`);
   } finally {
     submitBtn.disabled = false;
     submitBtn.style.opacity = '1';
@@ -607,7 +608,7 @@ folderForm.addEventListener('submit', async (e) => {
   
   const name = folderNameInput.value.trim();
   if (!name) {
-    alert('Veuillez saisir un nom de dossier');
+    lumarisAlert('Veuillez saisir un nom de dossier');
     return;
   }
 
@@ -623,7 +624,7 @@ folderForm.addEventListener('submit', async (e) => {
     await navigateTo(currentPath);
   } catch (error) {
     console.error('Error creating folder:', error);
-    alert(`Échec de la création du dossier : ${error.message}`);
+    lumarisAlert(`Échec de la création du dossier : ${error.message}`);
   } finally {
     submitBtn.disabled = false;
     submitBtn.style.opacity = '1';
@@ -644,7 +645,7 @@ document.getElementById('confirm-delete-btn').addEventListener('click', async ()
       closeDeleteModal();
     } catch (error) {
       console.error('Error deleting item:', error);
-      alert(`Échec de la suppression : ${error.message}`);
+      lumarisAlert(`Échec de la suppression : ${error.message}`);
     } finally {
       btn.disabled = false;
       btn.style.opacity = '1';
@@ -658,7 +659,7 @@ uploadForm.addEventListener('submit', async (e) => {
   
   const file = fileInput.files[0];
   if (!file) {
-    alert('Veuillez sélectionner un fichier');
+    lumarisAlert('Veuillez sélectionner un fichier');
     return;
   }
 

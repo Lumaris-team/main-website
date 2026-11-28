@@ -22,7 +22,7 @@ function todayDayKey() {
 }
 
 // ---------- API ----------
-async function apiEd(subpath, { method = "GET", body, headers = {} } = {}) {
+export async function apiEd(subpath, { method = "GET", body, headers = {} } = {}) {
   const res = await authedFetch(`/api/ed/${subpath}`, {
     method,
     headers: { ...(body ? { "Content-Type": "application/json" } : {}), ...headers },

@@ -1,6 +1,8 @@
 // Activity runner — renders the 25 AI activity components and collects answers.
 // Correctness is judged by the backend AI feedback endpoint.
 
+import { lumarisAlert } from "/lib/dialog.js";
+
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
 // ---------- small builders ----------
@@ -257,25 +259,31 @@ const RENDERERS = {
     const node = el(`<div class="ar-audio"><p class="ar-hint-sm">${esc(a.payload?.prompt || "Enregistrez votre réponse.")}</p>
       <div class="ar-audio-btns"><button class="ws-btn ws-btn-primary" type="button" data-rec>● Enregistrer</button><audio controls hidden></audio></div></div>`);
     const btn = node.querySelector("[data-rec]"), audio = node.querySelector("audio");
-    let rec = null, chunks = [], url = null;
+    let rec = null, chunks = [], url = null, stream = null;
     btn.addEventListener("click", async () => {
       if (rec && rec.state === "recording") { rec.stop(); return; }
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        stream = await navigator.mediaDevices.getUserMedia({ audio: true });
         rec = new MediaRecorder(stream);
         chunks = [];
         rec.ondataavailable = (e) => chunks.push(e.data);
         rec.onstop = () => {
-          stream.getTracks().forEach((t) => t.stop());
+          stream?.getTracks().forEach((t) => t.stop());
+          stream = null;
           url = URL.createObjectURL(new Blob(chunks));
           audio.src = url; audio.hidden = false;
           btn.textContent = "● Enregistrer à nouveau";
         };
         rec.start();
         btn.textContent = "■ Arrêter";
-      } catch (e) { alert("Microphone indisponible : " + e.message); }
+      } catch (e) { lumarisAlert("Microphone indisponible : " + e.message); }
     });
-    return { node, getAnswer: () => ({ recorded: !!url, audio: url || null }) };
+    return {
+      node,
+      getAnswer: () => ({ recorded: !!url, audio: url || null }),
+      // Stop the mic if the runner moves on or closes mid-recording.
+      destroy: () => { try { rec?.state === "recording" && rec.stop(); } catch {} stream?.getTracks().forEach((t) => t.stop()); stream = null; },
+    };
   },
   AudioPlayer(a) {
     const src = a.payload?.audio;
@@ -292,9 +300,10 @@ const RENDERERS = {
     ctx.strokeStyle = "#e8e6f0"; ctx.lineWidth = 2; ctx.lineCap = "round";
     let drawing = false;
     const pos = (e) => { const r = cv.getBoundingClientRect(); return [(e.clientX - r.left) * (cv.width / r.width), (e.clientY - r.top) * (cv.height / r.height)]; };
-    cv.addEventListener("pointerdown", (e) => { drawing = true; const [x, y] = pos(e); ctx.beginPath(); ctx.moveTo(x, y); });
+    cv.addEventListener("pointerdown", (e) => { drawing = true; cv.setPointerCapture(e.pointerId); const [x, y] = pos(e); ctx.beginPath(); ctx.moveTo(x, y); });
     cv.addEventListener("pointermove", (e) => { if (!drawing) return; const [x, y] = pos(e); ctx.lineTo(x, y); ctx.stroke(); });
-    window.addEventListener("pointerup", () => { drawing = false; });
+    cv.addEventListener("pointerup", () => { drawing = false; });
+    cv.addEventListener("pointercancel", () => { drawing = false; });
     node.querySelector("[data-clear]").addEventListener("click", () => ctx.clearRect(0, 0, cv.width, cv.height));
     return { node, getAnswer: () => ({ drawing: cv.toDataURL("image/png") }) };
   },
@@ -358,6 +367,7 @@ export function openActivityRunner(activities, { onClose, test } = {}) {
 
   const close = () => {
     if (timerInt) clearInterval(timerInt);
+    current?.destroy?.();
     root.remove(); onClose?.();
   };
   root.querySelector("[data-close]").addEventListener("click", close);
@@ -379,6 +389,8 @@ export function openActivityRunner(activities, { onClose, test } = {}) {
   }
 
   function render() {
+    phase = "answer"; // every freshly rendered activity awaits a new answer
+    current?.destroy?.(); // release resources (mic, streams) of the previous activity
     const a = activities[idx];
     stage.innerHTML = "";
     feedbackEl.hidden = true; feedbackEl.innerHTML = "";
@@ -395,10 +407,19 @@ export function openActivityRunner(activities, { onClose, test } = {}) {
   }
 
   root.querySelector("[data-prev]").addEventListener("click", () => { if (idx > 0) { idx--; render(); } });
+  // Single click handler with an explicit phase: "answer" submits for feedback,
+  // "next" (set after a successful validation) navigates. Never mix addEventListener
+  // with .onclick reassignment — both would fire and double-advance.
+  let phase = "answer";
   root.querySelector("[data-next]").addEventListener("click", async () => {
+    const btn = root.querySelector("[data-next]");
+    if (phase === "next") {
+      if (idx === activities.length - 1) { test ? finishTest() : close(); }
+      else { idx++; render(); phase = "answer"; }
+      return;
+    }
     const a = activities[idx];
     const answer = current?.getAnswer ? current.getAnswer() : {};
-    const btn = root.querySelector("[data-next]");
     btn.disabled = true; btn.textContent = "Vérification…";
     try {
       const fb = await apiLearning("feedback", {
@@ -420,15 +441,9 @@ export function openActivityRunner(activities, { onClose, test } = {}) {
           ${fb.hint ? `<div class="ar-fb-hint">💡 ${esc(fb.hint)}</div>` : ""}
           ${a.explanation ? `<div class="ar-fb-expl">${esc(a.explanation)}</div>` : ""}`;
       }
-      if (idx === activities.length - 1) {
-        btn.textContent = "Terminer ✓";
-        btn.disabled = false;
-        btn.onclick = () => (test ? finishTest() : close());
-      } else {
-        btn.textContent = "Continuer →";
-        btn.disabled = false;
-        btn.onclick = () => { idx++; render(); };
-      }
+      phase = "next";
+      btn.textContent = idx === activities.length - 1 ? "Terminer ✓" : "Continuer →";
+      btn.disabled = false;
     } catch (e) {
       btn.disabled = false;
       btn.textContent = "Réessayer";
@@ -457,6 +472,7 @@ export function openActivityRunner(activities, { onClose, test } = {}) {
     finished = true;
     if (timerInt) clearInterval(timerInt);
     const res = computeResults();
+    current?.destroy?.();
     stage.innerHTML = "";
     feedbackEl.hidden = true;
     root.querySelector("[data-comp]").textContent = "Résultats";

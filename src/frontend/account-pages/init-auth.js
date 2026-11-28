@@ -69,8 +69,9 @@ async function init() {
   document.documentElement.removeAttribute("data-auth-pending");
   if (ok) {
     startJWTRenewal();
-    // Hide loading after page is fully loaded and data is ready
-    setTimeout(() => hideLoadingOverlay(), 500);
+    // Hide loading after page is fully loaded and data is ready — unless the
+    // page owns the overlay and will hide it once its first data load settles.
+    setTimeout(() => { if (!window.__lumarisKeepLoading) hideLoadingOverlay(); }, 500);
   }
 }
 

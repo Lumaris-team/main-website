@@ -1,5 +1,6 @@
 import { authedFetch } from "/lib/auth.js";
 import { loadIcons } from '/lib/icons.js';
+import "/lib/select.js"; // Lumaris dropdowns for native <select>
 
 // ===================== TOOLS PAGE JAVASCRIPT =====================
 
